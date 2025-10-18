@@ -27,3 +27,4 @@ node_modules/
 
 # Local Netlify folder (legacy)
 .netlify
+roku-control.keystore
