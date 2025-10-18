@@ -37,12 +37,18 @@ function Invoke-CommandChecked {
 Write-Host "Building desktop release..." -ForegroundColor Cyan
 Invoke-CommandChecked -Command "npm" -Arguments @("run", "tauri:build") -WorkDir "$PWD"
 
-$ExeSource = Get-ChildItem -Path "$PWD\src-tauri\target\release\bundle" -Filter "*.exe" -Recurse | Select-Object -First 1
-if (-not $ExeSource) {
-    Write-Warning "No Windows executable found under src-tauri/target/release/bundle."
+$RawExe = Join-Path $PWD "src-tauri\target\release\roku-control-app.exe"
+if (Test-Path $RawExe) {
+    Copy-Item -Path $RawExe -Destination $ExeOutput -Force
+    Write-Host "Copied native executable to $ExeOutput"
 } else {
-    Copy-Item -Path $ExeSource.FullName -Destination $ExeOutput -Force
-    Write-Host "Copied desktop bundle to $ExeOutput"
+    $ExeSource = Get-ChildItem -Path "$PWD\src-tauri\target\release\bundle" -Filter "*.exe" -Recurse | Select-Object -First 1
+    if (-not $ExeSource) {
+        Write-Warning "No Windows executable found under src-tauri/target/release/. Skipping EXE copy."
+    } else {
+        Copy-Item -Path $ExeSource.FullName -Destination $ExeOutput -Force
+        Write-Host "Copied packaged executable to $ExeOutput"
+    }
 }
 
 Write-Host "Building Android release (unsigned)..." -ForegroundColor Cyan
