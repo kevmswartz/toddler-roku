@@ -84,4 +84,8 @@ Invoke-CommandChecked -Command $ApkSigner -Arguments @(
     $UnsignedApk.FullName
 ) -WorkDir "$PWD"
 
+if (Test-Path "$ApkOutput.idsig") {
+    Remove-Item "$ApkOutput.idsig" -Force -ErrorAction SilentlyContinue
+}
+
 Write-Host "Signed APK written to $ApkOutput" -ForegroundColor Green

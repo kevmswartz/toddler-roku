@@ -1,14 +1,6 @@
 # Build artifacts
 dist/
 
-# Capacitor native platforms
-android/
-!android/build.gradle
-!android/gradle/
-!android/gradle/wrapper/
-!android/gradle/wrapper/gradle-wrapper.properties
-electron/
-
 # Tauri generated build output (keep final bundles)
 src-tauri/target/
 !src-tauri/target/release/
@@ -25,6 +17,5 @@ src-tauri/gen/android/app/build/
 # Dependencies
 node_modules/
 
-# Local Netlify folder (legacy)
-.netlify
+# Local keystore (ignored by default)
 roku-control.keystore

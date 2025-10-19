@@ -50,9 +50,18 @@ This produces platform installers/bundles under `src-tauri/target/`.
 
 You can still open `index.html` directly or serve `dist/` with any static server, but Roku devices will reject the requests because of CORS unless you run within the same network and disable CORS in the browser. Native builds via Tauri are the recommended path.
 
-### Legacy Capacitor Projects
+### Release Bundles (Windows + Android)
 
-The previous Capacitor-based Android/Electron shells remain under `android/` and `electron/` for reference, but the active tooling now lives in `src-tauri/`.
+Use the helper script to produce both a Windows executable and a signed Android APK in the project root:
+
+```powershell
+.\scripts\build-release-artifacts.ps1 `
+  -KeystorePath 'C:\path\to\roku-control.keystore' `
+  -KeyAlias 'rokuControl' `
+  -AndroidTargets 'aarch64'
+```
+
+The script runs the Tauri desktop build, copies the generated `roku-control.exe`, builds the Android target(s), and signs the latest unsigned APK as `app-release-signed.apk`. Supply additional comma-separated targets (e.g. `aarch64,armv7`) if you need more than one ABI.
 
 ## Why Tauri?
 
@@ -68,7 +77,7 @@ The Roku External Control Protocol does not send CORS headers, so browser-based 
   ```
   Use `npm run content -- --help` to see all commands (init, add-special, add-quick, remove, list).
 - Commit the JSON to your git repo (for example on GitHub) and copy the raw file URL. Many teams keep a `content` branch just for the JSON so anyone can PR new buttons without touching the app code.
-- In the app’s Settings (after unlocking), paste the raw URL into **Kid Button Source** and click **Save URL & Refresh**. The Electron/Android apps will cache the remote JSON for offline use; you can refresh or clear the cache anytime.
+- In the app’s Settings (after unlocking), paste the raw URL into **Kid Button Source** and click **Save URL & Refresh**. The desktop and Android builds cache the remote JSON for offline use; you can refresh or clear the cache anytime.
 - Prefer a script? Run `./scripts/update-toddler-content.ps1 -Url "https://raw.githubusercontent.com/<org>/<repo>/<branch>/toddler-content.json"` to download the latest remote JSON into the repo (a timestamped backup is created automatically).
 - Want a guided workflow? `./scripts/manage-toddler-content.ps1 -Action menu` adds Roku app launchers, YouTube quick launches, TTS buttons, countdown timers, or fireworks celebrations through simple prompts (use `-Action add-quick-app`, `add-quick`, `add-tts`, `add-timer`, `add-fireworks`, etc. for direct commands).
 - To create a countdown button, run `./scripts/manage-toddler-content.ps1 -Action add-timer` and follow the prompts; the new button will use the `startToddlerTimer` handler and works out of the box with the built-in overlay.

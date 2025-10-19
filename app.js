@@ -221,9 +221,9 @@ function registerQuickActionCooldown(source) {
 
 // Initialize on load
 window.addEventListener('DOMContentLoaded', async () => {
-    // Log Capacitor plugin availability for debugging
+// Log native plugin availability for debugging
     if (isNativeRuntime) {
-        console.log('Running in native Capacitor environment');
+        console.log('Running in native runtime environment');
         console.log('Available plugins:', capacitorRuntime?.Plugins ? Object.keys(capacitorRuntime.Plugins) : 'none');
         console.log('HTTP plugin available:', Boolean(capacitorHttpPlugin));
     }
@@ -1071,7 +1071,7 @@ async function sendGoveeCommand(command, overrides = {}) {
     }
 
     const platformInfo = isNativeRuntime ? `(Running on ${capacitorRuntime?.getPlatformId?.()})` : '(Running in web mode)';
-    throw new Error(`Govee LAN control requires the Capacitor HTTP plugin. ${platformInfo} Make sure @capacitor-community/http is installed and run 'npm run sync' to update native projects.`);
+    throw new Error(`Govee LAN control requires a native bridge. ${platformInfo} Build the Tauri shell (or provide a compatible native plugin) to send UDP packets from this device.`);
 }
 
 function normalizeGoveePowerValue(raw) {
@@ -1603,7 +1603,7 @@ async function fetchRokuData(ip, endpoint) {
         return await RokuTransport.requestXml(ip, endpoint);
     } catch (error) {
         if (!RokuTransport.hasPlugin() && !RokuTransport.isNative) {
-            throw new Error(`${error.message} (build the Capacitor app to bypass browser CORS restrictions)`);
+            throw new Error(`${error.message} (build the Tauri shell to bypass browser CORS restrictions)`);
         }
         throw error;
     }
