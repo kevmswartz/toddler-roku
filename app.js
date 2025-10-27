@@ -47,10 +47,7 @@ const tauriInvoke = (() => {
     }
     return undefined;
 })();
-const capacitorRuntime = typeof window !== 'undefined' ? window.Capacitor : undefined;
-const isNativeRuntime = Boolean(capacitorRuntime?.isNativePlatform?.() && capacitorRuntime.getPlatformId?.() !== 'web');
-// Try multiple ways to access the HTTP plugin - @capacitor-community/http may export as Http or CapacitorHttp
-const capacitorHttpPlugin = isNativeRuntime ? (capacitorRuntime?.Plugins?.Http || capacitorRuntime?.Plugins?.CapacitorHttp) : null;
+const isNativeRuntime = Boolean(tauriInvoke);
 const goveeLanBridge = (() => {
     if (typeof window === 'undefined') return undefined;
     if (!window.goveeLan && tauriInvoke) {
@@ -66,6 +63,49 @@ const goveeLanBridge = (() => {
     }
     return window.goveeLan;
 })();
+
+const TAB_PREFERENCES_STORAGE_KEY = 'roku_tab_preferences';
+const TAB_SLOT_ORDER = ['slot1', 'slot2'];
+const TAB_DEFINITIONS = {
+    remote: {
+        id: 'remote',
+        defaultLabel: 'Remote',
+        defaultIcon: '🎮',
+        sections: ['toddlerControls', 'nowPlayingSection', 'quickLaunchSection', 'tabLayoutSection']
+    },
+    apps: {
+        id: 'apps',
+        defaultLabel: 'Apps',
+        defaultIcon: '📺',
+        sections: ['appsSection', 'quickLaunchSection', 'deepLinkSection']
+    },
+    lights: {
+        id: 'lights',
+        defaultLabel: 'Lights',
+        defaultIcon: '💡',
+        sections: ['goveeSection']
+    },
+    macros: {
+        id: 'macros',
+        defaultLabel: 'Macros',
+        defaultIcon: '✨',
+        sections: ['macroSection']
+    },
+    grownups: {
+        id: 'grownups',
+        defaultLabel: 'Grown-ups',
+        defaultIcon: '🛠️',
+        sections: ['connectionSection', 'contentSourceSection', 'remoteSection', 'goveeSection', 'deepLinkSection']
+    }
+};
+const TAB_OPTION_IDS = Object.keys(TAB_DEFINITIONS).filter(id => id !== 'remote');
+const TAB_MANAGED_SECTION_IDS = Array.from(
+    new Set(
+        Object.values(TAB_DEFINITIONS).flatMap(def => Array.isArray(def.sections) ? def.sections : [])
+    )
+);
+
+let tabPreferences = null;
 
 // Store latest media data for detailed view
 let latestMediaData = null;
@@ -89,6 +129,406 @@ let timerDurationMs = 0;
 let timerLabelText = '';
 let fireworksInterval = null;
 let fireworksTimeout = null;
+let nativeTtsStatusTimeout = null;
+
+function getNativeTtsBridge() {
+    if (typeof window === 'undefined') return undefined;
+    return window.NativeTts;
+}
+
+function getDefaultTabPreferences() {
+    return {
+        enabled: false,
+        activeTabId: 'remote',
+        slots: {
+            slot1: { optionId: 'apps', customLabel: '', customIcon: '' },
+            slot2: { optionId: 'grownups', customLabel: '', customIcon: '' }
+        }
+    };
+}
+
+function normalizeTabPreferences(raw) {
+    const defaults = getDefaultTabPreferences();
+    if (!raw || typeof raw !== 'object') {
+        return { ...defaults };
+    }
+
+    const normalized = {
+        enabled: Boolean(raw.enabled),
+        activeTabId: typeof raw.activeTabId === 'string' ? raw.activeTabId : defaults.activeTabId,
+        slots: { ...defaults.slots }
+    };
+
+    for (const slotId of TAB_SLOT_ORDER) {
+        const slotRaw = raw.slots?.[slotId];
+        if (!slotRaw || typeof slotRaw !== 'object') {
+            continue;
+        }
+        const optionId = typeof slotRaw.optionId === 'string' && TAB_OPTION_IDS.includes(slotRaw.optionId)
+            ? slotRaw.optionId
+            : 'none';
+        normalized.slots[slotId] = {
+            optionId,
+            customLabel: typeof slotRaw.customLabel === 'string' ? slotRaw.customLabel : '',
+            customIcon: typeof slotRaw.customIcon === 'string' ? slotRaw.customIcon : ''
+        };
+    }
+
+    if (!TAB_DEFINITIONS[normalized.activeTabId]) {
+        normalized.activeTabId = 'remote';
+    }
+
+    return normalized;
+}
+
+function loadTabPreferences() {
+    try {
+        const stored = localStorage.getItem(TAB_PREFERENCES_STORAGE_KEY);
+        if (!stored) {
+            return getDefaultTabPreferences();
+        }
+        return normalizeTabPreferences(JSON.parse(stored));
+    } catch (error) {
+        console.warn('Failed to load tab preferences, using defaults.', error);
+        return getDefaultTabPreferences();
+    }
+}
+
+function saveTabPreferences(prefs) {
+    try {
+        localStorage.setItem(TAB_PREFERENCES_STORAGE_KEY, JSON.stringify(prefs));
+    } catch (error) {
+        console.warn('Failed to persist tab preferences.', error);
+    }
+}
+
+function getSlotElementId(slotId, type) {
+    const suffix = slotId.charAt(0).toUpperCase() + slotId.slice(1);
+    return `tab${suffix}${type}`;
+}
+
+function buildTabFromDefinition(definition, overrides = {}) {
+    const label = (overrides.customLabel || '').trim();
+    const icon = (overrides.customIcon || '').trim();
+    return {
+        id: definition.id,
+        label: label || definition.defaultLabel,
+        icon: icon || definition.defaultIcon,
+        sections: Array.isArray(definition.sections) ? [...definition.sections] : []
+    };
+}
+
+function getTabsForRendering() {
+    const tabs = [];
+    const seen = new Set();
+
+    const remoteTab = buildTabFromDefinition(TAB_DEFINITIONS.remote);
+    tabs.push(remoteTab);
+    seen.add(remoteTab.id);
+
+    for (const slotId of TAB_SLOT_ORDER) {
+        const slotPrefs = tabPreferences?.slots?.[slotId];
+        if (!slotPrefs) continue;
+        const optionId = slotPrefs.optionId;
+        if (!optionId || optionId === 'none') continue;
+        const definition = TAB_DEFINITIONS[optionId];
+        if (!definition || seen.has(definition.id)) continue;
+        const tab = buildTabFromDefinition(definition, slotPrefs);
+        tabs.push(tab);
+        seen.add(definition.id);
+    }
+
+    return tabs;
+}
+
+function getActiveTabId() {
+    const active = tabPreferences?.activeTabId;
+    if (!active || !TAB_DEFINITIONS[active]) {
+        return 'remote';
+    }
+
+    const availableTabs = getTabsForRendering();
+    return availableTabs.some(tab => tab.id === active) ? active : 'remote';
+}
+
+function updateTabButtonsState(activeTabId) {
+    const buttonsContainer = document.getElementById('bottomTabButtons');
+    if (!buttonsContainer) return;
+    const buttons = buttonsContainer.querySelectorAll('button[data-tab-id]');
+    buttons.forEach(button => {
+        const isActive = button.dataset.tabId === activeTabId;
+        button.setAttribute('data-tab-active', String(isActive));
+    });
+}
+
+function clearTabVisibility() {
+    for (const sectionId of TAB_MANAGED_SECTION_IDS) {
+        const sectionEl = document.getElementById(sectionId);
+        if (sectionEl) {
+            sectionEl.classList.remove('tab-hidden');
+        }
+    }
+}
+
+function applyTabVisibility(activeTabId, availableTabs) {
+    if (!tabPreferences?.enabled) {
+        clearTabVisibility();
+        return;
+    }
+    const tabs = Array.isArray(availableTabs) ? availableTabs : getTabsForRendering();
+    const activeTab = tabs.find(tab => tab.id === activeTabId) || tabs[0];
+    const visibleSections = new Set(activeTab?.sections || []);
+
+    for (const sectionId of TAB_MANAGED_SECTION_IDS) {
+        const sectionEl = document.getElementById(sectionId);
+        if (!sectionEl) continue;
+        if (visibleSections.has(sectionId)) {
+            sectionEl.classList.remove('tab-hidden');
+        } else {
+            sectionEl.classList.add('tab-hidden');
+        }
+    }
+}
+
+function setActiveTab(tabId) {
+    const tabs = getTabsForRendering();
+    const desired = tabs.some(tab => tab.id === tabId) ? tabId : 'remote';
+    if (!tabPreferences) {
+        tabPreferences = getDefaultTabPreferences();
+    }
+    tabPreferences.activeTabId = desired;
+    saveTabPreferences(tabPreferences);
+    updateTabButtonsState(desired);
+    applyTabVisibility(desired, tabs);
+}
+
+function updateTabControlAvailability() {
+    const controlsContainer = document.getElementById('tabLayoutControls');
+    if (!controlsContainer) return;
+    const controlsEnabled = Boolean(tabPreferences?.enabled);
+    const interactiveElements = controlsContainer.querySelectorAll('select, input');
+    controlsContainer.classList.toggle('opacity-60', !controlsEnabled);
+    interactiveElements.forEach(element => {
+        element.disabled = !controlsEnabled;
+    });
+}
+
+function syncTabControlUi() {
+    const enableToggle = document.getElementById('enableBottomTabsToggle');
+    if (enableToggle) {
+        enableToggle.checked = Boolean(tabPreferences?.enabled);
+    }
+
+    for (const slotId of TAB_SLOT_ORDER) {
+        const slotPrefs = tabPreferences?.slots?.[slotId] || { optionId: 'none', customLabel: '', customIcon: '' };
+        const selectEl = document.getElementById(getSlotElementId(slotId, 'Select'));
+        const labelEl = document.getElementById(getSlotElementId(slotId, 'Label'));
+        const iconEl = document.getElementById(getSlotElementId(slotId, 'Icon'));
+        const definition = TAB_DEFINITIONS[slotPrefs.optionId];
+
+        if (selectEl) {
+            const optionValue = TAB_OPTION_IDS.includes(slotPrefs.optionId) ? slotPrefs.optionId : 'none';
+            selectEl.value = optionValue;
+        }
+
+        if (labelEl) {
+            labelEl.value = slotPrefs.customLabel || '';
+            labelEl.placeholder = definition?.defaultLabel || 'Default label';
+        }
+
+        if (iconEl) {
+            iconEl.value = slotPrefs.customIcon || '';
+            iconEl.placeholder = definition?.defaultIcon || 'e.g. 📺';
+        }
+    }
+
+    updateTabControlAvailability();
+
+    const controlsEnabled = Boolean(tabPreferences?.enabled);
+    for (const slotId of TAB_SLOT_ORDER) {
+        const labelEl = document.getElementById(getSlotElementId(slotId, 'Label'));
+        const iconEl = document.getElementById(getSlotElementId(slotId, 'Icon'));
+        const slotPrefs = tabPreferences?.slots?.[slotId] || { optionId: 'none' };
+        const slotActive = controlsEnabled && slotPrefs.optionId !== 'none';
+
+        if (labelEl) {
+            labelEl.disabled = !slotActive;
+            labelEl.classList.toggle('opacity-60', !slotActive);
+        }
+        if (iconEl) {
+            iconEl.disabled = !slotActive;
+            iconEl.classList.toggle('opacity-60', !slotActive);
+        }
+    }
+}
+
+function handleTabSelectionChange(slotId, optionId) {
+    if (!tabPreferences) {
+        tabPreferences = getDefaultTabPreferences();
+    }
+    if (!tabPreferences.slots) {
+        tabPreferences.slots = {};
+    }
+
+    const validOption = TAB_OPTION_IDS.includes(optionId) ? optionId : 'none';
+    const previous = tabPreferences.slots[slotId] || { optionId: 'none', customLabel: '', customIcon: '' };
+    tabPreferences.slots[slotId] = {
+        optionId: validOption,
+        customLabel: validOption !== 'none' && previous.optionId === validOption ? previous.customLabel || '' : '',
+        customIcon: validOption !== 'none' && previous.optionId === validOption ? previous.customIcon || '' : ''
+    };
+
+    if (tabPreferences.activeTabId && tabPreferences.activeTabId !== 'remote') {
+        const tabs = getTabsForRendering();
+        if (!tabs.some(tab => tab.id === tabPreferences.activeTabId)) {
+            tabPreferences.activeTabId = 'remote';
+        }
+    }
+
+    saveTabPreferences(tabPreferences);
+    syncTabControlUi();
+    renderBottomTabs();
+}
+
+function handleTabLabelChange(slotId, label) {
+    if (!tabPreferences) {
+        tabPreferences = getDefaultTabPreferences();
+    }
+    if (!tabPreferences.slots) {
+        tabPreferences.slots = {};
+    }
+    const slotPrefs = tabPreferences.slots[slotId] || { optionId: 'none', customLabel: '', customIcon: '' };
+    if (slotPrefs.optionId === 'none') {
+        slotPrefs.customLabel = '';
+        tabPreferences.slots[slotId] = slotPrefs;
+        saveTabPreferences(tabPreferences);
+        renderBottomTabs();
+        return;
+    }
+    slotPrefs.customLabel = label.slice(0, 32);
+    tabPreferences.slots[slotId] = slotPrefs;
+    saveTabPreferences(tabPreferences);
+    renderBottomTabs();
+}
+
+function handleTabIconChange(slotId, icon) {
+    if (!tabPreferences) {
+        tabPreferences = getDefaultTabPreferences();
+    }
+    if (!tabPreferences.slots) {
+        tabPreferences.slots = {};
+    }
+    const slotPrefs = tabPreferences.slots[slotId] || { optionId: 'none', customLabel: '', customIcon: '' };
+    if (slotPrefs.optionId === 'none') {
+        slotPrefs.customIcon = '';
+        tabPreferences.slots[slotId] = slotPrefs;
+        saveTabPreferences(tabPreferences);
+        renderBottomTabs();
+        return;
+    }
+    slotPrefs.customIcon = icon.slice(0, 4);
+    tabPreferences.slots[slotId] = slotPrefs;
+    saveTabPreferences(tabPreferences);
+    renderBottomTabs();
+}
+
+function renderBottomTabs() {
+    const nav = document.getElementById('bottomTabNav');
+    const buttonsContainer = document.getElementById('bottomTabButtons');
+    if (!nav || !buttonsContainer) return;
+
+    if (!tabPreferences?.enabled) {
+        nav.classList.add('hidden');
+        document.body.classList.remove('has-bottom-tabs');
+        buttonsContainer.innerHTML = '';
+        clearTabVisibility();
+        return;
+    }
+
+    const tabs = getTabsForRendering();
+    document.body.classList.add('has-bottom-tabs');
+    nav.classList.remove('hidden');
+    buttonsContainer.innerHTML = '';
+
+    const activeTabId = getActiveTabId();
+
+    tabs.forEach(tab => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.tabId = tab.id;
+        button.setAttribute('data-tab-active', String(tab.id === activeTabId));
+        button.className =
+            'flex flex-1 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-xs font-semibold text-indigo-100 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/40';
+
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'text-xl leading-none';
+        iconSpan.textContent = tab.icon || '';
+
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'text-[0.65rem] uppercase tracking-[0.25em] leading-tight';
+        labelSpan.textContent = tab.label;
+
+        button.append(iconSpan, labelSpan);
+
+        button.addEventListener('click', () => {
+            if (tab.id !== getActiveTabId()) {
+                setActiveTab(tab.id);
+            }
+        });
+
+        buttonsContainer.appendChild(button);
+    });
+
+    updateTabButtonsState(activeTabId);
+    applyTabVisibility(activeTabId, tabs);
+}
+
+function initTabControls() {
+    tabPreferences = loadTabPreferences();
+
+    const enableToggle = document.getElementById('enableBottomTabsToggle');
+    if (enableToggle) {
+        enableToggle.addEventListener('change', () => {
+            if (!tabPreferences) {
+                tabPreferences = getDefaultTabPreferences();
+            }
+            tabPreferences.enabled = enableToggle.checked;
+            if (!tabPreferences.enabled) {
+                tabPreferences.activeTabId = 'remote';
+            }
+            saveTabPreferences(tabPreferences);
+            updateTabControlAvailability();
+            renderBottomTabs();
+        });
+    }
+
+    for (const slotId of TAB_SLOT_ORDER) {
+        const selectEl = document.getElementById(getSlotElementId(slotId, 'Select'));
+        const labelEl = document.getElementById(getSlotElementId(slotId, 'Label'));
+        const iconEl = document.getElementById(getSlotElementId(slotId, 'Icon'));
+
+        if (selectEl) {
+            selectEl.addEventListener('change', event => {
+                handleTabSelectionChange(slotId, event.target.value);
+            });
+        }
+
+        if (labelEl) {
+            labelEl.addEventListener('input', event => {
+                handleTabLabelChange(slotId, event.target.value);
+            });
+        }
+
+        if (iconEl) {
+            iconEl.addEventListener('input', event => {
+                handleTabIconChange(slotId, event.target.value);
+            });
+        }
+    }
+
+    syncTabControlUi();
+    renderBottomTabs();
+}
 
 function getToddlerContentUrl() {
     return localStorage.getItem(TODDLER_CONTENT_URL_KEY) || '';
@@ -221,13 +661,12 @@ function registerQuickActionCooldown(source) {
 
 // Initialize on load
 window.addEventListener('DOMContentLoaded', async () => {
-// Log native plugin availability for debugging
+    // Log runtime info for debugging
     if (isNativeRuntime) {
-        console.log('Running in native runtime environment');
-        console.log('Available plugins:', capacitorRuntime?.Plugins ? Object.keys(capacitorRuntime.Plugins) : 'none');
-        console.log('HTTP plugin available:', Boolean(capacitorHttpPlugin));
+        console.log('Running inside Tauri shell');
     }
 
+    initTabControls();
     updateToddlerContentCacheMeta();
     initGoveeControls();
     await loadToddlerContent();
@@ -414,20 +853,36 @@ function renderRemoteColumn(container, remoteButtons) {
 
     const remoteMap = new Map(remoteButtons.map(btn => [btn.id, btn]));
 
+    if (!remoteMap.has('backButton')) {
+        remoteMap.set('backButton', {
+            id: 'backButton',
+            emoji: '⟵',
+            label: 'Go Back',
+            handler: 'sendKey',
+            args: ['Back'],
+            category: 'kidMode-remote',
+            zone: 'remote'
+        });
+    }
+
     const navGrid = document.createElement('div');
     navGrid.className = 'grid grid-cols-3 gap-3';
 
+    navGrid.appendChild(createRemoteButton(remoteMap.get('backButton')) || createRemoteSpacer());
     navGrid.appendChild(createRemoteButton(remoteMap.get('homeButton')) || createRemoteSpacer());
-    navGrid.appendChild(createRemoteButton(remoteMap.get('upButton')) || createRemoteSpacer());
     navGrid.appendChild(createRemoteButton(remoteMap.get('findRokuButton')) || createRemoteSpacer());
+
+    navGrid.appendChild(createRemoteSpacer());
+    navGrid.appendChild(createRemoteButton(remoteMap.get('upButton')) || createRemoteSpacer());
+    navGrid.appendChild(createRemoteSpacer());
 
     navGrid.appendChild(createRemoteButton(remoteMap.get('leftButton')) || createRemoteSpacer());
     navGrid.appendChild(createRemoteButton(remoteMap.get('selectButton')) || createRemoteSpacer());
     navGrid.appendChild(createRemoteButton(remoteMap.get('rightButton')) || createRemoteSpacer());
 
-    navGrid.appendChild(createRemoteButton(remoteMap.get('playPauseButton')) || createRemoteSpacer());
-    navGrid.appendChild(createRemoteButton(remoteMap.get('downButton')) || createRemoteSpacer());
     navGrid.appendChild(createRemoteButton(remoteMap.get('instantReplayButton')) || createRemoteSpacer());
+    navGrid.appendChild(createRemoteButton(remoteMap.get('downButton')) || createRemoteSpacer());
+    navGrid.appendChild(createRemoteButton(remoteMap.get('playPauseButton')) || createRemoteSpacer());
 
     container.appendChild(navGrid);
 
@@ -623,6 +1078,40 @@ function speakTts(message = '') {
         return;
     }
 
+    const nativeBridge = getNativeTtsBridge();
+    if (nativeBridge?.speak) {
+        try {
+            if (typeof nativeBridge.stop === 'function') {
+                nativeBridge.stop();
+            }
+
+            if (nativeTtsStatusTimeout) {
+                clearTimeout(nativeTtsStatusTimeout);
+                nativeTtsStatusTimeout = null;
+            }
+
+            const ready = typeof nativeBridge.isReady === 'function' ? Boolean(nativeBridge.isReady()) : true;
+            const success = nativeBridge.speak(text);
+
+            if (!success) {
+                showStatus('Could not speak that phrase.', 'error');
+                return;
+            }
+
+            showStatus(ready ? `Saying "${text}"...` : 'Warming up the voice...', 'info');
+
+            nativeTtsStatusTimeout = setTimeout(() => {
+                showStatus(`Said: "${text}"`, 'success');
+                nativeTtsStatusTimeout = null;
+            }, ready ? 1400 : 2000);
+            return;
+        } catch (error) {
+            console.error('Native TTS error', error);
+            showStatus('Could not speak that phrase.', 'error');
+            return;
+        }
+    }
+
     if (!('speechSynthesis' in window)) {
         showStatus('Your browser cannot talk yet. Try another device.', 'error');
         return;
@@ -669,7 +1158,7 @@ function speakTts(message = '') {
         speakWithVoices();
     } catch (error) {
         console.error('Speech synthesis exception', error);
-        showStatus('Could not start speaking. Try again.', 'error');
+        showStatus('Could not speak that phrase.', 'error');
     }
 }
 
@@ -1055,23 +1544,10 @@ async function sendGoveeCommand(command, overrides = {}) {
         return { data: null, target };
     }
 
-    if (capacitorHttpPlugin) {
-        const response = await capacitorHttpPlugin.request({
-            url,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: payload,
-            connectTimeout: 5000,
-            readTimeout: 5000
-        });
-        if (response.status < 200 || response.status >= 300) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        return { data: response.data, target };
-    }
-
-    const platformInfo = isNativeRuntime ? `(Running on ${capacitorRuntime?.getPlatformId?.()})` : '(Running in web mode)';
-    throw new Error(`Govee LAN control requires a native bridge. ${platformInfo} Build the Tauri shell (or provide a compatible native plugin) to send UDP packets from this device.`);
+    const environmentLabel = isNativeRuntime ? 'native shell' : 'web mode';
+    throw new Error(
+        `Govee LAN control requires the Tauri native shell (currently running in ${environmentLabel}). Build the Tauri app to send UDP packets from this device.`
+    );
 }
 
 function normalizeGoveePowerValue(raw) {
@@ -1383,27 +1859,6 @@ const RokuTransport = (() => {
             }
         }
 
-        if (capacitorHttpPlugin) {
-            const options = {
-                url,
-                method,
-                headers,
-                responseType: responseType === 'xml' ? 'text' : responseType
-            };
-
-            if (body !== undefined && body !== null) {
-                options.data = body;
-            } else if (method.toUpperCase() === 'POST' || method.toUpperCase() === 'PUT') {
-                options.data = '';
-            }
-
-            const response = await capacitorHttpPlugin.request(options);
-            if (response.status < 200 || response.status >= 300) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            return response.data;
-        }
-
         if (xhrSupported) {
             try {
                 const xhr = new XMLHttpRequest();
@@ -1468,7 +1923,7 @@ const RokuTransport = (() => {
         request,
         requestXml,
         isNative: isNativeRuntime,
-        hasPlugin: () => Boolean(capacitorHttpPlugin)
+        hasPlugin: () => Boolean(tauriInvoke)
     };
 })();
 

@@ -82,6 +82,16 @@
                 transform: translate(calc(var(--x) - 50%), calc(var(--y) - 50%)) scale(0.1);
             }
         }
+        .tab-hidden {
+            display: none !important;
+        }
+        #bottomTabNav {
+            box-shadow: 0 -12px 32px rgba(15, 23, 42, 0.35);
+        }
+        #bottomTabNav button[data-tab-active="true"] {
+            background: rgba(255, 255, 255, 0.18);
+            color: #fff;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-700 text-white">
@@ -140,7 +150,7 @@
         </div>
     </div>
 
-    <main class="mx-auto flex min-h-screen w-full flex-col gap-8 px-4 pb-16 pt-24 md:px-8 lg:px-12">
+    <main class="mx-auto flex min-h-screen w-full flex-col gap-8 px-4 pb-32 pt-24 md:px-8 lg:px-12">
         <div id="statusMessage" class="status-message hidden"></div>
         <div id="advancedSettingsBanner" data-settings class="hidden flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-white/15 px-5 py-4 text-sm font-semibold text-white shadow-2xl backdrop-blur md:px-6">
             <span>Advanced controls are unlocked. Make your changes, then tuck them away when you’re done.</span>
@@ -222,6 +232,68 @@
                 </div>
             </div>
             <p id="toddlerContentCacheInfo" class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-100"></p>
+        </section>
+
+        <section id="tabLayoutSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Bottom Tabs</h2>
+                    <p class="mt-1 text-sm text-indigo-100 max-w-2xl">Turn on the tab bar for quicker navigation. Remote is always pinned; choose what else appears and tweak the labels.</p>
+                </div>
+            </div>
+
+            <div class="mt-6 space-y-6">
+                <label class="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-indigo-100">
+                    <input id="enableBottomTabsToggle" type="checkbox" class="h-5 w-5 rounded border-white/30 bg-white/20 text-indigo-500 focus:ring-white/60" />
+                    <span>Show tab bar at the bottom of the screen</span>
+                </label>
+
+                <div id="tabLayoutControls" class="grid gap-6 md:grid-cols-2">
+                    <div class="space-y-3 rounded-2xl bg-white/10 p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Tab Slot 1</p>
+                        <label class="flex flex-col gap-2 text-sm text-indigo-100">
+                            <span class="font-semibold text-white/90">Content</span>
+                            <select id="tabSlot1Select" class="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-indigo-900 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/40">
+                                <option value="none">Hidden</option>
+                                <option value="apps">Apps &amp; Launchers</option>
+                                <option value="lights">Lights</option>
+                                <option value="macros">Macros</option>
+                                <option value="grownups">Grown-up Controls</option>
+                            </select>
+                        </label>
+                        <label class="flex flex-col gap-2 text-sm text-indigo-100">
+                            <span class="font-semibold text-white/90">Label</span>
+                            <input id="tabSlot1Label" type="text" maxlength="18" placeholder="Default label" class="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-indigo-900 placeholder:text-indigo-200/60 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/40" />
+                        </label>
+                        <label class="flex flex-col gap-2 text-sm text-indigo-100">
+                            <span class="font-semibold text-white/90">Emoji</span>
+                            <input id="tabSlot1Icon" type="text" maxlength="4" placeholder="e.g. 📺" class="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-indigo-900 placeholder:text-indigo-200/60 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/40" />
+                        </label>
+                    </div>
+                    <div class="space-y-3 rounded-2xl bg-white/10 p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Tab Slot 2</p>
+                        <label class="flex flex-col gap-2 text-sm text-indigo-100">
+                            <span class="font-semibold text-white/90">Content</span>
+                            <select id="tabSlot2Select" class="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-indigo-900 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/40">
+                                <option value="none">Hidden</option>
+                                <option value="apps">Apps &amp; Launchers</option>
+                                <option value="lights">Lights</option>
+                                <option value="macros">Macros</option>
+                                <option value="grownups">Grown-up Controls</option>
+                            </select>
+                        </label>
+                        <label class="flex flex-col gap-2 text-sm text-indigo-100">
+                            <span class="font-semibold text-white/90">Label</span>
+                            <input id="tabSlot2Label" type="text" maxlength="18" placeholder="Default label" class="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-indigo-900 placeholder:text-indigo-200/60 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/40" />
+                        </label>
+                        <label class="flex flex-col gap-2 text-sm text-indigo-100">
+                            <span class="font-semibold text-white/90">Emoji</span>
+                            <input id="tabSlot2Icon" type="text" maxlength="4" placeholder="e.g. 💡" class="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-indigo-900 placeholder:text-indigo-200/60 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/40" />
+                        </label>
+                    </div>
+                </div>
+                <p class="rounded-2xl bg-white/5 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-indigo-200">Remote tab is always visible.</p>
+            </div>
         </section>
 
         <section id="goveeSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
@@ -483,6 +555,10 @@
             </div>
         </section>
     </main>
+
+    <nav id="bottomTabNav" class="fixed inset-x-0 bottom-0 z-40 hidden bg-slate-950/80 text-white backdrop-blur-lg">
+        <div id="bottomTabButtons" class="mx-auto flex w-full max-w-4xl items-stretch justify-around gap-2 px-4 py-3"></div>
+    </nav>
 
     <div id="toastContainer" class="pointer-events-none fixed left-1/2 top-6 z-50 hidden -translate-x-1/2 transform"></div>
 

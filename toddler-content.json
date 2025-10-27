@@ -49,6 +49,17 @@
       "zone": "remote"
     },
     {
+      "id": "backButton",
+      "emoji": "⟵",
+      "label": "Go Back",
+      "handler": "sendKey",
+      "args": [
+        "Back"
+      ],
+      "category": "kidMode-remote",
+      "zone": "remote"
+    },
+    {
       "id": "instantReplayButton",
       "emoji": "🔁",
       "label": "Do It Again",
