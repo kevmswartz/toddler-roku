@@ -232,67 +232,19 @@
                 </div>
             </div>
             <p id="toddlerContentCacheInfo" class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-100"></p>
-        </section>
-
-        <section id="tabLayoutSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-white">Bottom Tabs</h2>
-                    <p class="mt-1 text-sm text-indigo-100 max-w-2xl">Turn on the tab bar for quicker navigation. Remote is always pinned; choose what else appears and tweak the labels.</p>
-                </div>
+            <div class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-100">
+                Bundled kid-mode buttons live in <code class="font-mono text-[11px] text-white">config/toddler/default.json</code>. Add a <code class="font-mono text-[11px] text-white">custom.json</code> beside it for local tweaks—Git will ignore that file.
             </div>
-
-            <div class="mt-6 space-y-6">
-                <label class="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-indigo-100">
-                    <input id="enableBottomTabsToggle" type="checkbox" class="h-5 w-5 rounded border-white/30 bg-white/20 text-indigo-500 focus:ring-white/60" />
-                    <span>Show tab bar at the bottom of the screen</span>
-                </label>
-
-                <div id="tabLayoutControls" class="grid gap-6 md:grid-cols-2">
-                    <div class="space-y-3 rounded-2xl bg-white/10 p-4">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Tab Slot 1</p>
-                        <label class="flex flex-col gap-2 text-sm text-indigo-100">
-                            <span class="font-semibold text-white/90">Content</span>
-                            <select id="tabSlot1Select" class="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-indigo-900 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/40">
-                                <option value="none">Hidden</option>
-                                <option value="apps">Apps &amp; Launchers</option>
-                                <option value="lights">Lights</option>
-                                <option value="macros">Macros</option>
-                                <option value="grownups">Grown-up Controls</option>
-                            </select>
-                        </label>
-                        <label class="flex flex-col gap-2 text-sm text-indigo-100">
-                            <span class="font-semibold text-white/90">Label</span>
-                            <input id="tabSlot1Label" type="text" maxlength="18" placeholder="Default label" class="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-indigo-900 placeholder:text-indigo-200/60 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/40" />
-                        </label>
-                        <label class="flex flex-col gap-2 text-sm text-indigo-100">
-                            <span class="font-semibold text-white/90">Emoji</span>
-                            <input id="tabSlot1Icon" type="text" maxlength="4" placeholder="e.g. 📺" class="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-indigo-900 placeholder:text-indigo-200/60 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/40" />
-                        </label>
-                    </div>
-                    <div class="space-y-3 rounded-2xl bg-white/10 p-4">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Tab Slot 2</p>
-                        <label class="flex flex-col gap-2 text-sm text-indigo-100">
-                            <span class="font-semibold text-white/90">Content</span>
-                            <select id="tabSlot2Select" class="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-indigo-900 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/40">
-                                <option value="none">Hidden</option>
-                                <option value="apps">Apps &amp; Launchers</option>
-                                <option value="lights">Lights</option>
-                                <option value="macros">Macros</option>
-                                <option value="grownups">Grown-up Controls</option>
-                            </select>
-                        </label>
-                        <label class="flex flex-col gap-2 text-sm text-indigo-100">
-                            <span class="font-semibold text-white/90">Label</span>
-                            <input id="tabSlot2Label" type="text" maxlength="18" placeholder="Default label" class="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-indigo-900 placeholder:text-indigo-200/60 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/40" />
-                        </label>
-                        <label class="flex flex-col gap-2 text-sm text-indigo-100">
-                            <span class="font-semibold text-white/90">Emoji</span>
-                            <input id="tabSlot2Icon" type="text" maxlength="4" placeholder="e.g. 💡" class="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-indigo-900 placeholder:text-indigo-200/60 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/40" />
-                        </label>
-                    </div>
+            <div id="buttonHandlerCatalog" class="mt-6 hidden space-y-4 rounded-3xl bg-white/10 p-4 text-indigo-100 shadow-inner">
+                <div>
+                    <h3 class="text-base font-semibold text-white">Kid-mode Handler Catalog</h3>
+                    <p class="mt-1 text-xs text-indigo-100/80">Use these button types and handlers when editing your config files.</p>
                 </div>
-                <p class="rounded-2xl bg-white/5 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-indigo-200">Remote tab is always visible.</p>
+                <div id="buttonHandlerList" class="grid gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
+                <div>
+                    <h4 class="text-sm font-semibold text-white/90">Content Providers</h4>
+                    <div id="contentProviderList" class="mt-2 grid gap-2 text-xs text-indigo-100"></div>
+                </div>
             </div>
         </section>
 
@@ -387,10 +339,79 @@
             <p id="goveeStatus" class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-indigo-100">Enter the LAN IP to get started.</p>
         </section>
 
+        <section id="kidQuickSection" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Kid Favorites</h2>
+                    <p class="mt-1 text-sm text-indigo-100 max-w-2xl">Tap a show tile or special button to launch it on the Roku.</p>
+                </div>
+            </div>
+            <div id="toddlerQuickColumn" class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+        </section>
+
         <section id="toddlerControls" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
-            <div class="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] xl:grid-cols-[minmax(0,5fr)_minmax(0,2fr)]">
-                <div id="toddlerQuickColumn" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
-                <div id="toddlerRemoteColumn" class="flex flex-col gap-4"></div>
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Remote</h2>
+                    <p class="mt-1 text-sm text-indigo-100 max-w-2xl">Directional pad, magic buttons, and helpers for kid mode.</p>
+                </div>
+            </div>
+            <div id="toddlerRemoteColumn" class="mt-6 flex flex-col gap-4"></div>
+        </section>
+
+        <section id="magicSection" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Magic Time</h2>
+                    <p class="mt-1 text-sm text-indigo-100 max-w-2xl">Quick sparks for little celebrations: start a timer, launch fireworks, or have the device speak on cue.</p>
+                </div>
+            </div>
+
+            <div class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                <div class="flex flex-col gap-4 rounded-3xl bg-white/10 p-5 text-indigo-50 shadow-inner">
+                    <div>
+                        <h3 class="text-lg font-semibold text-white">Magic Timer</h3>
+                        <p class="mt-1 text-sm text-indigo-100">Pick a duration and the countdown will pop up with the shimmering ring.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" data-magic-timer="180" class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">3 min</button>
+                        <button type="button" data-magic-timer="300" class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">5 min</button>
+                        <button type="button" data-magic-timer="600" class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">10 min</button>
+                        <button type="button" data-magic-timer="900" class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">15 min</button>
+                    </div>
+                    <form id="magicTimerForm" class="space-y-3">
+                        <label class="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-indigo-200">
+                            Custom minutes
+                            <div class="flex gap-2">
+                                <input id="magicTimerMinutes" type="number" min="1" max="120" step="1" placeholder="e.g. 8" class="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-base font-semibold text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30" />
+                                <button type="submit" class="rounded-2xl bg-white px-4 py-2 text-sm font-semibold uppercase tracking-wide text-indigo-600 shadow-lg transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-white/40">Start</button>
+                            </div>
+                        </label>
+                    </form>
+                    <button id="magicTimerCancel" type="button" class="self-start rounded-2xl bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">Cancel Timer</button>
+                </div>
+
+                <div class="flex flex-col gap-4 rounded-3xl bg-white/10 p-5 text-indigo-50 shadow-inner">
+                    <div>
+                        <h3 class="text-lg font-semibold text-white">Fireworks Celebration</h3>
+                        <p class="mt-1 text-sm text-indigo-100">Fill the screen with sparkle for bedtime victories or potty triumphs.</p>
+                    </div>
+                    <button id="magicFireworksButton" type="button" class="mt-auto rounded-2xl bg-gradient-to-r from-rose-400/80 to-amber-300/80 px-5 py-3 text-base font-semibold text-slate-900 shadow-lg transition hover:scale-[1.02] hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/40">Launch Fireworks</button>
+                </div>
+
+                <div class="flex flex-col gap-4 rounded-3xl bg-white/10 p-5 text-indigo-50 shadow-inner xl:col-span-1 md:col-span-2 xl:col-auto">
+                    <div>
+                        <h3 class="text-lg font-semibold text-white">Click to Say</h3>
+                        <p class="mt-1 text-sm text-indigo-100">Type a phrase and the device will read it aloud with the friendliest voice it can find.</p>
+                    </div>
+                    <form id="magicSpeakForm" class="flex flex-col gap-3">
+                        <textarea id="magicSpeakInput" rows="3" placeholder="Great job cleaning up every block!" class="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-base font-semibold text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"></textarea>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="submit" class="rounded-2xl bg-white px-5 py-3 text-base font-semibold text-indigo-600 shadow-lg transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-white/40">Say It</button>
+                            <button type="button" id="magicSpeakStop" class="rounded-2xl bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">Stop Voice</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </section>
 

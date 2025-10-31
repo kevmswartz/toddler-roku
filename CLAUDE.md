@@ -44,23 +44,33 @@ When running in native mode, network calls bypass browser CORS restrictions thro
 
 ### Content Management System
 
-Curated kid buttons come from `toddler-content.json` or a remote URL stored in localStorage. The content schema defines:
+Curated kid buttons come from `public/config/toddler/default.json` (bundled default) or a remote URL stored in localStorage. The content schema defines:
 - `specialButtons[]`: Each button has an `id`, `emoji`, `label`, `handler`, and `category`
 - Categories: `kidMode-remote`, `kidMode-content`, `kidMode-system`
 - Zones: `remote` (always visible), `quick` (toddler-focused content)
 
-The `button-types.json` file documents all handler functions and their purpose (e.g., `sendKey`, `launchApp`, `runMacro`).
+The `public/config/button-types.json` file documents all handler functions and their purpose (e.g., `sendKey`, `launchApp`, `runMacro`).
+
+**Content Loading (Simplified)**:
+1. If remote URL configured → fetch fresh from URL (no caching!)
+2. If remote fails or no URL → load from `custom.json` (if exists)
+3. Otherwise → load from bundled `default.json` (always available)
+4. Shows error only if all sources fail
+
+**Benefits:**
+- Always fresh content from remote URLs
+- No stale cache issues
+- Easy local testing (clear remote URL)
+- Works offline with bundled defaults
 
 ### State Management
 
 All state lives in localStorage with typed keys:
 - `roku_ip`: Roku device IP address
 - `roku_macros`: JSON array of saved macro sequences
-- `toddler_content_url`: Remote content source URL
-- `toddler_content_cache`: Cached content JSON
+- `toddler_content_url`: Optional remote content source URL (always fetches fresh)
 - `govee_ip`, `govee_port`, `govee_brightness`: Govee light settings
 - `govee_power_state_{ip}`: Per-device power state tracking
-- `roku_tab_preferences`: Tab layout customization
 
 ## Common Development Commands
 
@@ -88,20 +98,20 @@ npm run android:build
 The custom build script (`scripts/build.js`):
 1. Cleans `dist/` directory
 2. Compiles Tailwind CSS from `styles/tailwind.css`
-3. Copies static files: `index.html`, `app.js`, `button-types.json`, `toddler-content.json`
+3. Copies static files: `index.html`, `app.js`
 4. Copies vendor files (e.g., canvas-confetti)
-5. Copies `public/` directory for thumbnails/assets
+5. Copies `public/` directory recursively (includes config files, thumbnails, and all assets)
 
 **Important**: The Tauri config points `frontendDist` to `../dist`, so `npm run build` must run before Tauri commands.
 
 ### Content Management CLI
 
 ```bash
-# Interactive CLI to manage toddler-content.json
+# Interactive CLI to manage content configuration
 npm run content
 ```
 
-This launches `scripts/toddler-content-cli.js` for adding/editing kid buttons without manual JSON editing.
+This launches `scripts/toddler-content-cli.js` for adding/editing kid buttons in `public/config/toddler/default.json` without manual JSON editing.
 
 ### Tauri Commands
 
@@ -162,8 +172,8 @@ The entire frontend logic lives in `app.js` (~1000+ lines). Key patterns:
 **Handler Registration**:
 All button handlers are registered in a `handlers` object at the bottom of `app.js`. To add a new button type:
 1. Add handler function to the `handlers` object
-2. Update `button-types.json` to document the handler
-3. Add buttons to `toddler-content.json` with the handler name
+2. Update `public/config/button-types.json` to document the handler
+3. Add buttons to `public/config/toddler/default.json` with the handler name
 
 **Macro System**:
 Macros are stored as JSON arrays in localStorage (`roku_macros`). Each macro has:
@@ -172,15 +182,14 @@ Macros are stored as JSON arrays in localStorage (`roku_macros`). Each macro has
 - `steps[]`: Array of `{ type, params }` objects
   - Types: `key`, `wait`, `app`, `lights`, `tts`
 
-**Tab System**:
-The app has a flexible tab layout defined in `TAB_DEFINITIONS`:
-- `remote`: Toddler controls + Now Playing
-- `apps`: Apps grid + Quick Launch
-- `lights`: Govee light controls
-- `macros`: Macro runner
-- `grownups`: PIN-protected settings
+**Tab System (Simplified)**:
+The app has 4 fixed tabs (always visible, no customization):
+- `remote`: Remote controls (🎮) - Always pinned
+- `apps`: Roku Rooms (📺) - Apps grid + Quick Launch
+- `lights`: Lights (💡) - Govee light controls
+- `magic`: Magic Time (⏱️) - Timer, TTS, Fireworks
 
-Tab preferences stored in localStorage allow customizing which tabs appear in slots 1 and 2.
+All advanced settings are behind the gear button + PIN protection.
 
 ## Platform-Specific Notes
 

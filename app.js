@@ -16,11 +16,11 @@ const INLINE_VARIANTS = {
 const QUICK_ACTION_COOLDOWN_MS = 1000;
 const quickActionCooldowns = new Map();
 const MACRO_STORAGE_KEY = 'roku_macros';
-const TODDLER_CONTENT_PATH = 'toddler-content.json';
+const CONFIG_BASE_PATH = 'config';
+const TODDLER_CONTENT_DEFAULT_PATH = `${CONFIG_BASE_PATH}/toddler/default.json`;
+const TODDLER_CONTENT_CUSTOM_PATH = `${CONFIG_BASE_PATH}/toddler/custom.json`;
+const BUTTON_TYPES_CONFIG_PATH = `${CONFIG_BASE_PATH}/button-types.json`;
 const TODDLER_CONTENT_URL_KEY = 'toddler_content_url';
-const TODDLER_CONTENT_CACHE_KEY = 'toddler_content_cache';
-const TODDLER_CONTENT_CACHE_TIME_KEY = 'toddler_content_cache_time';
-const TODDLER_CONTENT_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000; // 6 hours
 const TIMER_CIRCUMFERENCE = 2 * Math.PI * 54;
 const GOVEE_IP_STORAGE_KEY = 'govee_ip';
 const GOVEE_PORT_STORAGE_KEY = 'govee_port';
@@ -64,20 +64,24 @@ const goveeLanBridge = (() => {
     return window.goveeLan;
 })();
 
-const TAB_PREFERENCES_STORAGE_KEY = 'roku_tab_preferences';
-const TAB_SLOT_ORDER = ['slot1', 'slot2'];
 const TAB_DEFINITIONS = {
     remote: {
         id: 'remote',
         defaultLabel: 'Remote',
         defaultIcon: '🎮',
-        sections: ['toddlerControls', 'nowPlayingSection', 'quickLaunchSection', 'tabLayoutSection']
+        sections: ['toddlerControls', 'remoteSection']
     },
     apps: {
         id: 'apps',
-        defaultLabel: 'Apps',
+        defaultLabel: 'Roku Rooms',
         defaultIcon: '📺',
-        sections: ['appsSection', 'quickLaunchSection', 'deepLinkSection']
+        sections: ['kidQuickSection', 'connectionSection', 'nowPlayingSection', 'appsSection', 'quickLaunchSection', 'deepLinkSection']
+    },
+    magic: {
+        id: 'magic',
+        defaultLabel: 'Magic Time',
+        defaultIcon: '⏱️',
+        sections: ['magicSection']
     },
     lights: {
         id: 'lights',
@@ -90,22 +94,13 @@ const TAB_DEFINITIONS = {
         defaultLabel: 'Macros',
         defaultIcon: '✨',
         sections: ['macroSection']
-    },
-    grownups: {
-        id: 'grownups',
-        defaultLabel: 'Grown-ups',
-        defaultIcon: '🛠️',
-        sections: ['connectionSection', 'contentSourceSection', 'remoteSection', 'goveeSection', 'deepLinkSection']
     }
 };
-const TAB_OPTION_IDS = Object.keys(TAB_DEFINITIONS).filter(id => id !== 'remote');
 const TAB_MANAGED_SECTION_IDS = Array.from(
     new Set(
         Object.values(TAB_DEFINITIONS).flatMap(def => Array.isArray(def.sections) ? def.sections : [])
     )
 );
-
-let tabPreferences = null;
 
 // Store latest media data for detailed view
 let latestMediaData = null;
@@ -115,6 +110,12 @@ let toddlerSpecialButtons = [];
 let toddlerQuickLaunchItems = [];
 let installedApps = [];
 let installedAppMap = new Map();
+let toddlerContentSource = { type: 'bundled', path: TODDLER_CONTENT_DEFAULT_PATH };
+let buttonTypeCatalog = null;
+
+if (typeof window !== 'undefined') {
+    window.getButtonHandlerCatalog = () => buttonTypeCatalog;
+}
 
 // Settings lock state
 let holdTimer = null;
@@ -136,77 +137,6 @@ function getNativeTtsBridge() {
     return window.NativeTts;
 }
 
-function getDefaultTabPreferences() {
-    return {
-        enabled: false,
-        activeTabId: 'remote',
-        slots: {
-            slot1: { optionId: 'apps', customLabel: '', customIcon: '' },
-            slot2: { optionId: 'grownups', customLabel: '', customIcon: '' }
-        }
-    };
-}
-
-function normalizeTabPreferences(raw) {
-    const defaults = getDefaultTabPreferences();
-    if (!raw || typeof raw !== 'object') {
-        return { ...defaults };
-    }
-
-    const normalized = {
-        enabled: Boolean(raw.enabled),
-        activeTabId: typeof raw.activeTabId === 'string' ? raw.activeTabId : defaults.activeTabId,
-        slots: { ...defaults.slots }
-    };
-
-    for (const slotId of TAB_SLOT_ORDER) {
-        const slotRaw = raw.slots?.[slotId];
-        if (!slotRaw || typeof slotRaw !== 'object') {
-            continue;
-        }
-        const optionId = typeof slotRaw.optionId === 'string' && TAB_OPTION_IDS.includes(slotRaw.optionId)
-            ? slotRaw.optionId
-            : 'none';
-        normalized.slots[slotId] = {
-            optionId,
-            customLabel: typeof slotRaw.customLabel === 'string' ? slotRaw.customLabel : '',
-            customIcon: typeof slotRaw.customIcon === 'string' ? slotRaw.customIcon : ''
-        };
-    }
-
-    if (!TAB_DEFINITIONS[normalized.activeTabId]) {
-        normalized.activeTabId = 'remote';
-    }
-
-    return normalized;
-}
-
-function loadTabPreferences() {
-    try {
-        const stored = localStorage.getItem(TAB_PREFERENCES_STORAGE_KEY);
-        if (!stored) {
-            return getDefaultTabPreferences();
-        }
-        return normalizeTabPreferences(JSON.parse(stored));
-    } catch (error) {
-        console.warn('Failed to load tab preferences, using defaults.', error);
-        return getDefaultTabPreferences();
-    }
-}
-
-function saveTabPreferences(prefs) {
-    try {
-        localStorage.setItem(TAB_PREFERENCES_STORAGE_KEY, JSON.stringify(prefs));
-    } catch (error) {
-        console.warn('Failed to persist tab preferences.', error);
-    }
-}
-
-function getSlotElementId(slotId, type) {
-    const suffix = slotId.charAt(0).toUpperCase() + slotId.slice(1);
-    return `tab${suffix}${type}`;
-}
-
 function buildTabFromDefinition(definition, overrides = {}) {
     const label = (overrides.customLabel || '').trim();
     const icon = (overrides.customIcon || '').trim();
@@ -219,36 +149,21 @@ function buildTabFromDefinition(definition, overrides = {}) {
 }
 
 function getTabsForRendering() {
-    const tabs = [];
-    const seen = new Set();
-
-    const remoteTab = buildTabFromDefinition(TAB_DEFINITIONS.remote);
-    tabs.push(remoteTab);
-    seen.add(remoteTab.id);
-
-    for (const slotId of TAB_SLOT_ORDER) {
-        const slotPrefs = tabPreferences?.slots?.[slotId];
-        if (!slotPrefs) continue;
-        const optionId = slotPrefs.optionId;
-        if (!optionId || optionId === 'none') continue;
-        const definition = TAB_DEFINITIONS[optionId];
-        if (!definition || seen.has(definition.id)) continue;
-        const tab = buildTabFromDefinition(definition, slotPrefs);
-        tabs.push(tab);
-        seen.add(definition.id);
-    }
-
-    return tabs;
+    // Fixed tabs: Remote, Roku Rooms, Lights, Magic Time
+    return [
+        buildTabFromDefinition(TAB_DEFINITIONS.remote),
+        buildTabFromDefinition(TAB_DEFINITIONS.apps),
+        buildTabFromDefinition(TAB_DEFINITIONS.lights),
+        buildTabFromDefinition(TAB_DEFINITIONS.magic)
+    ];
 }
 
 function getActiveTabId() {
-    const active = tabPreferences?.activeTabId;
-    if (!active || !TAB_DEFINITIONS[active]) {
-        return 'remote';
+    // Store active tab in a simple variable instead of preferences
+    if (!window._activeTabId || !TAB_DEFINITIONS[window._activeTabId]) {
+        window._activeTabId = 'remote';
     }
-
-    const availableTabs = getTabsForRendering();
-    return availableTabs.some(tab => tab.id === active) ? active : 'remote';
+    return window._activeTabId;
 }
 
 function updateTabButtonsState(activeTabId) {
@@ -293,157 +208,15 @@ function applyTabVisibility(activeTabId, availableTabs) {
 function setActiveTab(tabId) {
     const tabs = getTabsForRendering();
     const desired = tabs.some(tab => tab.id === tabId) ? tabId : 'remote';
-    if (!tabPreferences) {
-        tabPreferences = getDefaultTabPreferences();
-    }
-    tabPreferences.activeTabId = desired;
-    saveTabPreferences(tabPreferences);
+    window._activeTabId = desired;
     updateTabButtonsState(desired);
     applyTabVisibility(desired, tabs);
-}
-
-function updateTabControlAvailability() {
-    const controlsContainer = document.getElementById('tabLayoutControls');
-    if (!controlsContainer) return;
-    const controlsEnabled = Boolean(tabPreferences?.enabled);
-    const interactiveElements = controlsContainer.querySelectorAll('select, input');
-    controlsContainer.classList.toggle('opacity-60', !controlsEnabled);
-    interactiveElements.forEach(element => {
-        element.disabled = !controlsEnabled;
-    });
-}
-
-function syncTabControlUi() {
-    const enableToggle = document.getElementById('enableBottomTabsToggle');
-    if (enableToggle) {
-        enableToggle.checked = Boolean(tabPreferences?.enabled);
-    }
-
-    for (const slotId of TAB_SLOT_ORDER) {
-        const slotPrefs = tabPreferences?.slots?.[slotId] || { optionId: 'none', customLabel: '', customIcon: '' };
-        const selectEl = document.getElementById(getSlotElementId(slotId, 'Select'));
-        const labelEl = document.getElementById(getSlotElementId(slotId, 'Label'));
-        const iconEl = document.getElementById(getSlotElementId(slotId, 'Icon'));
-        const definition = TAB_DEFINITIONS[slotPrefs.optionId];
-
-        if (selectEl) {
-            const optionValue = TAB_OPTION_IDS.includes(slotPrefs.optionId) ? slotPrefs.optionId : 'none';
-            selectEl.value = optionValue;
-        }
-
-        if (labelEl) {
-            labelEl.value = slotPrefs.customLabel || '';
-            labelEl.placeholder = definition?.defaultLabel || 'Default label';
-        }
-
-        if (iconEl) {
-            iconEl.value = slotPrefs.customIcon || '';
-            iconEl.placeholder = definition?.defaultIcon || 'e.g. 📺';
-        }
-    }
-
-    updateTabControlAvailability();
-
-    const controlsEnabled = Boolean(tabPreferences?.enabled);
-    for (const slotId of TAB_SLOT_ORDER) {
-        const labelEl = document.getElementById(getSlotElementId(slotId, 'Label'));
-        const iconEl = document.getElementById(getSlotElementId(slotId, 'Icon'));
-        const slotPrefs = tabPreferences?.slots?.[slotId] || { optionId: 'none' };
-        const slotActive = controlsEnabled && slotPrefs.optionId !== 'none';
-
-        if (labelEl) {
-            labelEl.disabled = !slotActive;
-            labelEl.classList.toggle('opacity-60', !slotActive);
-        }
-        if (iconEl) {
-            iconEl.disabled = !slotActive;
-            iconEl.classList.toggle('opacity-60', !slotActive);
-        }
-    }
-}
-
-function handleTabSelectionChange(slotId, optionId) {
-    if (!tabPreferences) {
-        tabPreferences = getDefaultTabPreferences();
-    }
-    if (!tabPreferences.slots) {
-        tabPreferences.slots = {};
-    }
-
-    const validOption = TAB_OPTION_IDS.includes(optionId) ? optionId : 'none';
-    const previous = tabPreferences.slots[slotId] || { optionId: 'none', customLabel: '', customIcon: '' };
-    tabPreferences.slots[slotId] = {
-        optionId: validOption,
-        customLabel: validOption !== 'none' && previous.optionId === validOption ? previous.customLabel || '' : '',
-        customIcon: validOption !== 'none' && previous.optionId === validOption ? previous.customIcon || '' : ''
-    };
-
-    if (tabPreferences.activeTabId && tabPreferences.activeTabId !== 'remote') {
-        const tabs = getTabsForRendering();
-        if (!tabs.some(tab => tab.id === tabPreferences.activeTabId)) {
-            tabPreferences.activeTabId = 'remote';
-        }
-    }
-
-    saveTabPreferences(tabPreferences);
-    syncTabControlUi();
-    renderBottomTabs();
-}
-
-function handleTabLabelChange(slotId, label) {
-    if (!tabPreferences) {
-        tabPreferences = getDefaultTabPreferences();
-    }
-    if (!tabPreferences.slots) {
-        tabPreferences.slots = {};
-    }
-    const slotPrefs = tabPreferences.slots[slotId] || { optionId: 'none', customLabel: '', customIcon: '' };
-    if (slotPrefs.optionId === 'none') {
-        slotPrefs.customLabel = '';
-        tabPreferences.slots[slotId] = slotPrefs;
-        saveTabPreferences(tabPreferences);
-        renderBottomTabs();
-        return;
-    }
-    slotPrefs.customLabel = label.slice(0, 32);
-    tabPreferences.slots[slotId] = slotPrefs;
-    saveTabPreferences(tabPreferences);
-    renderBottomTabs();
-}
-
-function handleTabIconChange(slotId, icon) {
-    if (!tabPreferences) {
-        tabPreferences = getDefaultTabPreferences();
-    }
-    if (!tabPreferences.slots) {
-        tabPreferences.slots = {};
-    }
-    const slotPrefs = tabPreferences.slots[slotId] || { optionId: 'none', customLabel: '', customIcon: '' };
-    if (slotPrefs.optionId === 'none') {
-        slotPrefs.customIcon = '';
-        tabPreferences.slots[slotId] = slotPrefs;
-        saveTabPreferences(tabPreferences);
-        renderBottomTabs();
-        return;
-    }
-    slotPrefs.customIcon = icon.slice(0, 4);
-    tabPreferences.slots[slotId] = slotPrefs;
-    saveTabPreferences(tabPreferences);
-    renderBottomTabs();
 }
 
 function renderBottomTabs() {
     const nav = document.getElementById('bottomTabNav');
     const buttonsContainer = document.getElementById('bottomTabButtons');
     if (!nav || !buttonsContainer) return;
-
-    if (!tabPreferences?.enabled) {
-        nav.classList.add('hidden');
-        document.body.classList.remove('has-bottom-tabs');
-        buttonsContainer.innerHTML = '';
-        clearTabVisibility();
-        return;
-    }
 
     const tabs = getTabsForRendering();
     document.body.classList.add('has-bottom-tabs');
@@ -484,49 +257,7 @@ function renderBottomTabs() {
 }
 
 function initTabControls() {
-    tabPreferences = loadTabPreferences();
-
-    const enableToggle = document.getElementById('enableBottomTabsToggle');
-    if (enableToggle) {
-        enableToggle.addEventListener('change', () => {
-            if (!tabPreferences) {
-                tabPreferences = getDefaultTabPreferences();
-            }
-            tabPreferences.enabled = enableToggle.checked;
-            if (!tabPreferences.enabled) {
-                tabPreferences.activeTabId = 'remote';
-            }
-            saveTabPreferences(tabPreferences);
-            updateTabControlAvailability();
-            renderBottomTabs();
-        });
-    }
-
-    for (const slotId of TAB_SLOT_ORDER) {
-        const selectEl = document.getElementById(getSlotElementId(slotId, 'Select'));
-        const labelEl = document.getElementById(getSlotElementId(slotId, 'Label'));
-        const iconEl = document.getElementById(getSlotElementId(slotId, 'Icon'));
-
-        if (selectEl) {
-            selectEl.addEventListener('change', event => {
-                handleTabSelectionChange(slotId, event.target.value);
-            });
-        }
-
-        if (labelEl) {
-            labelEl.addEventListener('input', event => {
-                handleTabLabelChange(slotId, event.target.value);
-            });
-        }
-
-        if (iconEl) {
-            iconEl.addEventListener('input', event => {
-                handleTabIconChange(slotId, event.target.value);
-            });
-        }
-    }
-
-    syncTabControlUi();
+    // Fixed tabs - just render them
     renderBottomTabs();
 }
 
@@ -537,48 +268,16 @@ function getToddlerContentUrl() {
 function setToddlerContentUrl(url) {
     if (url) {
         localStorage.setItem(TODDLER_CONTENT_URL_KEY, url);
-        updateToddlerContentCacheMeta();
     } else {
         localStorage.removeItem(TODDLER_CONTENT_URL_KEY);
-        clearToddlerContentCacheStorage();
     }
+    updateToddlerContentSourceInfo();
 }
 
-function getCachedToddlerContent() {
-    const raw = localStorage.getItem(TODDLER_CONTENT_CACHE_KEY);
-    if (!raw) return null;
-
-    try {
-        const data = JSON.parse(raw);
-        const timestamp = Number(localStorage.getItem(TODDLER_CONTENT_CACHE_TIME_KEY) || '0');
-        return { data, timestamp };
-    } catch (error) {
-        console.warn('Failed to parse cached toddler content:', error);
-        clearToddlerContentCacheStorage();
-        return null;
-    }
-}
-
-function cacheToddlerContent(data) {
-    try {
-        localStorage.setItem(TODDLER_CONTENT_CACHE_KEY, JSON.stringify(data));
-        localStorage.setItem(TODDLER_CONTENT_CACHE_TIME_KEY, String(Date.now()));
-    } catch (error) {
-        console.warn('Failed to cache toddler content:', error);
-    }
-    updateToddlerContentCacheMeta();
-}
-
-function clearToddlerContentCacheStorage() {
-    localStorage.removeItem(TODDLER_CONTENT_CACHE_KEY);
-    localStorage.removeItem(TODDLER_CONTENT_CACHE_TIME_KEY);
-    updateToddlerContentCacheMeta();
-}
-
-function updateToddlerContentCacheMeta() {
+function updateToddlerContentSourceInfo() {
     const info = document.getElementById('toddlerContentCacheInfo');
     const urlInput = document.getElementById('toddlerContentUrl');
-    const url = getToddlerContentUrl();
+    const url = getToddlerContentUrl().trim();
 
     if (urlInput && urlInput !== document.activeElement) {
         urlInput.value = url;
@@ -586,14 +285,25 @@ function updateToddlerContentCacheMeta() {
 
     if (!info) return;
 
-    const cached = getCachedToddlerContent();
     if (url) {
-        const lastFetched = cached?.timestamp ? new Date(cached.timestamp) : null;
-        const formatted = lastFetched ? lastFetched.toLocaleString() : 'never';
-        info.textContent = `Source: ${url} (last fetched ${formatted})`;
-    } else {
-        info.textContent = 'Using bundled kid-mode buttons (no remote URL set).';
+        info.textContent = `Source: ${url} (remote URL, always fetches fresh)`;
+        return;
     }
+
+    if (toddlerContentSource?.type === 'custom') {
+        info.textContent = 'Using local kid-mode override (config/toddler/custom.json).';
+    } else if (toddlerContentSource?.type === 'bundled') {
+        info.textContent = 'Using bundled kid-mode buttons (config/toddler/default.json).';
+    } else if (toddlerContentSource?.type === 'empty') {
+        info.textContent = 'No kid-mode buttons available. Check your config files.';
+    } else {
+        info.textContent = 'Kid-mode button source not set yet.';
+    }
+}
+
+function setToddlerContentSource(source) {
+    toddlerContentSource = source || { type: 'unknown' };
+    updateToddlerContentSourceInfo();
 }
 
 function applyToddlerContent(data) {
@@ -609,6 +319,131 @@ async function fetchToddlerContentFromUrl(url) {
         throw new Error(`HTTP ${response.status}`);
     }
     return await response.json();
+}
+
+async function tryFetchToddlerContentFromPath(path) {
+    try {
+        const response = await fetch(path, { cache: 'no-store' });
+        if (response.status === 404) {
+            return null;
+        }
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.warn(`Failed to read kid-mode config from ${path}:`, error);
+        return null;
+    }
+}
+
+async function fetchLocalToddlerContent() {
+    const lookupOrder = [
+        { type: 'custom', path: TODDLER_CONTENT_CUSTOM_PATH },
+        { type: 'bundled', path: TODDLER_CONTENT_DEFAULT_PATH }
+    ];
+
+    for (const candidate of lookupOrder) {
+        const data = await tryFetchToddlerContentFromPath(candidate.path);
+        if (data) {
+            return { data, source: candidate };
+        }
+    }
+
+    return null;
+}
+
+async function loadButtonTypeCatalog() {
+    const container = document.getElementById('buttonHandlerCatalog');
+    if (!container) return;
+
+    try {
+        const response = await fetch(BUTTON_TYPES_CONFIG_PATH, { cache: 'no-store' });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        buttonTypeCatalog = await response.json();
+        renderButtonTypeCatalog(buttonTypeCatalog);
+    } catch (error) {
+        console.warn('Failed to load button type catalog:', error);
+        container.classList.add('hidden');
+    }
+}
+
+function renderButtonTypeCatalog(catalog) {
+    const container = document.getElementById('buttonHandlerCatalog');
+    const buttonList = document.getElementById('buttonHandlerList');
+    const providerList = document.getElementById('contentProviderList');
+    if (!container || !buttonList || !providerList) return;
+
+    buttonList.innerHTML = '';
+    providerList.innerHTML = '';
+
+    const buttonTypes = Array.isArray(catalog?.buttonTypes) ? catalog.buttonTypes : [];
+    const providers = Array.isArray(catalog?.contentProviders) ? catalog.contentProviders : [];
+
+    if (buttonTypes.length) {
+        buttonTypes.forEach(def => {
+            const card = document.createElement('div');
+            card.className = 'rounded-2xl bg-white/5 p-4 text-sm text-indigo-100 shadow-inner';
+
+            const title = document.createElement('h3');
+            title.className = 'text-base font-semibold text-white';
+            title.textContent = def.type;
+
+            const description = document.createElement('p');
+            description.className = 'mt-2 text-xs text-indigo-100/80';
+            description.textContent = def.description || 'Add custom kid-mode buttons using this type.';
+
+            const handlerList = document.createElement('ul');
+            handlerList.className = 'mt-3 space-y-1 text-xs font-semibold text-indigo-100';
+
+            (Array.isArray(def.handlers) ? def.handlers : []).forEach(handler => {
+                const item = document.createElement('li');
+                item.textContent = handler;
+                handlerList.appendChild(item);
+            });
+
+            card.append(title, description, handlerList);
+            buttonList.appendChild(card);
+        });
+    } else {
+        const empty = document.createElement('p');
+        empty.className = 'rounded-2xl bg-white/5 p-4 text-xs text-indigo-100/80';
+        empty.textContent = 'No handler catalog available.';
+        buttonList.appendChild(empty);
+    }
+
+    if (providers.length) {
+        providers.forEach(provider => {
+            const row = document.createElement('div');
+            row.className = 'rounded-2xl bg-white/5 p-3 text-xs text-indigo-100';
+
+            const heading = document.createElement('div');
+            heading.className = 'font-semibold text-white';
+            heading.textContent = provider.type;
+
+            const details = document.createElement('p');
+            details.className = 'mt-1 text-indigo-100/80';
+            const handlerNames = Array.isArray(provider.sourceButtons) ? provider.sourceButtons.join(', ') : 'No handlers listed';
+            const availability = provider.availableByDefault ? 'available by default' : 'enable manually';
+            details.textContent = `Handlers: ${handlerNames} • ${availability}`;
+
+            const notes = document.createElement('p');
+            notes.className = 'mt-2 text-[11px] text-indigo-100/70';
+            notes.textContent = provider.notes || '';
+
+            row.append(heading, details, notes);
+            providerList.appendChild(row);
+        });
+    } else {
+        const fallback = document.createElement('p');
+        fallback.className = 'rounded-2xl bg-white/5 p-3 text-xs text-indigo-100/80';
+        fallback.textContent = 'No content provider metadata available.';
+        providerList.appendChild(fallback);
+    }
+
+    container.classList.toggle('hidden', !buttonTypes.length && !providers.length);
 }
 
 async function saveToddlerContentUrl() {
@@ -638,8 +473,9 @@ async function refreshToddlerContent() {
 }
 
 function clearToddlerContentCache() {
-    clearToddlerContentCacheStorage();
-    showStatus('Kid-mode button cache cleared.', 'info');
+    // No cache to clear - just reload content
+    showStatus('Reloading kid-mode buttons...', 'info');
+    loadToddlerContent({ forceRefresh: true });
 }
 
 function getQuickActionKey(source) {
@@ -659,6 +495,114 @@ function registerQuickActionCooldown(source) {
     return true;
 }
 
+function handleMagicTimerStart(durationSeconds) {
+    const seconds = Number(durationSeconds);
+    if (!Number.isFinite(seconds) || seconds <= 0) {
+        showStatus('Pick a timer length to get started.', 'error');
+        return;
+    }
+
+    const minutes = seconds / 60;
+    const label =
+        minutes >= 1
+            ? `${Math.round(minutes * 10) / 10} minute timer`
+            : `${seconds} second timer`;
+    startToddlerTimer(seconds, label);
+}
+
+function handleMagicFireworks() {
+    startFireworksShow(8, 'Fireworks Celebration!');
+}
+
+function handleMagicSpeak(text) {
+    const phrase = typeof text === 'string' ? text.trim() : '';
+    if (!phrase) {
+        showStatus('Type something to say first.', 'error');
+        return false;
+    }
+    speakTts(phrase);
+    return true;
+}
+
+function stopMagicSpeak() {
+    const nativeBridge = getNativeTtsBridge();
+    try {
+        if (nativeBridge?.stop) {
+            nativeBridge.stop();
+        }
+    } catch (error) {
+        console.warn('Native TTS stop failed', error);
+    }
+
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        try {
+            window.speechSynthesis.cancel();
+        } catch (error) {
+            console.warn('Speech synthesis cancel failed', error);
+        }
+    }
+
+    showStatus('Voice stopped.', 'info');
+}
+
+function initMagicControls() {
+    const quickButtons = document.querySelectorAll('[data-magic-timer]');
+    quickButtons.forEach(button => {
+        if (!button.__magicTimerBound) {
+            button.__magicTimerBound = true;
+            button.addEventListener('click', () => handleMagicTimerStart(button.dataset.magicTimer));
+        }
+    });
+
+    const customMinutesInput = document.getElementById('magicTimerMinutes');
+    const timerForm = document.getElementById('magicTimerForm');
+    if (timerForm && !timerForm.__magicSubmitBound) {
+        timerForm.__magicSubmitBound = true;
+        timerForm.addEventListener('submit', event => {
+            event.preventDefault();
+            const minutesRaw = customMinutesInput ? Number(customMinutesInput.value) : NaN;
+            if (!Number.isFinite(minutesRaw) || minutesRaw <= 0) {
+                showStatus('Enter the number of minutes for the timer.', 'error');
+                return;
+            }
+            handleMagicTimerStart(minutesRaw * 60);
+        });
+    }
+
+    const cancelButton = document.getElementById('magicTimerCancel');
+    if (cancelButton && !cancelButton.__magicCancelBound) {
+        cancelButton.__magicCancelBound = true;
+        cancelButton.addEventListener('click', () => cancelToddlerTimer());
+    }
+
+    const fireworksButton = document.getElementById('magicFireworksButton');
+    if (fireworksButton && !fireworksButton.__magicFireworksBound) {
+        fireworksButton.__magicFireworksBound = true;
+        fireworksButton.addEventListener('click', () => handleMagicFireworks());
+    }
+
+    const speakForm = document.getElementById('magicSpeakForm');
+    const speakInput = document.getElementById('magicSpeakInput');
+    if (speakForm && !speakForm.__magicSpeakBound) {
+        speakForm.__magicSpeakBound = true;
+        speakForm.addEventListener('submit', event => {
+            event.preventDefault();
+            const phrase = speakInput ? speakInput.value : '';
+            const spoke = handleMagicSpeak(phrase);
+            if (spoke && speakInput) {
+                speakInput.value = '';
+                speakInput.focus();
+            }
+        });
+    }
+
+    const stopSpeakButton = document.getElementById('magicSpeakStop');
+    if (stopSpeakButton && !stopSpeakButton.__magicStopBound) {
+        stopSpeakButton.__magicStopBound = true;
+        stopSpeakButton.addEventListener('click', () => stopMagicSpeak());
+    }
+}
+
 // Initialize on load
 window.addEventListener('DOMContentLoaded', async () => {
     // Log runtime info for debugging
@@ -667,7 +611,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     initTabControls();
+    initMagicControls();
     updateToddlerContentCacheMeta();
+    void loadButtonTypeCatalog();
     initGoveeControls();
     await loadToddlerContent();
 
@@ -690,47 +636,44 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadToddlerContent({ forceRefresh = false } = {}) {
-    const remoteUrl = getToddlerContentUrl();
-    const cached = getCachedToddlerContent();
-    const now = Date.now();
+    const remoteUrl = getToddlerContentUrl().trim();
 
+    // If remote URL is configured, try fetching from it (always fresh, no cache)
     if (remoteUrl) {
-        const freshCache = cached && cached.timestamp && now - cached.timestamp < TODDLER_CONTENT_CACHE_MAX_AGE_MS;
-        if (freshCache && !forceRefresh) {
-            applyToddlerContent(cached.data);
-        }
-
         try {
             const remoteData = await fetchToddlerContentFromUrl(remoteUrl);
-            cacheToddlerContent(remoteData);
+            setToddlerContentSource({ type: 'remote', url: remoteUrl });
             applyToddlerContent(remoteData);
-            if (!freshCache) {
-                showStatus('Kid-mode buttons updated from remote JSON.', 'success');
-            }
+            showStatus('Kid-mode buttons loaded from remote URL.', 'success');
             return;
         } catch (error) {
-            console.error('Failed to download toddler content:', error);
-            if (cached) {
-                applyToddlerContent(cached.data);
-                showStatus('Using cached kid-mode buttons. Remote fetch failed.', 'error');
-                return;
-            }
-            showStatus('Remote kid-mode buttons unavailable. Using bundled copy.', 'error');
+            console.error('Failed to fetch remote toddler content:', error);
+            showStatus('Remote URL failed. Falling back to local config.', 'error');
+            // Fall through to local loading
         }
     }
 
-    try {
-        const response = await fetch(TODDLER_CONTENT_PATH, { cache: 'no-store' });
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+    // Load from local files (custom.json or default.json)
+    const localContent = await fetchLocalToddlerContent();
+    if (localContent) {
+        setToddlerContentSource(localContent.source);
+        applyToddlerContent(localContent.data);
+        if (!remoteUrl) {
+            // No remote URL configured - this is the primary source
+            if (localContent.source.type === 'custom') {
+                showStatus('Kid-mode buttons loaded from local override.', 'info');
+            } else {
+                showStatus('Kid-mode buttons loaded from bundled defaults.', 'info');
+            }
         }
-        const data = await response.json();
-        applyToddlerContent(data);
-    } catch (error) {
-        console.error('Failed to load toddler content:', error);
-        showStatus('Could not load kid-mode buttons. Refresh or check your network.', 'error');
-        applyToddlerContent({ specialButtons: [], quickLaunch: [] });
+        return;
     }
+
+    // Complete failure - no content available
+    console.error('Failed to load kid-mode buttons from any source.');
+    setToddlerContentSource({ type: 'empty' });
+    applyToddlerContent({ specialButtons: [], quickLaunch: [] });
+    showStatus('Could not load kid-mode buttons. Check your config files.', 'error');
 }
 
 function renderToddlerButtons(buttons = [], quickLaunch = []) {

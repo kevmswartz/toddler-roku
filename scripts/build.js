@@ -4,12 +4,14 @@ const { spawnSync } = require('child_process');
 
 const projectRoot = path.resolve(__dirname, '..');
 const distDir = path.join(projectRoot, 'dist');
+const args = process.argv.slice(2);
+const watchMode = args.includes('--watch');
 
 const staticFiles = [
   'index.html',
-  'app.js',
-  'button-types.json',
-  'toddler-content.json'
+  'app.js'
+  // Note: button-types.json and toddler-content.json are now in public/config/
+  // and are copied via copyDirectory('public', distDir) below
 ];
 
 const vendorFiles = [
@@ -112,4 +114,146 @@ function build() {
   console.log(`Build complete. Assets copied to ${distDir}`);
 }
 
-build();
+const watchers = [];
+const watchedDirectories = new Set();
+let buildInProgress = false;
+let pendingBuild = false;
+let pendingReason = null;
+let debounceTimer = null;
+
+function triggerBuild(reason = 'file change') {
+  if (buildInProgress) {
+    pendingBuild = true;
+    pendingReason = reason;
+    return;
+  }
+
+  buildInProgress = true;
+  const start = Date.now();
+  const label = reason || 'file change';
+  console.log(`Starting build (${label})...`);
+
+  try {
+    build();
+    const duration = Date.now() - start;
+    console.log(`Build finished (${label}) in ${duration}ms`);
+  } catch (error) {
+    console.error('Build failed:', error);
+  } finally {
+    buildInProgress = false;
+    if (pendingBuild) {
+      const queuedReason = pendingReason;
+      pendingBuild = false;
+      pendingReason = null;
+      triggerBuild(queuedReason);
+    }
+  }
+}
+
+function scheduleRebuild(reason) {
+  if (debounceTimer) {
+    pendingReason = reason || pendingReason;
+    return;
+  }
+
+  pendingReason = reason;
+  debounceTimer = setTimeout(() => {
+    debounceTimer = null;
+    const reasonToUse = pendingReason || 'file change';
+    pendingReason = null;
+    triggerBuild(reasonToUse);
+  }, 100);
+}
+
+function handleWatchEvent(eventPath) {
+  const relativePath = eventPath ? path.relative(projectRoot, eventPath) : 'unknown path';
+  scheduleRebuild(relativePath);
+}
+
+function watchFile(filePath) {
+  if (!fs.existsSync(filePath)) {
+    console.warn(`Watch skipped missing file: ${path.relative(projectRoot, filePath)}`);
+    return;
+  }
+
+  const watcher = fs.watch(filePath, () => handleWatchEvent(filePath));
+  watchers.push(watcher);
+  console.log(`Watching file: ${path.relative(projectRoot, filePath)}`);
+}
+
+function watchDirectoryRecursive(dirPath) {
+  if (watchedDirectories.has(dirPath)) {
+    return;
+  }
+
+  watchedDirectories.add(dirPath);
+
+  let watcher;
+  try {
+    watcher = fs.watch(dirPath, { recursive: true }, (_, filename) => {
+      const watchedPath = filename ? path.join(dirPath, filename.toString()) : dirPath;
+      handleWatchEvent(watchedPath);
+
+      if (filename) {
+        const candidatePath = path.join(dirPath, filename.toString());
+        if (fs.existsSync(candidatePath) && fs.statSync(candidatePath).isDirectory()) {
+          watchDirectoryRecursive(candidatePath);
+        }
+      }
+    });
+    console.log(`Watching directory (recursive): ${path.relative(projectRoot, dirPath)}`);
+  } catch (error) {
+    if (error.code !== 'ERR_FEATURE_UNAVAILABLE_ON_PLATFORM') {
+      throw error;
+    }
+
+    watcher = fs.watch(dirPath, (_, filename) => {
+      const watchedPath = filename ? path.join(dirPath, filename.toString()) : dirPath;
+      handleWatchEvent(watchedPath);
+
+      if (filename) {
+        const candidatePath = path.join(dirPath, filename.toString());
+        if (fs.existsSync(candidatePath) && fs.statSync(candidatePath).isDirectory()) {
+          watchDirectoryRecursive(candidatePath);
+        }
+      }
+    });
+    console.log(`Watching directory: ${path.relative(projectRoot, dirPath)}`);
+
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    entries
+      .filter(entry => entry.isDirectory())
+      .forEach(entry => watchDirectoryRecursive(path.join(dirPath, entry.name)));
+  }
+
+  watchers.push(watcher);
+}
+
+function setupWatchers() {
+  staticFiles.forEach(file => watchFile(path.join(projectRoot, file)));
+
+  const directoryWatchTargets = [
+    path.join(projectRoot, 'styles'),
+    path.join(projectRoot, 'public')
+  ];
+
+  directoryWatchTargets.forEach(dirPath => {
+    if (fs.existsSync(dirPath)) {
+      watchDirectoryRecursive(dirPath);
+    }
+  });
+
+  console.log('Watching for changes. Press Ctrl+C to stop.');
+}
+
+process.on('SIGINT', () => {
+  console.log('\nStopping watcher...');
+  watchers.forEach(watcher => watcher.close());
+  process.exit(0);
+});
+
+triggerBuild('initial build');
+
+if (watchMode) {
+  setupWatchers();
+}

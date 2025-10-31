@@ -19,3 +19,6 @@ node_modules/
 
 # Local keystore (ignored by default)
 roku-control.keystore
+
+# Local config overrides
+public/config/toddler/custom.json
