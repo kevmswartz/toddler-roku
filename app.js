@@ -186,10 +186,7 @@ function clearTabVisibility() {
 }
 
 function applyTabVisibility(activeTabId, availableTabs) {
-    if (!tabPreferences?.enabled) {
-        clearTabVisibility();
-        return;
-    }
+    // Show only sections for the active tab
     const tabs = Array.isArray(availableTabs) ? availableTabs : getTabsForRendering();
     const activeTab = tabs.find(tab => tab.id === activeTabId) || tabs[0];
     const visibleSections = new Set(activeTab?.sections || []);
@@ -234,11 +231,11 @@ function renderBottomTabs() {
             'flex flex-1 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-xs font-semibold text-indigo-100 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/40';
 
         const iconSpan = document.createElement('span');
-        iconSpan.className = 'text-xl leading-none';
+        iconSpan.className = 'text-2xl leading-none';
         iconSpan.textContent = tab.icon || '';
 
         const labelSpan = document.createElement('span');
-        labelSpan.className = 'text-[0.65rem] uppercase tracking-[0.25em] leading-tight';
+        labelSpan.className = 'text-[0.7rem] sm:text-xs uppercase tracking-wider leading-tight';
         labelSpan.textContent = tab.label;
 
         button.append(iconSpan, labelSpan);
@@ -301,6 +298,11 @@ function updateToddlerContentSourceInfo() {
     }
 }
 
+// Legacy function name - kept for compatibility after refactor
+function updateToddlerContentCacheMeta() {
+    updateToddlerContentSourceInfo();
+}
+
 function setToddlerContentSource(source) {
     toddlerContentSource = source || { type: 'unknown' };
     updateToddlerContentSourceInfo();
@@ -330,9 +332,19 @@ async function tryFetchToddlerContentFromPath(path) {
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
+
+        // Check content type - if it's HTML, this is likely a 404 page
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('text/html')) {
+            return null;
+        }
+
         return await response.json();
     } catch (error) {
-        console.warn(`Failed to read kid-mode config from ${path}:`, error);
+        // Only warn if this isn't an expected missing custom.json
+        if (!path.includes('custom.json')) {
+            console.warn(`Failed to read kid-mode config from ${path}:`, error);
+        }
         return null;
     }
 }

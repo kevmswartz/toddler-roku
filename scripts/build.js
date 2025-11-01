@@ -56,6 +56,26 @@ function copyDirectory(relativePath, destinationRoot) {
   }
 }
 
+function copyDirectoryContents(srcDir, destDir) {
+  if (!fs.existsSync(srcDir)) {
+    return;
+  }
+
+  const entries = fs.readdirSync(srcDir, { withFileTypes: true });
+  ensureDir(destDir);
+
+  for (const entry of entries) {
+    const srcPath = path.join(srcDir, entry.name);
+    const destPath = path.join(destDir, entry.name);
+
+    if (entry.isDirectory()) {
+      copyDirectoryContents(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
 function cleanDist() {
   fs.rmSync(distDir, { recursive: true, force: true });
   ensureDir(distDir);
@@ -110,7 +130,9 @@ function build() {
     }
   });
 
-  copyDirectory('public', distDir);
+  // Copy contents of public directory to dist (not the directory itself)
+  const publicDir = path.join(projectRoot, 'public');
+  copyDirectoryContents(publicDir, distDir);
   console.log(`Build complete. Assets copied to ${distDir}`);
 }
 

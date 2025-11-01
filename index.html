@@ -150,7 +150,7 @@
         </div>
     </div>
 
-    <main class="mx-auto flex min-h-screen w-full flex-col gap-8 px-4 pb-32 pt-24 md:px-8 lg:px-12">
+    <main class="mx-auto flex min-h-screen w-full flex-col gap-6 px-4 pb-32 pt-20 sm:gap-8 md:px-8 md:pt-24 lg:px-12">
         <div id="statusMessage" class="status-message hidden"></div>
         <div id="advancedSettingsBanner" data-settings class="hidden flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-white/15 px-5 py-4 text-sm font-semibold text-white shadow-2xl backdrop-blur md:px-6">
             <span>Advanced controls are unlocked. Make your changes, then tuck them away when you’re done.</span>
@@ -495,34 +495,34 @@
         <section id="remoteSection" class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8" data-settings>
             <h2 class="text-2xl font-bold text-white">Advanced Remote</h2>
             <p class="mt-1 text-sm text-indigo-100">All the classic Roku controls laid out for quick access.</p>
-            <div class="mt-6 grid grid-cols-3 gap-3 text-lg font-semibold">
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('Back')">◄ Back</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('Home')">⌂ Home</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('Info')">ⓘ Info</button>
+            <div class="mt-6 grid grid-cols-3 gap-3 text-base sm:text-lg font-semibold">
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Back')">⬅️ Back</button>
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Home')">🏠 Home</button>
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Info')">ℹ️ Info</button>
 
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('Rev')">⏮ Rev</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('Play')">⏯ Play</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('Fwd')">⏭ Fwd</button>
-
-                <div></div>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('Up')">▲</button>
-                <div></div>
-
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('Left')">◄</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('Select')">OK</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('Right')">►</button>
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Rev')">⏮️ Rev</button>
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Play')">⏯️ Play</button>
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Fwd')">⏭️ Fwd</button>
 
                 <div></div>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('Down')">▼</button>
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Up')">⬆️</button>
                 <div></div>
 
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('InstantReplay')">⟲</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('VolumeUp')">🔊+</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('VolumeMute')">🔇</button>
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Left')">⬅️</button>
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Select')">⭕ OK</button>
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Right')">➡️</button>
 
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('PowerOff')">⏻ Power</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('VolumeDown')">🔉-</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-3 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95" onclick="sendKey('ChannelUp')">CH+</button>
+                <div></div>
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Down')">⬇️</button>
+                <div></div>
+
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('InstantReplay')">⏪ Replay</button>
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('VolumeUp')">🔊 Vol+</button>
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('VolumeMute')">🔇 Mute</button>
+
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('PowerOff')">⏻ Power</button>
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('VolumeDown')">🔉 Vol-</button>
+                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('ChannelUp')">⬆️ CH+</button>
             </div>
         </section>
 
