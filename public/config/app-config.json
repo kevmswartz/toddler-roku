@@ -1,0 +1,219 @@
+{
+  "tabs": [
+    {
+      "id": "remote",
+      "label": "Remote",
+      "icon": "🎮",
+      "buttons": [
+        {
+          "id": "findRokuButton",
+          "emoji": "🔍",
+          "handler": "discoverRoku"
+        },
+        {
+          "id": "homeButton",
+          "emoji": "🏠",
+          "handler": "sendKey",
+          "args": ["Home"]
+        },
+        {
+          "id": "backButton",
+          "emoji": "⟵",
+          "handler": "sendKey",
+          "args": ["Back"]
+        },
+        {
+          "id": "instantReplayButton",
+          "emoji": "🔁",
+          "handler": "sendKey",
+          "args": ["InstantReplay"]
+        },
+        {
+          "id": "playPauseButton",
+          "emoji": "⏯️",
+          "handler": "sendKey",
+          "args": ["Play"]
+        },
+        {
+          "id": "upButton",
+          "emoji": "⬆️",
+          "handler": "sendKey",
+          "args": ["Up"]
+        },
+        {
+          "id": "leftButton",
+          "emoji": "⬅️",
+          "handler": "sendKey",
+          "args": ["Left"]
+        },
+        {
+          "id": "selectButton",
+          "emoji": "🆗",
+          "handler": "sendKey",
+          "args": ["Select"]
+        },
+        {
+          "id": "rightButton",
+          "emoji": "➡️",
+          "handler": "sendKey",
+          "args": ["Right"]
+        },
+        {
+          "id": "downButton",
+          "emoji": "⬇️",
+          "handler": "sendKey",
+          "args": ["Down"]
+        },
+        {
+          "id": "powerButton",
+          "emoji": "⏻",
+          "handler": "sendKey",
+          "args": ["PowerOff"]
+        }
+      ]
+    },
+    {
+      "id": "apps",
+      "label": "Roku",
+      "icon": "📺",
+      "buttons": [
+        {
+          "id": "disneyPlusButton",
+          "emoji": "🧚",
+          "label": "Disney+",
+          "thumbnail": "https://raw.githubusercontent.com/kevmswartz/toddler-phone-control/master/public/06d8Po5VgMWjpiRU0RpZoul-18.webp",
+          "appId": "291097",
+          "appName": "Disney+"
+        },
+        {
+          "id": "paramountPlusButton",
+          "emoji": "🌟",
+          "label": "Paramount+",
+          "appId": "31440",
+          "thumbnail": "https://raw.githubusercontent.com/kevmswartz/toddler-phone-control/master/public/f7c0cf5003624d98fbe69b2156453e9c.webp",
+          "appName": "Paramount+"
+        }       
+      ],
+      "quickLaunch": [
+        {
+          "type": "youtube",
+          "videoId": "OBqZDyVlFP8",
+          "label": "Baby Shark Theme"
+        },
+		{
+          "type": "youtube",
+          "videoId": "TtX8yVEF0-w",
+          "label": "5 Little Frogs"
+        },
+		{
+          "type": "youtube",
+          "videoId": "e_04ZrNroTo",
+          "label": "Wheels on the Bus"
+        },
+        {
+          "type": "youtube",
+          "videoId": "JXOTmWl5t3A",
+          "label": "Bluey Theme"
+        },{
+          "type": "youtube",
+          "videoId": "GC_mV1IpjWA",
+          "label": "Under the Sea"
+        },
+        {
+          "type": "youtube",
+          "videoId": "rnEB2F_v_cE",
+          "label": "In Summer"
+        },
+        {
+          "type": "youtube",
+          "videoId": "xlkH17apLMY",
+          "label": "Dora Theme"
+        },
+        {
+          "type": "youtube",
+          "videoId": "TeQ_TTyLGMs",
+          "label": "Build a Snowman"
+        },
+        {
+          "type": "youtube",
+          "videoId": "bBeZSuHI4Qc",
+          "label": "Isa's Song"
+        },
+        {
+          "type": "youtube",
+          "videoId": "kaOIxll4LCA",
+          "label": "Hakuna Matata"
+        },
+        {
+          "type": "youtube",
+          "videoId": "XqZsoesa55w",
+          "label": "Baby Shark"
+        },
+        {
+          "type": "youtube",
+          "videoId": "A3lvmq-iG4c",
+          "label": "Lesson #1"
+        },
+        {
+          "type": "youtube",
+          "videoId": "RTWhvp_OD6s",
+          "label": "Where You're From"
+        }
+      ]
+    },
+    {
+      "id": "lights",
+      "label": "Lights",
+      "icon": "💡",
+      "buttons": [{
+          "id": "lightsToggle",
+          "label": "Bedroom Ceiling",
+          "emoji": "🔁",
+          "handler": "goveeTogglePower",
+          "args": ["192.168.40.8", 4003]
+        }]
+    },
+    {
+      "id": "magic",
+      "label": "Magic Time",
+      "icon": "⏱️",
+      "buttons": [
+        {
+          "id": "fireworksButton",
+          "label": "Fireworks",
+          "emoji": "🎆",
+          "handler": "startFireworksShow",
+          "args": [6, "Amazing fireworks!"]
+        },
+        {
+          "id": "timer30s",
+          "label": "30s",
+          "emoji": "⏳",
+          "handler": "startToddlerTimer",
+          "args": [30, "30s"]
+        },
+        {
+          "id": "timer1min",
+          "label": "1 min",
+          "emoji": "⏱️",
+          "handler": "startToddlerTimer",
+          "args": [60, "1 min"]
+        },
+        {
+          "id": "timer3min",
+          "label": "3 min",
+          "emoji": "⏰",
+          "handler": "startToddlerTimer",
+          "args": [180, "3 min"]
+        },
+        {
+          "id": "timer5min",
+          "label": "5 min",
+          "emoji": "⌛",
+          "handler": "startToddlerTimer",
+          "args": [300, "5 min"]
+        }
+      ]
+    }
+  ]
+}

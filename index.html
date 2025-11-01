@@ -13,7 +13,8 @@
             touch-action: manipulation;
         }
         body.fireworks-open,
-        body.timer-open {
+        body.timer-open,
+        body.youtube-player-open {
             overflow: hidden;
         }
         .showcase-highlight {
@@ -24,11 +25,6 @@
         .timer-overlay {
             backdrop-filter: blur(16px);
             background: rgba(15, 23, 42, 0.72);
-        }
-        .timer-circle {
-            transform: rotate(-90deg);
-            transform-origin: 50% 50%;
-            transition: stroke-dashoffset 0.2s linear;
         }
         .fireworks-overlay {
             position: relative;
@@ -91,6 +87,79 @@
         #bottomTabNav button[data-tab-active="true"] {
             background: rgba(255, 255, 255, 0.18);
             color: #fff;
+        }
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        @keyframes pulse-grow {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+        }
+        @keyframes bounce-float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+        @keyframes rotate-pulse {
+            0%, 100% {
+                transform: rotate(0deg) scale(1);
+            }
+            25% {
+                transform: rotate(90deg) scale(1.1);
+            }
+            50% {
+                transform: rotate(180deg) scale(1);
+            }
+            75% {
+                transform: rotate(270deg) scale(1.1);
+            }
+        }
+        @keyframes wiggle {
+            0%, 100% {
+                transform: rotate(0deg);
+            }
+            25% {
+                transform: rotate(-15deg);
+            }
+            75% {
+                transform: rotate(15deg);
+            }
+        }
+        @keyframes rainbow-glow {
+            0% {
+                filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.6));
+            }
+            33% {
+                filter: drop-shadow(0 0 20px rgba(0, 255, 0, 0.6));
+            }
+            66% {
+                filter: drop-shadow(0 0 20px rgba(0, 0, 255, 0.6));
+            }
+            100% {
+                filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.6));
+            }
+        }
+        .timer-emoji-btn[data-selected="true"] {
+            background: rgba(255, 255, 255, 0.35);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
+        }
+        .youtube-mode-btn[data-selected="true"] {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
         }
     </style>
 </head>
@@ -195,6 +264,94 @@
             <div id="deviceInfo" class="mt-4 hidden rounded-2xl bg-white/10 px-5 py-4 text-sm text-indigo-100"></div>
         </section>
         
+        <section id="deviceDiscoverySection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">🔍 Advanced Device Discovery</h2>
+                    <p class="mt-1 text-sm text-indigo-100">Discover and test all devices on your network (Roku + Govee).</p>
+                </div>
+                <button
+                    onclick="refreshDeviceDiscovery()"
+                    class="rounded-2xl bg-emerald-500/30 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-300/60">
+                    🔄 Discover All Devices
+                </button>
+            </div>
+
+            <div class="mt-6 grid gap-6 lg:grid-cols-2">
+                <div class="rounded-3xl bg-slate-950/40 p-5">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide text-indigo-200 mb-3">Select Device</h3>
+                    <select
+                        id="deviceSelector"
+                        onchange="handleDeviceSelection()"
+                        class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30">
+                        <option value="">-- Select a device --</option>
+                    </select>
+
+                    <div id="deviceDetails" class="mt-4 hidden rounded-2xl bg-white/5 p-4 text-sm text-indigo-100"></div>
+                </div>
+
+                <div class="rounded-3xl bg-slate-950/40 p-5">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide text-indigo-200 mb-3">Test Commands</h3>
+                    <div id="deviceCommands" class="grid gap-2"></div>
+                </div>
+            </div>
+
+            <div id="discoveryStatus" class="mt-4 hidden rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-indigo-100"></div>
+        </section>
+
+        <section id="youtubeSettingsSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">YouTube Playback</h2>
+                    <p class="mt-1 text-sm text-indigo-100">Choose where YouTube videos should play.</p>
+                </div>
+            </div>
+
+            <div class="mt-6 grid gap-4 md:grid-cols-2">
+                <button id="youtubePlayRoku" onclick="setYoutubePlaybackMode('roku')" class="youtube-mode-btn flex flex-col gap-3 rounded-3xl bg-white/10 p-5 text-left transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/40">
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl">📺</span>
+                        <h3 class="text-lg font-bold text-white">Play on Roku</h3>
+                    </div>
+                    <p class="text-sm text-indigo-100">Launch videos on your Roku TV using the YouTube app.</p>
+                </button>
+                <button id="youtubePlayApp" onclick="setYoutubePlaybackMode('app')" class="youtube-mode-btn flex flex-col gap-3 rounded-3xl bg-white/10 p-5 text-left transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/40">
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl">📱</span>
+                        <h3 class="text-lg font-bold text-white">Play in App</h3>
+                    </div>
+                    <p class="text-sm text-indigo-100">Watch videos directly in this app (great for tablets and phones).</p>
+                </button>
+            </div>
+        </section>
+
+        <section id="tabConfigSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Tab Configuration</h2>
+                    <p class="mt-1 text-sm text-indigo-100">Customize which tabs appear and what sections they contain.</p>
+                </div>
+            </div>
+
+            <div class="mt-6 space-y-4">
+                <div class="rounded-2xl bg-white/10 p-4">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide text-indigo-200 mb-3">Current Tabs</h3>
+                    <div id="tabConfigList" class="grid gap-3 sm:grid-cols-2"></div>
+                </div>
+
+                <div class="rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-100">
+                    <p class="font-semibold text-white mb-2">To customize tabs and buttons:</p>
+                    <ol class="list-decimal list-inside space-y-1 ml-2">
+                        <li>Edit <code class="font-mono text-[11px] bg-white/10 px-1 py-0.5 rounded">public/config/app-config.json</code></li>
+                        <li>Each tab has a <code class="font-mono text-[11px] bg-white/10 px-1 py-0.5 rounded">buttons</code> array with all its buttons</li>
+                        <li>Add/remove/edit buttons directly in the tab's buttons array</li>
+                        <li>The apps tab also has a <code class="font-mono text-[11px] bg-white/10 px-1 py-0.5 rounded">quickLaunch</code> array for YouTube videos</li>
+                        <li>Refresh the page to see changes</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
         <section id="contentSourceSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
@@ -233,7 +390,7 @@
             </div>
             <p id="toddlerContentCacheInfo" class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-100"></p>
             <div class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-100">
-                Bundled kid-mode buttons live in <code class="font-mono text-[11px] text-white">config/toddler/default.json</code>. Add a <code class="font-mono text-[11px] text-white">custom.json</code> beside it for local tweaks—Git will ignore that file.
+                Bundled configuration lives in <code class="font-mono text-[11px] text-white">config/app-config.json</code>. Add <code class="font-mono text-[11px] text-white">app-config.custom.json</code> beside it for local tweaks—Git will ignore that file.
             </div>
             <div id="buttonHandlerCatalog" class="mt-6 hidden space-y-4 rounded-3xl bg-white/10 p-4 text-indigo-100 shadow-inner">
                 <div>
@@ -248,11 +405,15 @@
             </div>
         </section>
 
+        <section id="lightsButtonSection" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+            <div id="lightsButtonColumn" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+        </section>
+
         <section id="goveeSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h2 class="text-2xl font-bold text-white">Govee Lights (H60A1)</h2>
-                    <p class="mt-1 text-sm text-indigo-100 max-w-2xl">Turn on LAN control in the Govee Home app, note the light’s IP, then paste it here to toggle power, dim, or change colors without the cloud.</p>
+                    <h2 class="text-2xl font-bold text-white">Govee Lights Settings</h2>
+                    <p class="mt-1 text-sm text-indigo-100 max-w-2xl">Turn on LAN control in the Govee Home app, note the light's IP, then paste it here to toggle power, dim, or change colors without the cloud.</p>
                 </div>
             </div>
 
@@ -281,6 +442,11 @@
                         </label>
                     </div>
                     <div class="flex flex-wrap gap-3">
+                        <button
+                            onclick="goveeDiscoverDevices()"
+                            class="rounded-2xl bg-emerald-500/30 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-300/60">
+                            🔍 Discover Devices
+                        </button>
                         <button
                             onclick="goveeSaveSettings()"
                             class="rounded-2xl bg-white/20 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50">
@@ -336,43 +502,74 @@
                 </div>
             </div>
 
+            <div class="mt-6 rounded-3xl bg-white/10 p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide text-indigo-200">Device Status</h3>
+                    <button
+                        onclick="refreshGoveeStatus()"
+                        class="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
+                        Refresh
+                    </button>
+                </div>
+                <div id="goveeStatusDisplay" class="grid gap-2 text-sm text-indigo-100">
+                    <div class="flex items-center gap-3">
+                        <span class="text-lg">📡</span>
+                        <span class="font-semibold">Connection:</span>
+                        <span id="goveeOnlineStatus" class="font-mono text-white">—</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-lg">⚡</span>
+                        <span class="font-semibold">Power:</span>
+                        <span id="goveePowerStatus" class="font-mono text-white">—</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-lg">💡</span>
+                        <span class="font-semibold">Brightness:</span>
+                        <span id="goveeBrightnessStatus" class="font-mono text-white">—</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-lg">🎨</span>
+                        <span class="font-semibold">Color:</span>
+                        <span id="goveeColorStatus" class="flex items-center gap-2">
+                            <span id="goveeColorBox" class="inline-block h-6 w-12 rounded border-2 border-white/30 bg-gray-500"></span>
+                            <span id="goveeColorText" class="font-mono text-white text-xs">—</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             <p id="goveeStatus" class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-indigo-100">Enter the LAN IP to get started.</p>
         </section>
 
         <section id="kidQuickSection" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-white">Kid Favorites</h2>
-                    <p class="mt-1 text-sm text-indigo-100 max-w-2xl">Tap a show tile or special button to launch it on the Roku.</p>
-                </div>
-            </div>
-            <div id="toddlerQuickColumn" class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+            <div id="toddlerQuickColumn" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
         </section>
 
         <section id="toddlerControls" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-white">Remote</h2>
-                    <p class="mt-1 text-sm text-indigo-100 max-w-2xl">Directional pad, magic buttons, and helpers for kid mode.</p>
-                </div>
-            </div>
-            <div id="toddlerRemoteColumn" class="mt-6 flex flex-col gap-4"></div>
+            <div id="toddlerRemoteColumn" class="flex flex-col gap-4"></div>
         </section>
 
         <section id="magicSection" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-white">Magic Time</h2>
-                    <p class="mt-1 text-sm text-indigo-100 max-w-2xl">Quick sparks for little celebrations: start a timer, launch fireworks, or have the device speak on cue.</p>
+            <div id="magicButtonColumn" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+
+            <div id="timerEmojiPicker" class="hidden mt-6 rounded-3xl bg-white/10 p-5 text-indigo-50 shadow-inner">
+                <div class="mb-4">
+                    <h3 class="text-lg font-semibold text-white">Choose Your Timer Emoji</h3>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" data-timer-emoji="⭐" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">⭐</button>
+                    <button type="button" data-timer-emoji="🎨" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🎨</button>
+                    <button type="button" data-timer-emoji="🦄" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🦄</button>
+                    <button type="button" data-timer-emoji="🚀" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🚀</button>
+                    <button type="button" data-timer-emoji="🌈" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🌈</button>
+                    <button type="button" data-timer-emoji="🎈" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🎈</button>
+                    <button type="button" data-timer-emoji="🍎" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🍎</button>
+                    <button type="button" data-timer-emoji="⚡" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">⚡</button>
                 </div>
             </div>
 
-            <div class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div class="hidden mt-6 grid gap-5 md:grid-cols-2">
                 <div class="flex flex-col gap-4 rounded-3xl bg-white/10 p-5 text-indigo-50 shadow-inner">
-                    <div>
-                        <h3 class="text-lg font-semibold text-white">Magic Timer</h3>
-                        <p class="mt-1 text-sm text-indigo-100">Pick a duration and the countdown will pop up with the shimmering ring.</p>
-                    </div>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" data-magic-timer="180" class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">3 min</button>
                         <button type="button" data-magic-timer="300" class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">5 min</button>
@@ -397,20 +594,6 @@
                         <p class="mt-1 text-sm text-indigo-100">Fill the screen with sparkle for bedtime victories or potty triumphs.</p>
                     </div>
                     <button id="magicFireworksButton" type="button" class="mt-auto rounded-2xl bg-gradient-to-r from-rose-400/80 to-amber-300/80 px-5 py-3 text-base font-semibold text-slate-900 shadow-lg transition hover:scale-[1.02] hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/40">Launch Fireworks</button>
-                </div>
-
-                <div class="flex flex-col gap-4 rounded-3xl bg-white/10 p-5 text-indigo-50 shadow-inner xl:col-span-1 md:col-span-2 xl:col-auto">
-                    <div>
-                        <h3 class="text-lg font-semibold text-white">Click to Say</h3>
-                        <p class="mt-1 text-sm text-indigo-100">Type a phrase and the device will read it aloud with the friendliest voice it can find.</p>
-                    </div>
-                    <form id="magicSpeakForm" class="flex flex-col gap-3">
-                        <textarea id="magicSpeakInput" rows="3" placeholder="Great job cleaning up every block!" class="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-base font-semibold text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"></textarea>
-                        <div class="flex flex-wrap gap-2">
-                            <button type="submit" class="rounded-2xl bg-white px-5 py-3 text-base font-semibold text-indigo-600 shadow-lg transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-white/40">Say It</button>
-                            <button type="button" id="magicSpeakStop" class="rounded-2xl bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">Stop Voice</button>
-                        </div>
-                    </form>
                 </div>
             </div>
         </section>
@@ -587,40 +770,33 @@
         id="timerOverlay"
         class="timer-overlay fixed inset-0 z-50 hidden items-center justify-center px-6 py-12 text-white">
         <div class="w-full max-w-md rounded-3xl bg-white/10 p-8 shadow-2xl">
-            <div class="flex items-start justify-between gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold">Magic Circle Timer</h2>
-                    <p id="timerLabel" class="mt-1 text-sm text-indigo-100">Countdown in progress…</p>
-                </div>
-                <button
-                    onclick="cancelToddlerTimer()"
-                    class="rounded-full bg-white/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
-                    Cancel
-                </button>
+            <div class="text-center mb-6">
+                <div id="timerOriginalTime" class="text-lg font-semibold text-indigo-200">5:00</div>
             </div>
 
-            <div class="relative mx-auto mt-8 flex h-56 w-56 items-center justify-center">
-                <svg class="absolute inset-0 h-full w-full" viewBox="0 0 120 120" aria-hidden="true">
-                    <circle cx="60" cy="60" r="54" stroke="rgba(255,255,255,0.2)" stroke-width="10" fill="none"></circle>
-                    <circle id="timerProgressCircle" class="timer-circle" cx="60" cy="60" r="54" stroke="url(#timerGradient)" stroke-width="10" stroke-linecap="round" stroke-dasharray="339.292" stroke-dashoffset="339.292" fill="none"></circle>
-                    <defs>
-                        <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="#c4b5fd"></stop>
-                            <stop offset="100%" stop-color="#7dd3fc"></stop>
-                        </linearGradient>
-                    </defs>
-                </svg>
-                <div class="relative flex flex-col items-center justify-center text-center">
-                    <span id="timerCountdown" class="text-4xl font-extrabold tracking-tight">00:00</span>
-                    <span class="mt-1 text-xs uppercase tracking-[0.4em] text-indigo-100">Remaining</span>
+            <div class="relative mx-auto flex h-64 w-64 items-center justify-center">
+                <div id="timerSpinnerEmoji" class="absolute text-9xl" style="animation: spin 3s linear infinite;">⭐</div>
+                <div class="relative flex flex-col items-center justify-center text-center z-10">
+                    <span id="timerCountdown" class="text-5xl font-extrabold tracking-tight text-white drop-shadow-lg">00:00</span>
                 </div>
+            </div>
+
+            <div class="mt-6 flex flex-wrap justify-center gap-2">
+                <button type="button" data-timer-emoji="⭐" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">⭐</button>
+                <button type="button" data-timer-emoji="🎨" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🎨</button>
+                <button type="button" data-timer-emoji="🦄" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🦄</button>
+                <button type="button" data-timer-emoji="🚀" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🚀</button>
+                <button type="button" data-timer-emoji="🌈" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🌈</button>
+                <button type="button" data-timer-emoji="🎈" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🎈</button>
+                <button type="button" data-timer-emoji="🍎" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🍎</button>
+                <button type="button" data-timer-emoji="⚡" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">⚡</button>
             </div>
 
             <button
                 id="timerOverlayDismiss"
                 onclick="cancelToddlerTimer()"
-                class="mt-8 w-full rounded-2xl bg-white px-5 py-3 text-base font-semibold text-indigo-600 shadow-lg transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-white/60">
-                Tap to stop timer
+                class="mt-6 w-full rounded-2xl bg-rose-500/80 px-5 py-4 text-base font-bold text-white shadow-lg transition hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-white/60">
+                Stop Timer
             </button>
         </div>
     </div>
@@ -639,6 +815,28 @@
                 class="rounded-full bg-white/20 px-6 py-3 text-xs font-semibold uppercase tracking-[0.35em] text-white shadow-lg transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50">
                 End Fireworks
             </button>
+        </div>
+    </div>
+
+    <div
+        id="youtubePlayerOverlay"
+        class="fixed inset-0 z-50 hidden items-center justify-center bg-black/95 px-4 py-6">
+        <div class="relative w-full max-w-6xl">
+            <button
+                onclick="closeYoutubePlayer()"
+                class="absolute -top-12 right-0 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">
+                Close Video
+            </button>
+            <div class="relative w-full pt-[56.25%]">
+                <iframe
+                    id="youtubePlayerFrame"
+                    class="absolute inset-0 h-full w-full rounded-2xl"
+                    src=""
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+                </iframe>
+            </div>
         </div>
     </div>
 

@@ -17,8 +17,8 @@ const QUICK_ACTION_COOLDOWN_MS = 1000;
 const quickActionCooldowns = new Map();
 const MACRO_STORAGE_KEY = 'roku_macros';
 const CONFIG_BASE_PATH = 'config';
-const TODDLER_CONTENT_DEFAULT_PATH = `${CONFIG_BASE_PATH}/toddler/default.json`;
-const TODDLER_CONTENT_CUSTOM_PATH = `${CONFIG_BASE_PATH}/toddler/custom.json`;
+const APP_CONFIG_PATH = `${CONFIG_BASE_PATH}/app-config.json`;
+const APP_CONFIG_CUSTOM_PATH = `${CONFIG_BASE_PATH}/app-config.custom.json`;
 const BUTTON_TYPES_CONFIG_PATH = `${CONFIG_BASE_PATH}/button-types.json`;
 const TODDLER_CONTENT_URL_KEY = 'toddler_content_url';
 const TIMER_CIRCUMFERENCE = 2 * Math.PI * 54;
@@ -28,6 +28,7 @@ const GOVEE_BRIGHTNESS_STORAGE_KEY = 'govee_brightness';
 const GOVEE_DEFAULT_PORT = 4003;
 const GOVEE_MIN_BRIGHTNESS = 1;
 const GOVEE_POWER_STATE_PREFIX = 'govee_power_state_';
+const YOUTUBE_PLAYBACK_MODE_KEY = 'youtube_playback_mode'; // 'roku' or 'app'
 const GOVEE_STATUS_VARIANTS = {
     info: 'bg-white/10 text-indigo-100',
     success: 'bg-emerald-500/20 text-emerald-50 border border-emerald-200/40',
@@ -73,7 +74,7 @@ const TAB_DEFINITIONS = {
     },
     apps: {
         id: 'apps',
-        defaultLabel: 'Roku Rooms',
+        defaultLabel: 'Roku',
         defaultIcon: '📺',
         sections: ['kidQuickSection', 'connectionSection', 'nowPlayingSection', 'appsSection', 'quickLaunchSection', 'deepLinkSection']
     },
@@ -87,7 +88,7 @@ const TAB_DEFINITIONS = {
         id: 'lights',
         defaultLabel: 'Lights',
         defaultIcon: '💡',
-        sections: ['goveeSection']
+        sections: ['lightsButtonSection', 'goveeSection']
     },
     macros: {
         id: 'macros',
@@ -110,8 +111,9 @@ let toddlerSpecialButtons = [];
 let toddlerQuickLaunchItems = [];
 let installedApps = [];
 let installedAppMap = new Map();
-let toddlerContentSource = { type: 'bundled', path: TODDLER_CONTENT_DEFAULT_PATH };
+let toddlerContentSource = { type: 'bundled', path: APP_CONFIG_PATH };
 let buttonTypeCatalog = null;
+let tabsConfig = null;
 
 if (typeof window !== 'undefined') {
     window.getButtonHandlerCatalog = () => buttonTypeCatalog;
@@ -131,6 +133,8 @@ let timerLabelText = '';
 let fireworksInterval = null;
 let fireworksTimeout = null;
 let nativeTtsStatusTimeout = null;
+let selectedTimerEmoji = '⭐';
+let currentTimerAnimation = 0;
 
 function getNativeTtsBridge() {
     if (typeof window === 'undefined') return undefined;
@@ -148,8 +152,25 @@ function buildTabFromDefinition(definition, overrides = {}) {
     };
 }
 
+async function loadTabsConfig() {
+    // Tabs are now loaded as part of the unified app config via loadToddlerContent()
+    // This function is kept for backwards compatibility but does nothing
+    // since tabsConfig is populated by applyToddlerContent()
+}
+
 function getTabsForRendering() {
-    // Fixed tabs: Remote, Roku Rooms, Lights, Magic Time
+    // If we have a loaded config, use it
+    if (tabsConfig && Array.isArray(tabsConfig.tabs)) {
+        return tabsConfig.tabs.map(tab => ({
+            id: tab.id,
+            label: tab.label || TAB_DEFINITIONS[tab.id]?.defaultLabel || tab.id,
+            icon: tab.icon || TAB_DEFINITIONS[tab.id]?.defaultIcon || '📱',
+            // Use sections from TAB_DEFINITIONS since HTML sections are hardcoded
+            sections: TAB_DEFINITIONS[tab.id]?.sections || []
+        }));
+    }
+
+    // Fallback to hardcoded tabs
     return [
         buildTabFromDefinition(TAB_DEFINITIONS.remote),
         buildTabFromDefinition(TAB_DEFINITIONS.apps),
@@ -227,18 +248,15 @@ function renderBottomTabs() {
         button.type = 'button';
         button.dataset.tabId = tab.id;
         button.setAttribute('data-tab-active', String(tab.id === activeTabId));
+        button.setAttribute('aria-label', tab.label);
         button.className =
-            'flex flex-1 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-xs font-semibold text-indigo-100 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/40';
+            'flex flex-1 flex-col items-center justify-center rounded-2xl px-3 py-3 text-xs font-semibold text-indigo-100 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/40';
 
         const iconSpan = document.createElement('span');
-        iconSpan.className = 'text-2xl leading-none';
+        iconSpan.className = 'text-3xl leading-none';
         iconSpan.textContent = tab.icon || '';
 
-        const labelSpan = document.createElement('span');
-        labelSpan.className = 'text-[0.7rem] sm:text-xs uppercase tracking-wider leading-tight';
-        labelSpan.textContent = tab.label;
-
-        button.append(iconSpan, labelSpan);
+        button.appendChild(iconSpan);
 
         button.addEventListener('click', () => {
             if (tab.id !== getActiveTabId()) {
@@ -308,10 +326,60 @@ function setToddlerContentSource(source) {
     updateToddlerContentSourceInfo();
 }
 
+function normalizeQuickLaunchItem(item) {
+    // Auto-generate missing fields for quick launch items
+    const normalized = { ...item };
+
+    // Auto-generate id if not provided
+    if (!normalized.id) {
+        if (normalized.type === 'youtube' && normalized.videoId) {
+            normalized.id = `yt-${normalized.videoId}`;
+        } else {
+            // Fallback: generate from label or random
+            normalized.id = normalized.label ? `ql-${normalized.label.toLowerCase().replace(/\s+/g, '-')}` : `ql-${Date.now()}`;
+        }
+    }
+
+    // Auto-generate thumbnail for youtube if not provided
+    if (normalized.type === 'youtube' && normalized.videoId && !normalized.thumbnail) {
+        normalized.thumbnail = `https://img.youtube.com/vi/${normalized.videoId}/maxresdefault.jpg`;
+    }
+
+    // Default label to empty string
+    if (!normalized.label) {
+        normalized.label = '';
+    }
+
+    return normalized;
+}
+
 function applyToddlerContent(data) {
-    toddlerSpecialButtons = Array.isArray(data?.specialButtons) ? [...data.specialButtons] : [];
-    toddlerQuickLaunchItems = Array.isArray(data?.quickLaunch) ? [...data.quickLaunch] : [];
-    renderToddlerButtons(toddlerSpecialButtons, toddlerQuickLaunchItems);
+    // Extract tabs and buttons from the unified config structure
+    const tabs = Array.isArray(data?.tabs) ? data.tabs : [];
+
+    // Store tabs config for navigation
+    tabsConfig = { tabs };
+
+    const remoteTab = tabs.find(tab => tab.id === 'remote');
+    const appsTab = tabs.find(tab => tab.id === 'apps');
+    const lightsTab = tabs.find(tab => tab.id === 'lights');
+    const magicTab = tabs.find(tab => tab.id === 'magic');
+
+    const remoteButtons = Array.isArray(remoteTab?.buttons) ? [...remoteTab.buttons] : [];
+    const appsButtons = Array.isArray(appsTab?.buttons) ? [...appsTab.buttons] : [];
+    const lightsButtons = Array.isArray(lightsTab?.buttons) ? [...lightsTab.buttons] : [];
+    const magicButtons = Array.isArray(magicTab?.buttons) ? [...magicTab.buttons] : [];
+
+    // Normalize quick launch items (auto-generate id, thumbnail, etc.)
+    const rawQuickLaunch = Array.isArray(appsTab?.quickLaunch) ? appsTab.quickLaunch : [];
+    toddlerQuickLaunchItems = rawQuickLaunch.map(normalizeQuickLaunchItem);
+
+    // Combine remote and apps buttons for rendering
+    toddlerSpecialButtons = [...remoteButtons, ...appsButtons, ...lightsButtons, ...magicButtons];
+
+    renderToddlerButtons(remoteButtons, appsButtons, toddlerQuickLaunchItems);
+    renderLightsButtons(lightsButtons);
+    renderMagicButtons(magicButtons);
     renderQuickLaunchSettings(toddlerQuickLaunchItems);
 }
 
@@ -351,8 +419,8 @@ async function tryFetchToddlerContentFromPath(path) {
 
 async function fetchLocalToddlerContent() {
     const lookupOrder = [
-        { type: 'custom', path: TODDLER_CONTENT_CUSTOM_PATH },
-        { type: 'bundled', path: TODDLER_CONTENT_DEFAULT_PATH }
+        { type: 'custom', path: APP_CONFIG_CUSTOM_PATH },
+        { type: 'bundled', path: APP_CONFIG_PATH }
     ];
 
     for (const candidate of lookupOrder) {
@@ -593,6 +661,27 @@ function initMagicControls() {
         fireworksButton.addEventListener('click', () => handleMagicFireworks());
     }
 
+    // Timer emoji selection
+    const emojiButtons = document.querySelectorAll('[data-timer-emoji]');
+    emojiButtons.forEach(button => {
+        if (!button.__emojiSelectBound) {
+            button.__emojiSelectBound = true;
+            button.addEventListener('click', () => {
+                const emoji = button.dataset.timerEmoji;
+                selectedTimerEmoji = emoji || '⭐';
+
+                // Update UI to show selected
+                emojiButtons.forEach(btn => btn.setAttribute('data-selected', 'false'));
+                button.setAttribute('data-selected', 'true');
+            });
+        }
+    });
+
+    // Set first emoji as selected by default
+    if (emojiButtons.length > 0 && !emojiButtons[0].dataset.selected) {
+        emojiButtons[0].setAttribute('data-selected', 'true');
+    }
+
     const speakForm = document.getElementById('magicSpeakForm');
     const speakInput = document.getElementById('magicSpeakInput');
     if (speakForm && !speakForm.__magicSpeakBound) {
@@ -622,12 +711,21 @@ window.addEventListener('DOMContentLoaded', async () => {
         console.log('Running inside Tauri shell');
     }
 
+    // Load tabs config before initializing tab controls
+    await loadTabsConfig();
     initTabControls();
     initMagicControls();
     updateToddlerContentCacheMeta();
     void loadButtonTypeCatalog();
     initGoveeControls();
     await loadToddlerContent();
+
+    // Run device discovery at startup
+    if (isNativeRuntime) {
+        discoverAndRegisterAllDevices().catch(err => {
+            console.warn('Startup discovery failed:', err);
+        });
+    }
 
     const savedIp = localStorage.getItem(STORAGE_KEY);
     if (savedIp) {
@@ -684,11 +782,11 @@ async function loadToddlerContent({ forceRefresh = false } = {}) {
     // Complete failure - no content available
     console.error('Failed to load kid-mode buttons from any source.');
     setToddlerContentSource({ type: 'empty' });
-    applyToddlerContent({ specialButtons: [], quickLaunch: [] });
+    applyToddlerContent({ tabs: [] });
     showStatus('Could not load kid-mode buttons. Check your config files.', 'error');
 }
 
-function renderToddlerButtons(buttons = [], quickLaunch = []) {
+function renderToddlerButtons(remoteButtons = [], appsButtons = [], quickLaunch = []) {
     const quickColumn = document.getElementById('toddlerQuickColumn');
     const remoteColumn = document.getElementById('toddlerRemoteColumn');
     if (!quickColumn || !remoteColumn) return;
@@ -696,16 +794,15 @@ function renderToddlerButtons(buttons = [], quickLaunch = []) {
     quickColumn.innerHTML = '';
     remoteColumn.innerHTML = '';
 
-    const baseButtons = Array.isArray(buttons) ? [...buttons] : [];
-    const quickSpecial = baseButtons.filter(btn => (btn.zone || 'quick') === 'quick');
-    const quickSpecialWithImages = quickSpecial.filter(btn => btn.thumbnail);
-    const quickSpecialNoImages = quickSpecial.filter(btn => !btn.thumbnail);
-    const remoteSpecial = baseButtons.filter(btn => btn.zone === 'remote');
+    // Separate apps buttons by whether they have thumbnails
+    const appsButtonsWithImages = appsButtons.filter(btn => btn.thumbnail);
+    const appsButtonsNoImages = appsButtons.filter(btn => !btn.thumbnail);
 
+    // Combine quick launch items with apps buttons (images first, then no-image buttons)
     const quickItems = [
         ...(Array.isArray(quickLaunch) ? quickLaunch.map(mapQuickLaunchToToddlerButton) : []),
-        ...quickSpecialWithImages,
-        ...quickSpecialNoImages
+        ...appsButtonsWithImages,
+        ...appsButtonsNoImages
     ];
 
     if (quickItems.length === 0) {
@@ -722,8 +819,50 @@ function renderToddlerButtons(buttons = [], quickLaunch = []) {
         });
     }
 
-    renderRemoteColumn(remoteColumn, remoteSpecial);
+    renderRemoteColumn(remoteColumn, remoteButtons);
     updateFavoriteMacroButton();
+}
+
+function renderLightsButtons(buttons = []) {
+    const column = document.getElementById('lightsButtonColumn');
+    if (!column) return;
+
+    column.innerHTML = '';
+
+    if (buttons.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'col-span-full rounded-3xl bg-white/10 px-6 py-8 text-center text-lg font-semibold text-indigo-100';
+        emptyState.textContent = 'No light buttons configured yet.';
+        column.appendChild(emptyState);
+    } else {
+        buttons.forEach(config => {
+            const element = createQuickButtonElement(config);
+            if (element) {
+                column.appendChild(element);
+            }
+        });
+    }
+}
+
+function renderMagicButtons(buttons = []) {
+    const column = document.getElementById('magicButtonColumn');
+    if (!column) return;
+
+    column.innerHTML = '';
+
+    if (buttons.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'col-span-full rounded-3xl bg-white/10 px-6 py-8 text-center text-lg font-semibold text-indigo-100';
+        emptyState.textContent = 'No magic buttons configured yet.';
+        column.appendChild(emptyState);
+    } else {
+        buttons.forEach(config => {
+            const element = createQuickButtonElement(config);
+            if (element) {
+                column.appendChild(element);
+            }
+        });
+    }
 }
 
 function mapQuickLaunchToToddlerButton(item) {
@@ -814,9 +953,7 @@ function renderRemoteColumn(container, remoteButtons) {
             emoji: '⟵',
             label: 'Go Back',
             handler: 'sendKey',
-            args: ['Back'],
-            category: 'kidMode-remote',
-            zone: 'remote'
+            args: ['Back']
         });
     }
 
@@ -1117,14 +1254,67 @@ function speakTts(message = '') {
     }
 }
 
+function applyTimerAnimation(element) {
+    if (!element) return;
+
+    const animations = [
+        'spin 3s linear infinite',
+        'pulse-grow 2s ease-in-out infinite',
+        'bounce-float 2s ease-in-out infinite',
+        'rotate-pulse 3s ease-in-out infinite',
+        'wiggle 1s ease-in-out infinite',
+        'rainbow-glow 3s linear infinite'
+    ];
+
+    element.style.animation = animations[currentTimerAnimation];
+}
+
+function setupTimerOverlayEmojiButtons() {
+    const overlayEmojiButtons = document.querySelectorAll('#timerOverlay [data-timer-emoji]');
+
+    overlayEmojiButtons.forEach(button => {
+        if (!button.__timerOverlayBound) {
+            button.__timerOverlayBound = true;
+            button.addEventListener('click', () => {
+                const emoji = button.dataset.timerEmoji;
+                selectedTimerEmoji = emoji || '⭐';
+
+                // Update the spinner emoji
+                const spinnerEmoji = document.getElementById('timerSpinnerEmoji');
+                if (spinnerEmoji) {
+                    spinnerEmoji.textContent = selectedTimerEmoji;
+                }
+
+                // Cycle to next animation
+                currentTimerAnimation = (currentTimerAnimation + 1) % 6;
+                applyTimerAnimation(spinnerEmoji);
+
+                // Update selected state
+                overlayEmojiButtons.forEach(btn => btn.setAttribute('data-selected', 'false'));
+                button.setAttribute('data-selected', 'true');
+            });
+        }
+    });
+
+    // Set currently selected emoji
+    const currentEmojiButton = Array.from(overlayEmojiButtons).find(
+        btn => btn.dataset.timerEmoji === selectedTimerEmoji
+    );
+    if (currentEmojiButton) {
+        overlayEmojiButtons.forEach(btn => btn.setAttribute('data-selected', 'false'));
+        currentEmojiButton.setAttribute('data-selected', 'true');
+    }
+}
+
 function startToddlerTimer(durationSeconds = 300, label = 'Timer') {
     const secondsValue = Number(Array.isArray(durationSeconds) ? durationSeconds[0] : durationSeconds);
     const labelValue = Array.isArray(durationSeconds) && durationSeconds.length > 1 ? durationSeconds[1] : label;
     const displayLabel = typeof labelValue === 'string' && labelValue.trim().length > 0 ? labelValue.trim() : 'Timer';
 
     const overlay = document.getElementById('timerOverlay');
-    const labelEl = document.getElementById('timerLabel');
-    if (!overlay || !labelEl) {
+    const originalTimeEl = document.getElementById('timerOriginalTime');
+    const spinnerEmoji = document.getElementById('timerSpinnerEmoji');
+    if (!overlay) {
         console.warn('Timer overlay elements are missing.');
         return;
     }
@@ -1137,7 +1327,22 @@ function startToddlerTimer(durationSeconds = 300, label = 'Timer') {
     timerEndTimestamp = Date.now() + timerDurationMs;
     timerLabelText = displayLabel || 'Timer';
 
-    labelEl.textContent = `${timerLabelText} — ${formatTimerDuration(sanitizedSeconds)} timer`;
+    // Display original time
+    if (originalTimeEl) {
+        const minutes = Math.floor(sanitizedSeconds / 60);
+        const seconds = sanitizedSeconds % 60;
+        const timeStr = seconds > 0 ? `${minutes}:${String(seconds).padStart(2, '0')}` : `${minutes}:00`;
+        originalTimeEl.textContent = timeStr;
+    }
+
+    if (spinnerEmoji) {
+        spinnerEmoji.textContent = selectedTimerEmoji;
+        applyTimerAnimation(spinnerEmoji);
+    }
+
+    // Set up emoji button listeners in overlay
+    setupTimerOverlayEmojiButtons();
+
     if (typeof document !== 'undefined' && document.body) {
         document.body.classList.add('timer-open');
     }
@@ -1159,7 +1364,6 @@ function formatTimerDuration(totalSeconds = 0) {
 function updateToddlerTimerDisplay() {
     const overlay = document.getElementById('timerOverlay');
     const countdownEl = document.getElementById('timerCountdown');
-    const progressCircle = document.getElementById('timerProgressCircle');
     if (!overlay || overlay.classList.contains('hidden')) {
         return;
     }
@@ -1172,12 +1376,6 @@ function updateToddlerTimerDisplay() {
 
     if (countdownEl) {
         countdownEl.textContent = `${minutes}:${seconds}`;
-    }
-
-    if (progressCircle && timerDurationMs > 0) {
-        const progress = Math.min(1, 1 - remainingMs / timerDurationMs);
-        const offset = TIMER_CIRCUMFERENCE * (1 - progress);
-        progressCircle.style.strokeDashoffset = offset.toString();
     }
 
     if (remainingMs <= 0) {
@@ -1203,14 +1401,10 @@ function cancelToddlerTimer({ silent = false } = {}) {
         document.body.classList.remove('timer-open');
     }
     const overlay = document.getElementById('timerOverlay');
-    const progressCircle = document.getElementById('timerProgressCircle');
     const countdownEl = document.getElementById('timerCountdown');
     if (overlay) {
         overlay.classList.add('hidden');
         overlay.classList.remove('flex');
-    }
-    if (progressCircle) {
-        progressCircle.style.strokeDashoffset = TIMER_CIRCUMFERENCE.toString();
     }
     if (countdownEl) {
         countdownEl.textContent = '00:00';
@@ -1395,6 +1589,312 @@ function getStoredGoveePowerState(target) {
 function setStoredGoveePowerState(target, state) {
     const key = getGoveePowerStateKey(target.host, target.port);
     localStorage.setItem(key, state ? 'on' : 'off');
+}
+
+// Device Registry System
+const DEVICE_REGISTRY_KEY = 'device_registry';
+
+function getDeviceRegistry() {
+    try {
+        const data = localStorage.getItem(DEVICE_REGISTRY_KEY);
+        return data ? JSON.parse(data) : { roku: {}, govee: {} };
+    } catch (error) {
+        console.error('Failed to parse device registry:', error);
+        return { roku: {}, govee: {} };
+    }
+}
+
+function saveDeviceRegistry(registry) {
+    try {
+        localStorage.setItem(DEVICE_REGISTRY_KEY, JSON.stringify(registry));
+    } catch (error) {
+        console.error('Failed to save device registry:', error);
+    }
+}
+
+function registerRokuDevice(device) {
+    const registry = getDeviceRegistry();
+    const id = device.serial_number || device.device_id || device.ip;
+
+    if (!id) {
+        console.warn('Cannot register Roku device without ID', device);
+        return;
+    }
+
+    registry.roku[id] = {
+        id,
+        ip: device.ip,
+        serial_number: device.serial_number,
+        device_id: device.device_id,
+        model_name: device.model_name,
+        friendly_name: device.friendly_name,
+        last_seen: Date.now()
+    };
+
+    saveDeviceRegistry(registry);
+    console.log('✅ Registered Roku device:', id, '→', device.ip);
+}
+
+function registerGoveeDevice(device) {
+    const registry = getDeviceRegistry();
+    const mac = device.mac_address || device.device_id;
+
+    if (!mac) {
+        console.warn('Cannot register Govee device without MAC address', device);
+        return;
+    }
+
+    registry.govee[mac] = {
+        mac,
+        ip: device.ip,
+        model: device.model,
+        name: device.name,
+        device_id: device.device_id,
+        last_seen: Date.now()
+    };
+
+    saveDeviceRegistry(registry);
+    console.log('✅ Registered Govee device:', mac, '→', device.ip);
+}
+
+function getDeviceByMac(type, mac) {
+    const registry = getDeviceRegistry();
+    return registry[type]?.[mac];
+}
+
+function getAllDevices() {
+    const registry = getDeviceRegistry();
+    return {
+        roku: Object.values(registry.roku || {}),
+        govee: Object.values(registry.govee || {})
+    };
+}
+
+async function discoverAndRegisterAllDevices() {
+    console.log('🔄 Starting device discovery...');
+
+    if (!isNativeRuntime) {
+        console.warn('⚠️  Discovery requires native runtime');
+        return;
+    }
+
+    try {
+        // Discover Roku devices
+        console.log('📺 Discovering Roku devices...');
+        const rokuDevices = await tauriInvoke('roku_discover', { timeout_secs: 3 });
+        console.log(`Found ${rokuDevices.length} Roku device(s)`);
+        rokuDevices.forEach(registerRokuDevice);
+
+        // Discover Govee devices
+        console.log('💡 Discovering Govee devices...');
+        const goveeDevices = await tauriInvoke('govee_discover', { timeout_ms: 3000 });
+        console.log(`Found ${goveeDevices.length} Govee device(s)`);
+        goveeDevices.forEach(registerGoveeDevice);
+
+        const allDevices = getAllDevices();
+        console.log('✅ Discovery complete!');
+        console.log(`   Total: ${allDevices.roku.length} Roku + ${allDevices.govee.length} Govee`);
+
+        return allDevices;
+    } catch (error) {
+        console.error('❌ Discovery failed:', error);
+        return null;
+    }
+}
+
+async function refreshDeviceDiscovery() {
+    const statusEl = document.getElementById('discoveryStatus');
+
+    if (statusEl) {
+        statusEl.classList.remove('hidden');
+        statusEl.textContent = 'Discovering devices...';
+    }
+
+    const devices = await discoverAndRegisterAllDevices();
+
+    if (devices) {
+        populateDeviceSelector();
+        if (statusEl) {
+            statusEl.textContent = `Found ${devices.roku.length} Roku + ${devices.govee.length} Govee devices`;
+        }
+    } else {
+        if (statusEl) {
+            statusEl.textContent = 'Discovery failed';
+        }
+    }
+}
+
+function populateDeviceSelector() {
+    const selector = document.getElementById('deviceSelector');
+    if (!selector) return;
+
+    const devices = getAllDevices();
+
+    // Clear existing options except first
+    selector.innerHTML = '<option value="">-- Select a device --</option>';
+
+    // Add Roku devices
+    devices.roku.forEach(device => {
+        const option = document.createElement('option');
+        option.value = `roku:${device.id}`;
+        const name = device.friendly_name || device.model_name || device.ip;
+        option.textContent = `📺 ${name} (${device.ip})`;
+        selector.appendChild(option);
+    });
+
+    // Add Govee devices
+    devices.govee.forEach(device => {
+        const option = document.createElement('option');
+        option.value = `govee:${device.mac}`;
+        const name = device.name || device.model || device.ip;
+        option.textContent = `💡 ${name} (${device.ip})`;
+        selector.appendChild(option);
+    });
+}
+
+function handleDeviceSelection() {
+    const selector = document.getElementById('deviceSelector');
+    const detailsEl = document.getElementById('deviceDetails');
+    const commandsEl = document.getElementById('deviceCommands');
+
+    if (!selector || !detailsEl || !commandsEl) return;
+
+    const value = selector.value;
+
+    if (!value) {
+        detailsEl.classList.add('hidden');
+        commandsEl.innerHTML = '';
+        return;
+    }
+
+    const [type, id] = value.split(':');
+    const device = getDeviceByMac(type, id);
+
+    if (!device) return;
+
+    // Show device details
+    detailsEl.classList.remove('hidden');
+
+    if (type === 'roku') {
+        detailsEl.innerHTML = `
+            <div class="space-y-2">
+                <div><strong>Type:</strong> Roku Device</div>
+                <div><strong>IP:</strong> ${device.ip}</div>
+                ${device.friendly_name ? `<div><strong>Name:</strong> ${device.friendly_name}</div>` : ''}
+                ${device.model_name ? `<div><strong>Model:</strong> ${device.model_name}</div>` : ''}
+                ${device.serial_number ? `<div><strong>Serial:</strong> ${device.serial_number}</div>` : ''}
+                <div><strong>Last Seen:</strong> ${new Date(device.last_seen).toLocaleString()}</div>
+            </div>
+        `;
+
+        // Show Roku commands
+        commandsEl.innerHTML = `
+            <button onclick="testRokuCommand('${device.ip}', 'Home')" class="w-full rounded-xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">🏠 Home</button>
+            <button onclick="testRokuCommand('${device.ip}', 'Select')" class="w-full rounded-xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">⭕ Select</button>
+            <button onclick="testRokuCommand('${device.ip}', 'Play')" class="w-full rounded-xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">⏯️ Play</button>
+            <button onclick="testRokuCommand('${device.ip}', 'Back')" class="w-full rounded-xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">⬅️ Back</button>
+            <button onclick="testRokuInfo('${device.ip}')" class="w-full rounded-xl bg-emerald-500/30 px-4 py-2 text-sm text-white transition hover:bg-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-300/60">ℹ️ Get Device Info</button>
+        `;
+    } else if (type === 'govee') {
+        detailsEl.innerHTML = `
+            <div class="space-y-2">
+                <div><strong>Type:</strong> Govee Light</div>
+                <div><strong>IP:</strong> ${device.ip}</div>
+                ${device.name ? `<div><strong>Name:</strong> ${device.name}</div>` : ''}
+                ${device.model ? `<div><strong>Model:</strong> ${device.model}</div>` : ''}
+                <div><strong>MAC:</strong> ${device.mac}</div>
+                <div><strong>Last Seen:</strong> ${new Date(device.last_seen).toLocaleString()}</div>
+            </div>
+        `;
+
+        // Show Govee commands
+        commandsEl.innerHTML = `
+            <button onclick="testGoveeCommand('${device.ip}', 'on')" class="w-full rounded-xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">💡 Turn On</button>
+            <button onclick="testGoveeCommand('${device.ip}', 'off')" class="w-full rounded-xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">⚫ Turn Off</button>
+            <button onclick="testGoveeCommand('${device.ip}', 'brightness', 100)" class="w-full rounded-xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">🔆 Full Brightness</button>
+            <button onclick="testGoveeCommand('${device.ip}', 'brightness', 50)" class="w-full rounded-xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">🔅 50% Brightness</button>
+            <button onclick="testGoveeCommand('${device.ip}', 'color', {r:255,g:0,b:0})" class="w-full rounded-xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">🔴 Red</button>
+            <button onclick="testGoveeCommand('${device.ip}', 'status')" class="w-full rounded-xl bg-emerald-500/30 px-4 py-2 text-sm text-white transition hover:bg-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-300/60">ℹ️ Get Status</button>
+        `;
+    }
+}
+
+async function testRokuCommand(ip, key) {
+    const statusEl = document.getElementById('discoveryStatus');
+
+    try {
+        const url = `http://${ip}:8060/keypress/${key}`;
+        await tauriInvoke('roku_post', { url, body: null });
+
+        if (statusEl) {
+            statusEl.classList.remove('hidden');
+            statusEl.textContent = `✅ Sent ${key} to Roku at ${ip}`;
+        }
+    } catch (error) {
+        if (statusEl) {
+            statusEl.classList.remove('hidden');
+            statusEl.textContent = `❌ Failed to send ${key}: ${error}`;
+        }
+    }
+}
+
+async function testRokuInfo(ip) {
+    const statusEl = document.getElementById('discoveryStatus');
+
+    try {
+        const url = `http://${ip}:8060/query/device-info`;
+        const result = await tauriInvoke('roku_get', { url });
+        console.log('📱 Roku device info:', result);
+
+        if (statusEl) {
+            statusEl.classList.remove('hidden');
+            statusEl.textContent = `✅ Got device info - check console`;
+        }
+    } catch (error) {
+        if (statusEl) {
+            statusEl.classList.remove('hidden');
+            statusEl.textContent = `❌ Failed to get info: ${error}`;
+        }
+    }
+}
+
+async function testGoveeCommand(ip, command, value) {
+    const statusEl = document.getElementById('discoveryStatus');
+
+    try {
+        if (command === 'status') {
+            const result = await tauriInvoke('govee_status', { host: ip, port: 4003 });
+            console.log('💡 Govee status:', result);
+            if (statusEl) {
+                statusEl.classList.remove('hidden');
+                statusEl.textContent = `✅ Status: ${result.online ? 'Online' : 'Offline'}, Power: ${result.power ? 'ON' : 'OFF'} - check console`;
+            }
+            return;
+        }
+
+        let body;
+        if (command === 'on') {
+            body = { msg: { cmd: 'turn', data: { value: 1 } } };
+        } else if (command === 'off') {
+            body = { msg: { cmd: 'turn', data: { value: 0 } } };
+        } else if (command === 'brightness') {
+            body = { msg: { cmd: 'brightness', data: { value } } };
+        } else if (command === 'color') {
+            body = { msg: { cmd: 'colorwc', data: { color: value, colorTemInKelvin: 0 } } };
+        }
+
+        await tauriInvoke('govee_send', { host: ip, port: 4003, body });
+
+        if (statusEl) {
+            statusEl.classList.remove('hidden');
+            statusEl.textContent = `✅ Sent ${command} to Govee at ${ip}`;
+        }
+    } catch (error) {
+        if (statusEl) {
+            statusEl.classList.remove('hidden');
+            statusEl.textContent = `❌ Failed to send ${command}: ${error}`;
+        }
+    }
 }
 
 function parseGoveeOverrides(ipOrOptions, portArg) {
@@ -1676,6 +2176,153 @@ function updateGoveeBrightnessLabel(value) {
     }
 }
 
+async function goveeDiscoverDevices(timeoutMs = 3000) {
+    if (!isNativeRuntime) {
+        setGoveeStatus('Device discovery requires the native app. Please use the Tauri build.', 'error');
+        return;
+    }
+
+    console.log('🔍 Starting Govee device discovery...');
+    console.log('📡 Sending multicast probe to 239.255.255.250:4001');
+    console.log('👂 Listening for responses on UDP 4002');
+    console.log(`⏱️  Timeout: ${timeoutMs}ms`);
+
+    setGoveeStatus('Discovering Govee devices on your network...', 'info');
+
+    try {
+        const devices = await tauriInvoke('govee_discover', { timeout_ms: timeoutMs });
+
+        console.log('\n═══════════════════════════════════════════════════');
+        console.log(`✅ Discovery complete! Found ${devices.length} device(s)`);
+        console.log('═══════════════════════════════════════════════════\n');
+
+        if (devices.length === 0) {
+            console.log('⚠️  No devices found. Make sure:');
+            console.log('   1. Your Govee device has LAN Control enabled');
+            console.log('   2. The device is on the same network');
+            console.log('   3. Your firewall allows UDP multicast');
+            setGoveeStatus('No Govee devices found on your network.', 'error');
+        } else {
+            devices.forEach((device, index) => {
+                console.log(`\n📱 Device #${index + 1}:`);
+                console.log('─────────────────────────────────────────────────');
+                if (device.ip) {
+                    console.log(`   IP Address: ${device.ip}`);
+                }
+                if (device.model) {
+                    console.log(`   Model/SKU: ${device.model}`);
+                }
+                if (device.name) {
+                    console.log(`   Device Name: ${device.name}`);
+                }
+                if (device.device_id) {
+                    console.log(`   Device ID: ${device.device_id}`);
+                }
+                if (device.ble_version) {
+                    console.log(`   BLE Version: ${device.ble_version}`);
+                }
+                if (device.wifi_version) {
+                    console.log(`   WiFi Version: ${device.wifi_version}`);
+                }
+                console.log(`   Source: ${device.source_ip}:${device.source_port}`);
+                console.log('\n   📦 Full Response:');
+                console.log(JSON.stringify(device.raw_response, null, 2));
+            });
+
+            console.log('\n═══════════════════════════════════════════════════');
+            console.log('💡 To control these devices, use their IP on port 4003');
+            console.log('═══════════════════════════════════════════════════\n');
+
+            setGoveeStatus(`Found ${devices.length} Govee device(s)! Check console for details.`, 'success');
+        }
+
+        return devices;
+    } catch (error) {
+        console.error('❌ Discovery failed:', error);
+        setGoveeStatus(`Discovery failed: ${error}`, 'error');
+        return [];
+    }
+}
+
+async function refreshGoveeStatus() {
+    if (!isNativeRuntime) {
+        setGoveeStatus('Status detection requires the native app. Please use the Tauri build.', 'error');
+        return;
+    }
+
+    const { ip, port } = getStoredGoveeConfig();
+    if (!ip) {
+        setGoveeStatus('Enter a Govee IP address to check status.', 'error');
+        return;
+    }
+
+    try {
+        const status = await tauriInvoke('govee_status', { host: ip, port });
+        displayGoveeStatus(status);
+
+        if (!status.online) {
+            setGoveeStatus('Device is offline or not responding.', 'error');
+        } else {
+            setGoveeStatus('Status updated successfully!', 'success');
+        }
+    } catch (error) {
+        setGoveeStatus(`Failed to get status: ${error}`, 'error');
+        console.error('Govee status error:', error);
+    }
+}
+
+function displayGoveeStatus(status) {
+    const onlineEl = document.getElementById('goveeOnlineStatus');
+    const powerEl = document.getElementById('goveePowerStatus');
+    const brightnessEl = document.getElementById('goveeBrightnessStatus');
+    const colorBoxEl = document.getElementById('goveeColorBox');
+    const colorTextEl = document.getElementById('goveeColorText');
+
+    if (onlineEl) {
+        if (status.online) {
+            onlineEl.textContent = '🟢 Online';
+            onlineEl.className = 'font-mono text-emerald-300';
+        } else {
+            onlineEl.textContent = '🔴 Offline';
+            onlineEl.className = 'font-mono text-rose-300';
+        }
+    }
+
+    if (powerEl) {
+        if (status.power === true) {
+            powerEl.textContent = '🟢 ON';
+            powerEl.className = 'font-mono text-emerald-300';
+        } else if (status.power === false) {
+            powerEl.textContent = '⚫ OFF';
+            powerEl.className = 'font-mono text-gray-400';
+        } else {
+            powerEl.textContent = '—';
+            powerEl.className = 'font-mono text-white';
+        }
+    }
+
+    if (brightnessEl) {
+        if (status.brightness != null) {
+            brightnessEl.textContent = `${status.brightness}%`;
+            brightnessEl.className = 'font-mono text-white';
+        } else {
+            brightnessEl.textContent = '—';
+            brightnessEl.className = 'font-mono text-white';
+        }
+    }
+
+    if (colorBoxEl && colorTextEl) {
+        if (status.color) {
+            const { r, g, b } = status.color;
+            colorBoxEl.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+            colorTextEl.textContent = `RGB(${r}, ${g}, ${b})`;
+        } else {
+            colorBoxEl.style.backgroundColor = '#6b7280';
+            colorTextEl.textContent = '—';
+        }
+    }
+}
+
 function updateGoveeUI() {
     const { ip, port } = getStoredGoveeConfig();
     const ipInput = document.getElementById('goveeIpInput');
@@ -1698,6 +2345,11 @@ function updateGoveeUI() {
         try {
             const { host, port: resolvedPort } = resolveGoveeTarget({ ip, port });
             setGoveeStatus(`Ready to control lights at ${host}:${resolvedPort}.`, 'info');
+
+            // Auto-refresh status when showing settings
+            if (isNativeRuntime) {
+                refreshGoveeStatus();
+            }
         } catch (error) {
             setGoveeStatus('The saved Govee IP looks invalid. Double-check it in settings.', 'error');
         }
@@ -1975,10 +2627,57 @@ const COMMON_APPS = [
     { id: '50539', name: 'The Roku Channel' },
 ];
 
+// Discover Roku devices on the network
+async function discoverRoku() {
+    if (!isNativeRuntime) {
+        showStatus('Roku discovery requires the native app. Please use the Tauri build.', 'error');
+        return;
+    }
+
+    showStatus('🔍 Searching for Roku devices on your network...', 'info');
+
+    try {
+        const devices = await tauriInvoke('roku_discover', { timeoutSecs: 5 });
+
+        if (!devices || devices.length === 0) {
+            showStatus('No Roku devices found. Make sure your Roku is on the same network.', 'error');
+            return;
+        }
+
+        // If only one device found, auto-fill it
+        if (devices.length === 1) {
+            const device = devices[0];
+            document.getElementById('rokuIp').value = device.ip;
+            showStatus(`Found Roku at ${device.ip}! Click "Save IP" to connect.`, 'success');
+            return;
+        }
+
+        // Multiple devices found - show selection
+        const deviceList = devices.map((d, i) => `${i + 1}. ${d.ip}`).join('\n');
+        showStatus(`Found ${devices.length} Roku devices:\n${deviceList}\n\nEnter the IP you want to use.`, 'info');
+
+        // Auto-fill first device
+        if (devices[0]) {
+            document.getElementById('rokuIp').value = devices[0].ip;
+        }
+    } catch (error) {
+        showStatus('Failed to discover Roku devices: ' + error, 'error');
+        console.error('Roku discovery error:', error);
+    }
+}
+
 // Check Roku status and load apps
 async function checkStatus() {
     const ip = getSavedIp();
-    if (!ip) return;
+    if (!ip) {
+        // If no IP saved, try discovery first
+        if (isNativeRuntime) {
+            await discoverRoku();
+        } else {
+            showStatus('Please enter a Roku IP address in settings.', 'error');
+        }
+        return;
+    }
 
     showStatus('Connecting to Roku...', 'info');
 
@@ -2323,12 +3022,84 @@ function formatTime(ms) {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+// Get YouTube playback mode preference
+function getYoutubePlaybackMode() {
+    return localStorage.getItem(YOUTUBE_PLAYBACK_MODE_KEY) || 'roku';
+}
+
+// Set YouTube playback mode preference
+function setYoutubePlaybackMode(mode) {
+    localStorage.setItem(YOUTUBE_PLAYBACK_MODE_KEY, mode);
+    updateYoutubeModeUI();
+    showStatus(`YouTube videos will now play ${mode === 'app' ? 'in the app' : 'on Roku'}.`, 'success');
+}
+
+// Update YouTube mode button UI
+function updateYoutubeModeUI() {
+    const mode = getYoutubePlaybackMode();
+    const rokuBtn = document.getElementById('youtubePlayRoku');
+    const appBtn = document.getElementById('youtubePlayApp');
+
+    if (rokuBtn && appBtn) {
+        rokuBtn.setAttribute('data-selected', mode === 'roku' ? 'true' : 'false');
+        appBtn.setAttribute('data-selected', mode === 'app' ? 'true' : 'false');
+    }
+}
+
+// Open YouTube player in app
+function openYoutubePlayer(videoId) {
+    const overlay = document.getElementById('youtubePlayerOverlay');
+    const iframe = document.getElementById('youtubePlayerFrame');
+
+    if (!overlay || !iframe) {
+        console.warn('YouTube player elements missing');
+        return;
+    }
+
+    // YouTube embed URL with autoplay
+    iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+
+    overlay.classList.remove('hidden');
+    overlay.classList.add('flex');
+    document.body.classList.add('youtube-player-open');
+}
+
+// Close YouTube player
+function closeYoutubePlayer() {
+    const overlay = document.getElementById('youtubePlayerOverlay');
+    const iframe = document.getElementById('youtubePlayerFrame');
+
+    if (overlay) {
+        overlay.classList.add('hidden');
+        overlay.classList.remove('flex');
+    }
+
+    if (iframe) {
+        iframe.src = ''; // Stop video playback
+    }
+
+    document.body.classList.remove('youtube-player-open');
+}
+
 // Launch specific YouTube video by ID
 async function launchSpecificYouTube(videoId) {
-    const ip = getSavedIp();
-    if (!ip) return;
+    const mode = getYoutubePlaybackMode();
 
-    showStatus(`Launching YouTube video ${videoId}...`, 'info');
+    if (mode === 'app') {
+        // Play in app
+        openYoutubePlayer(videoId);
+        showStatus('Playing video in app...', 'success');
+        return;
+    }
+
+    // Play on Roku (default)
+    const ip = getSavedIp();
+    if (!ip) {
+        showStatus('No Roku IP configured. Set it in settings or switch to "Play in App" mode.', 'error');
+        return;
+    }
+
+    showStatus(`Launching YouTube video ${videoId} on Roku...`, 'info');
 
     try {
         const appId = '837'; // YouTube app ID
@@ -2336,7 +3107,7 @@ async function launchSpecificYouTube(videoId) {
         console.log('Launching YouTube:', endpoint);
 
         await rokuPost(ip, endpoint);
-        showStatus(`Launched YouTube video!`, 'success');
+        showStatus(`Launched YouTube video on Roku!`, 'success');
         showToast('Launched on Roku!', 'success');
         setTimeout(() => checkNowPlaying(), 2000);
     } catch (error) {
@@ -3088,6 +3859,55 @@ function checkPin() {
     }
 }
 
+function renderTabConfig() {
+    const container = document.getElementById('tabConfigList');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    const tabs = getTabsForRendering();
+    tabs.forEach(tab => {
+        const card = document.createElement('div');
+        card.className = 'rounded-2xl bg-white/10 p-4 space-y-2';
+
+        const header = document.createElement('div');
+        header.className = 'flex items-center gap-2';
+
+        const icon = document.createElement('span');
+        icon.className = 'text-2xl';
+        icon.textContent = tab.icon;
+
+        const label = document.createElement('span');
+        label.className = 'font-bold text-white';
+        label.textContent = tab.label;
+
+        header.append(icon, label);
+
+        const info = document.createElement('div');
+        info.className = 'text-xs text-indigo-100 space-y-1';
+
+        const idInfo = document.createElement('div');
+        idInfo.innerHTML = `<span class="font-semibold">ID:</span> <code class="font-mono bg-white/10 px-1 py-0.5 rounded">${tab.id}</code>`;
+
+        // Get button count from the config if available
+        const tabData = tabsConfig?.tabs?.find(t => t.id === tab.id);
+        const buttonCount = Array.isArray(tabData?.buttons) ? tabData.buttons.length : 0;
+        const quickLaunchCount = Array.isArray(tabData?.quickLaunch) ? tabData.quickLaunch.length : 0;
+
+        const buttonsInfo = document.createElement('div');
+        buttonsInfo.className = 'text-[11px]';
+        if (quickLaunchCount > 0) {
+            buttonsInfo.innerHTML = `<span class="font-semibold">Content:</span> ${buttonCount} buttons, ${quickLaunchCount} quick launch items`;
+        } else {
+            buttonsInfo.innerHTML = `<span class="font-semibold">Content:</span> ${buttonCount} buttons`;
+        }
+
+        info.append(idInfo, buttonsInfo);
+        card.append(header, info);
+        container.appendChild(card);
+    });
+}
+
 function showSettings() {
     // Show all advanced settings
     const advancedSections = document.querySelectorAll('[data-settings]');
@@ -3097,6 +3917,8 @@ function showSettings() {
     renderQuickLaunchSettings(toddlerQuickLaunchItems);
     updateToddlerContentCacheMeta();
     updateGoveeUI();
+    updateYoutubeModeUI();
+    renderTabConfig();
     showStatus('Settings unlocked! Advanced controls are now visible.', 'success');
 
     const contentSourceSection = document.getElementById('contentSourceSection');

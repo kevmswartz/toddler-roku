@@ -21,4 +21,4 @@ node_modules/
 roku-control.keystore
 
 # Local config overrides
-public/config/toddler/custom.json
+public/config/app-config.custom.json
