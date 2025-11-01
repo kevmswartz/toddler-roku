@@ -28,11 +28,27 @@ const GOVEE_BRIGHTNESS_STORAGE_KEY = 'govee_brightness';
 const GOVEE_DEFAULT_PORT = 4003;
 const GOVEE_MIN_BRIGHTNESS = 1;
 const GOVEE_POWER_STATE_PREFIX = 'govee_power_state_';
+const GOVEE_API_KEY_STORAGE_KEY = 'govee_api_key';
 const YOUTUBE_PLAYBACK_MODE_KEY = 'youtube_playback_mode'; // 'roku' or 'app'
 const GOVEE_STATUS_VARIANTS = {
     info: 'bg-white/10 text-indigo-100',
     success: 'bg-emerald-500/20 text-emerald-50 border border-emerald-200/40',
     error: 'bg-rose-500/20 text-rose-50 border border-rose-200/40'
+};
+const GOVEE_CAPABILITY_LABELS = {
+    'devices.capabilities.on_off': 'Power (on/off)',
+    'devices.capabilities.brightness': 'Brightness control',
+    'devices.capabilities.color': 'RGB color control',
+    'devices.capabilities.color_temperature': 'Color temperature',
+    'devices.capabilities.color_temperature_v2': 'Color temperature',
+    'devices.capabilities.mode': 'Scene modes',
+    'devices.capabilities.effect': 'Lighting effects',
+    'devices.capabilities.music': 'Music sync',
+    turn: 'Power (on/off)',
+    brightness: 'Brightness',
+    color: 'RGB color',
+    colorTem: 'Color temperature',
+    color_temp: 'Color temperature'
 };
 const tauriBridge = typeof window !== 'undefined' ? window.__TAURI__ : undefined;
 const tauriInvoke = (() => {
@@ -114,6 +130,9 @@ let installedAppMap = new Map();
 let toddlerContentSource = { type: 'bundled', path: APP_CONFIG_PATH };
 let buttonTypeCatalog = null;
 let tabsConfig = null;
+let goveeCloudDevices = [];
+let goveeCloudDevicesLoaded = false;
+let goveeCloudDevicesLoading = false;
 
 if (typeof window !== 'undefined') {
     window.getButtonHandlerCatalog = () => buttonTypeCatalog;
@@ -1561,6 +1580,18 @@ function setStoredGoveeConfig({ ip, port }) {
     updateGoveeUI();
 }
 
+function getStoredGoveeApiKey() {
+    return localStorage.getItem(GOVEE_API_KEY_STORAGE_KEY) || '';
+}
+
+function setStoredGoveeApiKey(value) {
+    if (value) {
+        localStorage.setItem(GOVEE_API_KEY_STORAGE_KEY, value.trim());
+    } else {
+        localStorage.removeItem(GOVEE_API_KEY_STORAGE_KEY);
+    }
+}
+
 function getStoredGoveeBrightness() {
     const raw = localStorage.getItem(GOVEE_BRIGHTNESS_STORAGE_KEY);
     const parsed = Number(raw);
@@ -1990,6 +2021,16 @@ function setGoveeStatus(message, variant = 'info') {
     statusEl.textContent = message;
 }
 
+function setGoveeCloudStatus(message, variant = 'info') {
+    const statusEl = document.getElementById('goveeCloudStatus');
+    if (!statusEl) return;
+
+    const baseClasses = 'rounded-2xl px-4 py-3 text-sm font-semibold transition-colors';
+    const variantClasses = GOVEE_STATUS_VARIANTS[variant] || GOVEE_STATUS_VARIANTS.info;
+    statusEl.className = `${baseClasses} ${variantClasses}`;
+    statusEl.textContent = message;
+}
+
 async function sendGoveeCommand(command, overrides = {}) {
     const { url, target } = buildGoveeUrl('/devices/control', overrides);
     const payload = { msg: command };
@@ -2323,11 +2364,54 @@ function displayGoveeStatus(status) {
     }
 }
 
+function updateGoveeCloudUI() {
+    const key = getStoredGoveeApiKey();
+    const input = document.getElementById('goveeApiKeyInput');
+    const statusEl = document.getElementById('goveeApiKeyStatus');
+    const clearButton = document.getElementById('goveeApiKeyClear');
+
+    if (input && input !== document.activeElement) {
+        input.value = key;
+    }
+    if (clearButton) {
+        clearButton.classList.toggle('hidden', !key);
+    }
+    if (statusEl) {
+        if (key) {
+            const masked = key.length > 6 ? `${key.slice(0, 3)}…${key.slice(-3)}` : '••••••';
+            statusEl.textContent = `Key saved locally (${masked}).`;
+        } else {
+            statusEl.textContent = 'No API key saved yet.';
+        }
+    }
+
+    if (!key) {
+        if (!goveeCloudDevicesLoading) {
+            setGoveeCloudStatus('Save your Govee API key to load your devices from the cloud.', 'info');
+        }
+        if (!goveeCloudDevicesLoading) {
+            goveeCloudDevices = [];
+            goveeCloudDevicesLoaded = false;
+            renderGoveeCloudDevices();
+        }
+        return;
+    }
+
+    if (!goveeCloudDevicesLoading && !goveeCloudDevicesLoaded) {
+        setGoveeCloudStatus('API key saved. Tap “Refresh Cloud Devices” to pull your cloud list.', 'info');
+    }
+    if (!goveeCloudDevicesLoading) {
+        renderGoveeCloudDevices();
+    }
+}
+
 function updateGoveeUI() {
     const { ip, port } = getStoredGoveeConfig();
     const ipInput = document.getElementById('goveeIpInput');
     const portInput = document.getElementById('goveePortInput');
     const brightnessInput = document.getElementById('goveeBrightnessSlider');
+
+    updateGoveeCloudUI();
 
     if (ipInput && ipInput !== document.activeElement) {
         ipInput.value = ip;
@@ -2375,6 +2459,299 @@ function initGoveeControls() {
     if (brightnessInput) {
         brightnessInput.addEventListener('input', handleGoveeBrightnessInput);
         brightnessInput.addEventListener('change', handleGoveeBrightnessChange);
+    }
+
+    if (getStoredGoveeApiKey()) {
+        goveeLoadCloudDevices({ auto: true });
+    }
+}
+
+function goveeSaveApiKey() {
+    const input = document.getElementById('goveeApiKeyInput');
+    if (!input) return;
+
+    const key = input.value.trim();
+    if (!key) {
+        showStatus('Enter your Govee API key before saving.', 'error');
+        return;
+    }
+
+    setStoredGoveeApiKey(key);
+    goveeCloudDevices = [];
+    goveeCloudDevicesLoaded = false;
+    renderGoveeCloudDevices();
+    updateGoveeCloudUI();
+    showStatus('Govee API key saved locally on this device.', 'success');
+    goveeLoadCloudDevices({ auto: true });
+}
+
+function goveeClearApiKey() {
+    setStoredGoveeApiKey('');
+    goveeCloudDevices = [];
+    goveeCloudDevicesLoaded = false;
+    renderGoveeCloudDevices();
+    updateGoveeCloudUI();
+    const input = document.getElementById('goveeApiKeyInput');
+    if (input) {
+        input.value = '';
+    }
+    showStatus('Removed the stored Govee API key for this device.', 'info');
+}
+
+function humanizeGoveeCapability(value) {
+    if (!value) return '';
+
+    if (typeof value === 'object') {
+        if (value.label) return value.label;
+        if (value.command) return humanizeGoveeCapability(value.command);
+        return humanizeGoveeCapability(value.type || value.name || value.capability);
+    }
+
+    const raw = String(value).trim();
+    if (!raw) return '';
+
+    const lookup = GOVEE_CAPABILITY_LABELS[raw];
+    if (lookup) return lookup;
+
+    const cleaned = raw
+        .replace(/^devices\.capabilities\./i, '')
+        .replace(/^capabilities\./i, '')
+        .replace(/_/g, ' ')
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .trim();
+
+    if (!cleaned) return '';
+
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
+function extractGoveeDeviceCommands(device = {}) {
+    const commands = [];
+    const push = (candidate) => {
+        const label = humanizeGoveeCapability(candidate);
+        if (label) {
+            const key = label.toLowerCase();
+            if (!commands.some(existing => existing.toLowerCase() === key)) {
+                commands.push(label);
+            }
+        }
+    };
+
+    if (Array.isArray(device.supportCmds)) {
+        device.supportCmds.forEach(push);
+    }
+    if (Array.isArray(device.supportCommands)) {
+        device.supportCommands.forEach(item => {
+            if (typeof item === 'string' || typeof item === 'object') {
+                push(item);
+            }
+        });
+    }
+    if (Array.isArray(device.capabilities)) {
+        device.capabilities.forEach(cap => push(cap));
+    }
+    if (Array.isArray(device?.deviceExt?.lastDeviceData)) {
+        device.deviceExt.lastDeviceData.forEach(entry => push(entry));
+    }
+
+    return commands;
+}
+
+function renderGoveeCloudDevices() {
+    const container = document.getElementById('goveeCloudDeviceList');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (goveeCloudDevicesLoading) {
+        const loading = document.createElement('div');
+        loading.className = 'text-sm text-indigo-100/80';
+        loading.textContent = 'Loading devices…';
+        container.appendChild(loading);
+        return;
+    }
+
+    if (!goveeCloudDevicesLoaded) {
+        return;
+    }
+
+    if (!Array.isArray(goveeCloudDevices) || goveeCloudDevices.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'text-sm text-indigo-100/70';
+        empty.textContent = 'No devices returned by the Govee cloud yet.';
+        container.appendChild(empty);
+        return;
+    }
+
+    goveeCloudDevices.forEach(device => {
+        const card = document.createElement('div');
+        card.className = 'rounded-3xl bg-slate-950/40 p-4 space-y-3';
+
+        const header = document.createElement('div');
+        header.className = 'flex flex-wrap items-start justify-between gap-3';
+
+        const titleWrapper = document.createElement('div');
+        titleWrapper.className = 'space-y-1';
+        const name = document.createElement('div');
+        name.className = 'text-base font-semibold text-white';
+        name.textContent = device.deviceName || device.device_name || device.name || device.nickName || 'Unnamed device';
+        titleWrapper.appendChild(name);
+
+        const subtitleParts = [];
+        if (device.model) subtitleParts.push(device.model);
+        if (device.roomName) subtitleParts.push(device.roomName);
+        if (device.device) subtitleParts.push(device.device);
+        if (subtitleParts.length > 0) {
+            const subtitle = document.createElement('div');
+            subtitle.className = 'text-xs text-indigo-100/70';
+            subtitle.textContent = subtitleParts.join(' • ');
+            titleWrapper.appendChild(subtitle);
+        }
+        header.appendChild(titleWrapper);
+
+        const badgeGroup = document.createElement('div');
+        badgeGroup.className = 'flex flex-wrap gap-2 text-xs';
+
+        const commands = extractGoveeDeviceCommands(device);
+
+        if (device.controllable === true || device.controllable === 'true') {
+            const badge = document.createElement('span');
+            badge.className = 'rounded-full bg-emerald-500/20 px-2 py-1 font-semibold text-emerald-100';
+            badge.textContent = 'Controllable';
+            badgeGroup.appendChild(badge);
+        }
+        if (device.retrievable === true || device.retrievable === 'true') {
+            const badge = document.createElement('span');
+            badge.className = 'rounded-full bg-sky-500/20 px-2 py-1 font-semibold text-sky-100';
+            badge.textContent = 'Reports State';
+            badgeGroup.appendChild(badge);
+        }
+        if (commands.length > 0) {
+            const badge = document.createElement('span');
+            badge.className = 'rounded-full bg-white/10 px-2 py-1 font-semibold text-indigo-100';
+            badge.textContent = `${commands.length} command${commands.length === 1 ? '' : 's'}`;
+            badgeGroup.appendChild(badge);
+        }
+
+        if (badgeGroup.childElementCount > 0) {
+            header.appendChild(badgeGroup);
+        }
+
+        card.appendChild(header);
+
+        if (device.device) {
+            const idRow = document.createElement('div');
+            idRow.className = 'text-xs text-indigo-100/70';
+            idRow.innerHTML = `<span class="font-semibold text-indigo-100">Device ID:</span> <span class="font-mono">${device.device}</span>`;
+            card.appendChild(idRow);
+        }
+
+        const commandsWrapper = document.createElement('div');
+        commandsWrapper.className = 'space-y-2';
+        const commandsLabel = document.createElement('div');
+        commandsLabel.className = 'text-xs font-semibold uppercase tracking-wide text-indigo-200';
+        commandsLabel.textContent = 'Supported Commands';
+        commandsWrapper.appendChild(commandsLabel);
+
+        if (commands.length > 0) {
+            const list = document.createElement('ul');
+            list.className = 'grid gap-1 text-sm text-indigo-100';
+            commands.forEach(command => {
+                const item = document.createElement('li');
+                item.className = 'flex items-center gap-2';
+
+                const bullet = document.createElement('span');
+                bullet.textContent = '•';
+                bullet.className = 'text-indigo-300';
+
+                const label = document.createElement('span');
+                label.textContent = command;
+
+                item.append(bullet, label);
+                list.appendChild(item);
+            });
+            commandsWrapper.appendChild(list);
+        } else {
+            const emptyCommands = document.createElement('div');
+            emptyCommands.className = 'text-sm text-indigo-100/70';
+            emptyCommands.textContent = 'The cloud API has not reported specific commands for this device yet.';
+            commandsWrapper.appendChild(emptyCommands);
+        }
+
+        card.appendChild(commandsWrapper);
+
+        container.appendChild(card);
+    });
+}
+
+async function goveeLoadCloudDevices(options = {}) {
+    const { auto = false } = options || {};
+    const apiKey = getStoredGoveeApiKey();
+
+    if (!apiKey) {
+        if (!auto) {
+            setGoveeCloudStatus('Save your Govee API key to load cloud devices.', 'error');
+            const input = document.getElementById('goveeApiKeyInput');
+            if (input) {
+                input.focus();
+            }
+        }
+        return;
+    }
+
+    if (goveeCloudDevicesLoading) {
+        return;
+    }
+
+    goveeCloudDevicesLoading = true;
+    renderGoveeCloudDevices();
+    setGoveeCloudStatus('Loading devices from the Govee cloud…', 'info');
+
+    try {
+        const response = await fetch('https://developer-api.govee.com/v1/devices', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Govee-API-Key': apiKey
+            }
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || `Request failed with status ${response.status}`);
+        }
+
+        let payload = {};
+        try {
+            payload = await response.json();
+        } catch (parseError) {
+            throw new Error('Received an unreadable response from the Govee cloud.');
+        }
+
+        const devices =
+            (Array.isArray(payload?.data?.devices) && payload.data.devices) ||
+            (Array.isArray(payload?.devices) && payload.devices) ||
+            [];
+
+        goveeCloudDevices = devices;
+        goveeCloudDevicesLoaded = true;
+
+        if (devices.length === 0) {
+            setGoveeCloudStatus('No devices returned by the Govee cloud for this account.', 'error');
+        } else {
+            setGoveeCloudStatus(`Found ${devices.length} device${devices.length === 1 ? '' : 's'} in your account.`, 'success');
+        }
+    } catch (error) {
+        goveeCloudDevicesLoaded = false;
+        console.error('Govee cloud device load failed:', error);
+        const message = (error?.message || 'Unknown error').trim();
+        setGoveeCloudStatus(`Cloud request failed: ${message}`, 'error');
+        if (!auto) {
+            showStatus('Could not load Govee cloud devices. Double-check your API key.', 'error');
+        }
+    } finally {
+        goveeCloudDevicesLoading = false;
+        renderGoveeCloudDevices();
     }
 }
 

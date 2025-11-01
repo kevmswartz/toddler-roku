@@ -12,6 +12,12 @@
         button {
             touch-action: manipulation;
         }
+        :root {
+            --app-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        body.has-bottom-tabs {
+            padding-bottom: calc(var(--app-safe-area-bottom) + 12px);
+        }
         body.fireworks-open,
         body.timer-open,
         body.youtube-player-open {
@@ -83,6 +89,10 @@
         }
         #bottomTabNav {
             box-shadow: 0 -12px 32px rgba(15, 23, 42, 0.35);
+            bottom: var(--app-safe-area-bottom);
+        }
+        #bottomTabButtons {
+            padding-bottom: calc(var(--app-safe-area-bottom) + 0.75rem);
         }
         #bottomTabNav button[data-tab-active="true"] {
             background: rgba(255, 255, 255, 0.18);
@@ -419,6 +429,37 @@
 
             <div class="mt-6 grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:items-start">
                 <div class="space-y-4">
+                    <div class="rounded-3xl bg-white/10 p-4 space-y-3">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Cloud API Key</span>
+                                <p class="mt-1 text-xs text-indigo-100/80 max-w-xl">Store your private Govee API key locally so the app can look up devices and send cloud commands when LAN control is unavailable.</p>
+                            </div>
+                            <button
+                                id="goveeApiKeyClear"
+                                type="button"
+                                onclick="goveeClearApiKey()"
+                                class="hidden rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
+                                Remove Key
+                            </button>
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                            <input
+                                id="goveeApiKeyInput"
+                                type="password"
+                                autocomplete="off"
+                                spellcheck="false"
+                                placeholder="Paste your Govee developer API key"
+                                class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm font-semibold text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50" />
+                            <button
+                                type="button"
+                                onclick="goveeSaveApiKey()"
+                                class="rounded-2xl bg-emerald-500/30 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-300/60">
+                                Save API Key
+                            </button>
+                        </div>
+                        <p id="goveeApiKeyStatus" class="text-xs text-indigo-100/80">No API key saved yet.</p>
+                    </div>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <label class="flex flex-col gap-2">
                             <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Device IP</span>
@@ -536,6 +577,27 @@
                         </span>
                     </div>
                 </div>
+            </div>
+
+            <div class="mt-6 rounded-3xl bg-white/10 p-5 space-y-4">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h3 class="text-sm font-semibold uppercase tracking-wide text-indigo-200">Cloud Device Catalog</h3>
+                        <p class="mt-1 text-xs text-indigo-100/80 max-w-xl">Pull your devices from the official Govee cloud API and review which commands each one supports.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onclick="goveeLoadCloudDevices()"
+                            class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50">
+                            Refresh Cloud Devices
+                        </button>
+                    </div>
+                </div>
+                <p id="goveeCloudStatus" class="rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-indigo-100">
+                    Save your Govee API key to load your cloud devices.
+                </p>
+                <div id="goveeCloudDeviceList" class="grid gap-4"></div>
             </div>
 
             <p id="goveeStatus" class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-indigo-100">Enter the LAN IP to get started.</p>
