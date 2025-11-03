@@ -256,7 +256,6 @@ function renderBottomTabs() {
     if (!nav || !buttonsContainer) return;
 
     const tabs = getTabsForRendering();
-    document.body.classList.add('has-bottom-tabs');
     nav.classList.remove('hidden');
     buttonsContainer.innerHTML = '';
 

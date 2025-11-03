@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Roku Control</title>
     <link rel="stylesheet" href="tailwind.css">
     <style>
@@ -12,11 +12,14 @@
         button {
             touch-action: manipulation;
         }
-        :root {
-            --app-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+        .min-h-screen {
+            min-height: 100vh;
+            min-height: 100svh;
         }
-        body.has-bottom-tabs {
-            padding-bottom: calc(var(--app-safe-area-bottom) + 12px);
+        @supports (min-height: 100dvh) {
+            .min-h-screen {
+                min-height: 100dvh;
+            }
         }
         body.fireworks-open,
         body.timer-open,
@@ -89,10 +92,8 @@
         }
         #bottomTabNav {
             box-shadow: 0 -12px 32px rgba(15, 23, 42, 0.35);
-            bottom: var(--app-safe-area-bottom);
-        }
-        #bottomTabButtons {
-            padding-bottom: calc(var(--app-safe-area-bottom) + 0.75rem);
+            bottom: 0;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
         }
         #bottomTabNav button[data-tab-active="true"] {
             background: rgba(255, 255, 255, 0.18);
