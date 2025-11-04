@@ -761,6 +761,15 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     initMacroSystem();
+
+    // Initialize room detection system
+    await loadRoomConfig();
+    updateRoomUI();
+
+    // Start auto room detection if enabled
+    if (roomConfig?.settings?.autoDetect && isNativeRuntime) {
+        startRoomDetection();
+    }
 });
 
 async function loadToddlerContent({ forceRefresh = false } = {}) {
@@ -1780,6 +1789,299 @@ function populateDeviceSelector() {
         option.textContent = `💡 ${name} (${device.ip})`;
         selector.appendChild(option);
     });
+}
+
+// Room Detection System
+const ROOM_CONFIG_STORAGE_KEY = 'room_config';
+const CURRENT_ROOM_STORAGE_KEY = 'current_room';
+const ROOM_RSSI_HISTORY_KEY = 'room_rssi_history';
+
+let roomConfig = null;
+let currentRoom = null;
+let roomDetectionInterval = null;
+let rssiHistory = {};
+
+async function loadRoomConfig() {
+    try {
+        // Try to load custom room config from localStorage
+        const stored = localStorage.getItem(ROOM_CONFIG_STORAGE_KEY);
+        if (stored) {
+            roomConfig = JSON.parse(stored);
+            console.log('📍 Loaded room config from localStorage');
+            return roomConfig;
+        }
+
+        // Fall back to default config file
+        const response = await fetch('/config/rooms.json');
+        if (!response.ok) {
+            throw new Error(`Failed to load rooms.json: ${response.status}`);
+        }
+
+        roomConfig = await response.json();
+        console.log('📍 Loaded default room config from file');
+        return roomConfig;
+    } catch (error) {
+        console.error('Failed to load room config:', error);
+        // Return minimal default
+        roomConfig = {
+            rooms: [],
+            settings: {
+                autoDetect: false,
+                scanInterval: 10000,
+                rssiSampleSize: 3,
+                detectionMode: 'manual',
+                fallbackRoom: null
+            }
+        };
+        return roomConfig;
+    }
+}
+
+function saveRoomConfig(config) {
+    try {
+        localStorage.setItem(ROOM_CONFIG_STORAGE_KEY, JSON.stringify(config));
+        roomConfig = config;
+        console.log('💾 Room config saved');
+    } catch (error) {
+        console.error('Failed to save room config:', error);
+    }
+}
+
+function getCurrentRoom() {
+    if (currentRoom) return currentRoom;
+
+    const stored = localStorage.getItem(CURRENT_ROOM_STORAGE_KEY);
+    if (stored) {
+        currentRoom = stored;
+    }
+
+    return currentRoom;
+}
+
+function setCurrentRoom(roomId, source = 'manual') {
+    currentRoom = roomId;
+    localStorage.setItem(CURRENT_ROOM_STORAGE_KEY, roomId);
+
+    console.log(`📍 Room changed to: ${roomId} (source: ${source})`);
+
+    // Trigger UI update
+    updateRoomUI();
+    filterControlsByRoom();
+
+    // Dispatch custom event for other components
+    window.dispatchEvent(new CustomEvent('roomChanged', {
+        detail: { roomId, source }
+    }));
+}
+
+async function scanForRoomDetection() {
+    if (!isNativeRuntime || !tauriInvoke) {
+        console.log('📍 Room detection requires native runtime');
+        return null;
+    }
+
+    try {
+        const timeout = roomConfig?.settings?.scanInterval || 5000;
+        const devices = await tauriInvoke('roomsense_scan', { timeout_ms: timeout });
+
+        console.log(`📍 Scanned ${devices.length} nearby BLE devices`);
+
+        return devices;
+    } catch (error) {
+        console.error('Room scan failed:', error);
+        return null;
+    }
+}
+
+function detectRoomFromRSSI(scannedDevices) {
+    if (!roomConfig || !roomConfig.rooms || roomConfig.rooms.length === 0) {
+        console.log('📍 No room config available');
+        return null;
+    }
+
+    if (!scannedDevices || scannedDevices.length === 0) {
+        console.log('📍 No devices scanned');
+        return null;
+    }
+
+    const mode = roomConfig.settings?.detectionMode || 'strongest_signal';
+
+    if (mode === 'manual') {
+        return null; // Don't auto-detect in manual mode
+    }
+
+    // Build RSSI map by device address
+    const rssiMap = {};
+    scannedDevices.forEach(device => {
+        if (device.address && device.rssi !== null && device.rssi !== undefined) {
+            rssiMap[device.address.toLowerCase()] = device.rssi;
+        }
+    });
+
+    // Calculate room scores
+    const roomScores = [];
+
+    roomConfig.rooms.forEach(room => {
+        if (!room.beacons || room.beacons.length === 0) {
+            return; // Skip rooms with no beacons
+        }
+
+        let totalScore = 0;
+        let matchedBeacons = 0;
+
+        room.beacons.forEach(beacon => {
+            const beaconAddr = beacon.address.toLowerCase();
+            const rssi = rssiMap[beaconAddr];
+
+            if (rssi !== undefined) {
+                const threshold = beacon.rssiThreshold || -70;
+
+                if (rssi >= threshold) {
+                    // Stronger signal = higher score
+                    // RSSI is negative, so -50 is better than -70
+                    const score = 100 + rssi; // Convert to positive score
+                    totalScore += score;
+                    matchedBeacons++;
+                }
+            }
+        });
+
+        if (matchedBeacons > 0) {
+            const averageScore = totalScore / matchedBeacons;
+            roomScores.push({
+                roomId: room.id,
+                score: averageScore,
+                matchedBeacons: matchedBeacons
+            });
+        }
+    });
+
+    if (roomScores.length === 0) {
+        console.log('📍 No rooms matched');
+        return roomConfig.settings?.fallbackRoom || null;
+    }
+
+    // Sort by score (highest first)
+    roomScores.sort((a, b) => b.score - a.score);
+
+    const detectedRoom = roomScores[0];
+    console.log(`📍 Detected room: ${detectedRoom.roomId} (score: ${detectedRoom.score.toFixed(1)}, beacons: ${detectedRoom.matchedBeacons})`);
+
+    return detectedRoom.roomId;
+}
+
+async function performRoomDetection() {
+    if (!roomConfig?.settings?.autoDetect) {
+        return;
+    }
+
+    const devices = await scanForRoomDetection();
+    if (!devices) {
+        return;
+    }
+
+    const detectedRoomId = detectRoomFromRSSI(devices);
+
+    if (detectedRoomId && detectedRoomId !== currentRoom) {
+        setCurrentRoom(detectedRoomId, 'auto');
+    }
+}
+
+function startRoomDetection() {
+    if (roomDetectionInterval) {
+        stopRoomDetection();
+    }
+
+    if (!roomConfig?.settings?.autoDetect) {
+        console.log('📍 Auto room detection is disabled');
+        return;
+    }
+
+    const interval = roomConfig.settings.scanInterval || 10000;
+
+    console.log(`📍 Starting room detection (scan every ${interval}ms)`);
+
+    // Perform immediate scan
+    performRoomDetection();
+
+    // Set up periodic scanning
+    roomDetectionInterval = setInterval(() => {
+        performRoomDetection();
+    }, interval);
+}
+
+function stopRoomDetection() {
+    if (roomDetectionInterval) {
+        clearInterval(roomDetectionInterval);
+        roomDetectionInterval = null;
+        console.log('📍 Room detection stopped');
+    }
+}
+
+function filterControlsByRoom() {
+    // Filter buttons/controls to show only those relevant to current room
+    // This will be implemented when we add room assignments to buttons
+
+    const room = getCurrentRoom();
+
+    if (!room || !roomConfig) {
+        // Show all controls if no room selected
+        return;
+    }
+
+    const roomData = roomConfig.rooms.find(r => r.id === room);
+    if (!roomData) {
+        return;
+    }
+
+    console.log(`🔍 Filtering controls for room: ${roomData.name}`);
+
+    // TODO: Implement actual filtering logic
+    // For now, just log which devices belong to this room
+    console.log(`  Roku devices:`, roomData.devices?.roku || []);
+    console.log(`  Govee devices:`, roomData.devices?.govee || []);
+}
+
+function updateRoomUI() {
+    const room = getCurrentRoom();
+    const roomIndicator = document.getElementById('currentRoomIndicator');
+    const roomSelector = document.getElementById('roomSelector');
+    const roomSelectorBar = document.getElementById('roomSelectorBar');
+
+    if (!roomIndicator || !roomSelector) return;
+
+    // Populate room selector dropdown
+    if (roomConfig && roomConfig.rooms && roomConfig.rooms.length > 0) {
+        roomSelector.innerHTML = '<option value="">All Rooms</option>';
+
+        roomConfig.rooms.forEach(r => {
+            const option = document.createElement('option');
+            option.value = r.id;
+            option.textContent = `${r.emoji || '📍'} ${r.name}`;
+            roomSelector.appendChild(option);
+        });
+
+        // Show room selector bar
+        if (roomSelectorBar) {
+            roomSelectorBar.classList.remove('hidden');
+        }
+    }
+
+    // Update current room display
+    if (room && roomConfig) {
+        const roomData = roomConfig.rooms.find(r => r.id === room);
+        if (roomData) {
+            roomIndicator.textContent = `${roomData.emoji || '📍'} ${roomData.name}`;
+            roomIndicator.classList.remove('hidden');
+            roomSelector.value = room;
+        }
+    } else {
+        roomIndicator.textContent = '📍 All Rooms';
+        roomIndicator.classList.remove('hidden');
+        if (roomSelector) {
+            roomSelector.value = '';
+        }
+    }
 }
 
 function handleDeviceSelection() {
