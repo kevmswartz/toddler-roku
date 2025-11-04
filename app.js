@@ -2681,6 +2681,20 @@ function renderGoveeCloudDevices() {
 
         container.appendChild(card);
     });
+
+    // Populate test device selector
+    const testDeviceSelect = document.getElementById('goveeTestDevice');
+    if (testDeviceSelect && goveeCloudDevices && goveeCloudDevices.length > 0) {
+        // Clear existing options except first
+        testDeviceSelect.innerHTML = '<option value="">— Select a device —</option>';
+
+        goveeCloudDevices.forEach((device, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = `${device.deviceName || device.device_name || device.name || 'Unnamed'} (${device.model || 'Unknown'})`;
+            testDeviceSelect.appendChild(option);
+        });
+    }
 }
 
 async function goveeLoadCloudDevices(options = {}) {
@@ -2752,6 +2766,305 @@ async function goveeLoadCloudDevices(options = {}) {
         goveeCloudDevicesLoading = false;
         renderGoveeCloudDevices();
     }
+}
+
+// Testing Playground Functions
+let goveeTestSelectedDevice = null;
+let goveeTestLastCommand = null;
+
+function goveeTestDeviceChanged() {
+    const select = document.getElementById('goveeTestDevice');
+    const deviceIndex = parseInt(select.value, 10);
+
+    if (isNaN(deviceIndex) || deviceIndex < 0 || deviceIndex >= goveeCloudDevices.length) {
+        goveeTestSelectedDevice = null;
+        document.getElementById('goveeTestDeviceInfo').classList.add('hidden');
+        return;
+    }
+
+    const device = goveeCloudDevices[deviceIndex];
+    goveeTestSelectedDevice = device;
+
+    // Update device info display
+    const modelEl = document.getElementById('goveeTestModel');
+    const deviceIdEl = document.getElementById('goveeTestDeviceId');
+    const capsEl = document.getElementById('goveeTestCaps');
+
+    modelEl.textContent = device.model || '—';
+    deviceIdEl.textContent = device.device || '—';
+
+    // Extract capabilities
+    const capabilities = extractGoveeDeviceCommands(device);
+    capsEl.textContent = capabilities.length > 0 ? capabilities.join(', ') : 'Unknown';
+
+    document.getElementById('goveeTestDeviceInfo').classList.remove('hidden');
+}
+
+function goveeTestCommandTypeChanged() {
+    const commandType = document.getElementById('goveeTestCommandType').value;
+    const paramsContainer = document.getElementById('goveeTestParams');
+
+    // Hide all param sections
+    document.getElementById('goveeTestParamsPower').classList.add('hidden');
+    document.getElementById('goveeTestParamsBrightness').classList.add('hidden');
+    document.getElementById('goveeTestParamsColor').classList.add('hidden');
+    document.getElementById('goveeTestParamsColorTem').classList.add('hidden');
+    document.getElementById('goveeTestParamsColorTemPct').classList.add('hidden');
+    document.getElementById('goveeTestParamsSegment').classList.add('hidden');
+
+    if (!commandType) {
+        paramsContainer.classList.add('hidden');
+        return;
+    }
+
+    // Show relevant param section
+    paramsContainer.classList.remove('hidden');
+
+    if (commandType === 'turn') {
+        document.getElementById('goveeTestParamsPower').classList.remove('hidden');
+    } else if (commandType === 'brightness') {
+        document.getElementById('goveeTestParamsBrightness').classList.remove('hidden');
+    } else if (commandType === 'color') {
+        document.getElementById('goveeTestParamsColor').classList.remove('hidden');
+    } else if (commandType === 'colorTem') {
+        document.getElementById('goveeTestParamsColorTem').classList.remove('hidden');
+    } else if (commandType === 'colorTemPercentage') {
+        document.getElementById('goveeTestParamsColorTemPct').classList.remove('hidden');
+    } else if (commandType === 'segment') {
+        document.getElementById('goveeTestParamsSegment').classList.remove('hidden');
+    }
+}
+
+function goveeTestColorPickerChanged() {
+    const colorPicker = document.getElementById('goveeTestColorPicker');
+    const hex = colorPicker.value;
+
+    // Convert hex to RGB
+    const r = parseInt(hex.substr(1, 2), 16);
+    const g = parseInt(hex.substr(3, 2), 16);
+    const b = parseInt(hex.substr(5, 2), 16);
+
+    document.getElementById('goveeTestColorR').textContent = r;
+    document.getElementById('goveeTestColorG').textContent = g;
+    document.getElementById('goveeTestColorB').textContent = b;
+}
+
+async function goveeTestSendCommand() {
+    const apiKey = getStoredGoveeApiKey();
+    if (!apiKey) {
+        showStatus('Save your Govee API key first.', 'error');
+        return;
+    }
+
+    if (!goveeTestSelectedDevice) {
+        showStatus('Select a device first.', 'error');
+        return;
+    }
+
+    const commandType = document.getElementById('goveeTestCommandType').value;
+    if (!commandType) {
+        showStatus('Select a command type first.', 'error');
+        return;
+    }
+
+    // Build command based on type
+    let cmd = { name: commandType };
+
+    if (commandType === 'turn') {
+        const powerValue = document.getElementById('goveeTestPowerValue').value;
+        cmd.value = powerValue;
+    } else if (commandType === 'brightness') {
+        const brightness = parseInt(document.getElementById('goveeTestBrightnessValue').value, 10);
+        cmd.value = brightness;
+    } else if (commandType === 'color') {
+        const r = parseInt(document.getElementById('goveeTestColorR').textContent, 10);
+        const g = parseInt(document.getElementById('goveeTestColorG').textContent, 10);
+        const b = parseInt(document.getElementById('goveeTestColorB').textContent, 10);
+        cmd.value = { r, g, b };
+    } else if (commandType === 'colorTem') {
+        const kelvin = parseInt(document.getElementById('goveeTestColorTemValue').value, 10);
+        cmd.value = kelvin;
+    } else if (commandType === 'colorTemPercentage') {
+        const percentage = parseInt(document.getElementById('goveeTestColorTemPctValue').value, 10);
+        cmd.value = percentage;
+    } else if (commandType === 'segment') {
+        try {
+            const segmentData = JSON.parse(document.getElementById('goveeTestSegmentValue').value);
+            cmd.value = segmentData;
+        } catch (e) {
+            showStatus('Invalid segment data JSON.', 'error');
+            return;
+        }
+    }
+
+    // Store the command for later use
+    goveeTestLastCommand = {
+        device: goveeTestSelectedDevice.device,
+        model: goveeTestSelectedDevice.model,
+        cmd: cmd
+    };
+
+    // Show loading state
+    const sendBtn = document.getElementById('goveeTestSendBtn');
+    const originalText = sendBtn.textContent;
+    sendBtn.textContent = '⏳ Sending...';
+    sendBtn.disabled = true;
+
+    try {
+        // Use Tauri bridge if available
+        if (tauriInvoke) {
+            const response = await tauriInvoke('govee_cloud_control', {
+                apiKey: apiKey,
+                device: goveeTestSelectedDevice.device,
+                model: goveeTestSelectedDevice.model,
+                cmd: cmd
+            });
+
+            // Show response
+            showGoveeTestResponse(response, 'success');
+            showStatus('Command sent successfully!', 'success');
+        } else {
+            showStatus('Cloud commands require running in Tauri (not browser mode).', 'error');
+        }
+    } catch (error) {
+        console.error('Govee test command failed:', error);
+        showGoveeTestResponse({ error: error.toString() }, 'error');
+        showStatus('Command failed: ' + error.toString(), 'error');
+    } finally {
+        sendBtn.textContent = originalText;
+        sendBtn.disabled = false;
+    }
+}
+
+function showGoveeTestResponse(response, status) {
+    const responseEl = document.getElementById('goveeTestResponse');
+    const statusEl = document.getElementById('goveeTestResponseStatus');
+    const bodyEl = document.getElementById('goveeTestResponseBody');
+
+    responseEl.classList.remove('hidden');
+
+    if (status === 'success') {
+        statusEl.textContent = '✅ Success';
+        statusEl.className = 'text-xs font-semibold text-emerald-300';
+    } else {
+        statusEl.textContent = '❌ Error';
+        statusEl.className = 'text-xs font-semibold text-rose-300';
+    }
+
+    bodyEl.textContent = JSON.stringify(response, null, 2);
+
+    // Show save button if successful
+    if (status === 'success') {
+        document.getElementById('goveeTestSaveBtn').classList.remove('hidden');
+    }
+}
+
+function goveeClearTestResponse() {
+    document.getElementById('goveeTestResponse').classList.add('hidden');
+    document.getElementById('goveeTestButtonConfig').classList.add('hidden');
+    document.getElementById('goveeTestSaveBtn').classList.add('hidden');
+}
+
+function goveeTestSaveAsButton() {
+    if (!goveeTestLastCommand) {
+        showStatus('Send a command first.', 'error');
+        return;
+    }
+
+    const configEl = document.getElementById('goveeTestButtonConfig');
+    configEl.classList.remove('hidden');
+
+    // Scroll to it
+    configEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Generate button config
+    goveeUpdateButtonConfig();
+}
+
+function goveeUpdateButtonConfig() {
+    if (!goveeTestLastCommand) return;
+
+    const label = document.getElementById('goveeTestButtonLabel').value || 'My Light Command';
+    const emoji = document.getElementById('goveeTestButtonEmoji').value || '💡';
+
+    const buttonConfig = {
+        id: `govee_${Date.now()}`,
+        label: label,
+        emoji: emoji,
+        handler: 'goveeCloudCommand',
+        args: [
+            goveeTestLastCommand.device,
+            goveeTestLastCommand.model,
+            goveeTestLastCommand.cmd
+        ]
+    };
+
+    const jsonEl = document.getElementById('goveeTestButtonConfigJSON');
+    jsonEl.textContent = JSON.stringify(buttonConfig, null, 2);
+}
+
+function goveeCopyButtonConfig() {
+    const jsonEl = document.getElementById('goveeTestButtonConfigJSON');
+    const text = jsonEl.textContent;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            showStatus('Button config copied to clipboard!', 'success');
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            showStatus('Failed to copy to clipboard.', 'error');
+        });
+    } else {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            showStatus('Button config copied to clipboard!', 'success');
+        } catch (err) {
+            console.error('Failed to copy:', err);
+            showStatus('Failed to copy to clipboard.', 'error');
+        }
+        document.body.removeChild(textarea);
+    }
+}
+
+// Handler function that can be called from button configs
+async function goveeCloudCommand(device, model, cmd, options = {}) {
+    const apiKey = getStoredGoveeApiKey();
+    if (!apiKey) {
+        showStatus('Govee API key not configured.', 'error');
+        return;
+    }
+
+    try {
+        if (tauriInvoke) {
+            await tauriInvoke('govee_cloud_control', {
+                apiKey: apiKey,
+                device: device,
+                model: model,
+                cmd: cmd
+            });
+            showStatus('Lights updated!', 'success');
+        } else {
+            showStatus('Cloud commands require Tauri (not browser).', 'error');
+        }
+    } catch (error) {
+        console.error('Govee cloud command failed:', error);
+        showStatus('Command failed: ' + error.toString(), 'error');
+    }
+}
+
+// Listen for button label/emoji changes to update the config
+if (document.getElementById('goveeTestButtonLabel')) {
+    document.getElementById('goveeTestButtonLabel').addEventListener('input', goveeUpdateButtonConfig);
+}
+if (document.getElementById('goveeTestButtonEmoji')) {
+    document.getElementById('goveeTestButtonEmoji').addEventListener('input', goveeUpdateButtonConfig);
 }
 
 // Save IP to localStorage
