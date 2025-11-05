@@ -1878,49 +1878,64 @@ async function scanBluetoothLE(timeoutMs) {
     // Use tauri-plugin-blec for BLE scanning (better Android support)
     return new Promise((resolve, reject) => {
         let devices = [];
-        let completed = false;
+        let scanError = null;
 
-        // Create a channel handler for receiving devices
-        const handleDevices = (deviceList) => {
-            if (!completed) {
-                devices = deviceList;
-            }
+        // Check if Tauri API is available
+        if (!tauriBridge || !tauriBridge.core || !tauriBridge.core.Channel) {
+            reject(new Error('Tauri BLE API not available. Running in native mode?'));
+            return;
+        }
+
+        // Create a channel for receiving device updates
+        const onDevices = new tauriBridge.core.Channel();
+        onDevices.onmessage = (deviceList) => {
+            console.log('BLE scan channel message received:', deviceList?.length || 0, 'devices');
+            devices = deviceList || [];
+            console.log('Updated devices array, now has:', devices.length, 'devices');
         };
 
-        // Start the scan
-        tauriInvoke('plugin:blec|scan', {
-            timeout: timeoutMs,
-            allowIbeacons: false,
-            onDevices: handleDevices
-        })
-        .then(() => {
-            completed = true;
+        // Set timeout to collect results - wait for full scan duration plus buffer
+        const timeoutId = setTimeout(() => {
+            if (scanError) {
+                console.error('BLE scan failed:', scanError);
+                reject(scanError);
+                return;
+            }
+
+            console.log('BLE scan timeout reached. Final devices count:', devices.length);
+            console.log('Raw devices:', devices);
+
             // Convert plugin format to our format
-            const convertedDevices = devices.map(d => ({
+            const convertedDevices = (devices || []).map(d => ({
                 address: d.address,
                 name: d.name || 'Unknown',
                 rssi: d.rssi,
-                manufacturer_data: Object.entries(d.manufacturer_data || {}).map(([id, data]) => ({
+                manufacturer_data: Object.entries(d.manufacturerData || d.manufacturer_data || {}).map(([id, data]) => ({
                     id: parseInt(id),
                     data: data.map(b => b.toString(16).padStart(2, '0')).join('')
                 })),
                 type: 'ble'
             }));
+            console.log('Converted devices:', convertedDevices);
             resolve(convertedDevices);
+        }, timeoutMs + 500); // Add 500ms buffer to ensure all channel messages arrive
+
+        // Start the scan
+        console.log('Starting BLE scan with timeout:', timeoutMs);
+        tauriInvoke('plugin:blec|scan', {
+            timeout: timeoutMs,
+            allowIbeacons: false,
+            onDevices: onDevices
+        })
+        .then(() => {
+            console.log('BLE scan command completed successfully');
         })
         .catch((error) => {
-            completed = true;
+            scanError = error;
+            clearTimeout(timeoutId);
             console.error('BLE scan error:', error);
             reject(error);
         });
-
-        // Timeout fallback
-        setTimeout(() => {
-            if (!completed) {
-                completed = true;
-                resolve(devices);
-            }
-        }, timeoutMs + 1000);
     });
 }
 
