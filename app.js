@@ -1891,7 +1891,7 @@ async function scanBluetoothLE(timeoutMs) {
         tauriInvoke('plugin:blec|scan', {
             timeout: timeoutMs,
             allowIbeacons: false,
-            handler: handleDevices
+            onDevices: handleDevices
         })
         .then(() => {
             completed = true;
