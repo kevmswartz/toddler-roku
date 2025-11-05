@@ -177,25 +177,59 @@ async function loadTabsConfig() {
     // since tabsConfig is populated by applyToddlerContent()
 }
 
+async function isOnWifi() {
+    // In native mode, use the Tauri command to check WiFi (not mobile data)
+    if (isNativeRuntime && tauriInvoke) {
+        try {
+            const connected = await tauriInvoke('is_wifi_connected');
+            return connected === true;
+        } catch (error) {
+            console.warn('Failed to check WiFi status:', error);
+            // Fallback to basic online check
+            return typeof navigator !== 'undefined' && navigator.onLine !== false;
+        }
+    }
+
+    // In browser mode, fall back to basic online check
+    return typeof navigator !== 'undefined' && navigator.onLine !== false;
+}
+
 function getTabsForRendering() {
+    let tabs;
+
     // If we have a loaded config, use it
     if (tabsConfig && Array.isArray(tabsConfig.tabs)) {
-        return tabsConfig.tabs.map(tab => ({
+        tabs = tabsConfig.tabs.map(tab => ({
             id: tab.id,
             label: tab.label || TAB_DEFINITIONS[tab.id]?.defaultLabel || tab.id,
             icon: tab.icon || TAB_DEFINITIONS[tab.id]?.defaultIcon || '📱',
             // Use sections from TAB_DEFINITIONS since HTML sections are hardcoded
             sections: TAB_DEFINITIONS[tab.id]?.sections || []
         }));
+    } else {
+        // Fallback to hardcoded tabs
+        tabs = [
+            buildTabFromDefinition(TAB_DEFINITIONS.remote),
+            buildTabFromDefinition(TAB_DEFINITIONS.apps),
+            buildTabFromDefinition(TAB_DEFINITIONS.lights),
+            buildTabFromDefinition(TAB_DEFINITIONS.magic)
+        ];
     }
 
-    // Fallback to hardcoded tabs
-    return [
-        buildTabFromDefinition(TAB_DEFINITIONS.remote),
-        buildTabFromDefinition(TAB_DEFINITIONS.apps),
-        buildTabFromDefinition(TAB_DEFINITIONS.lights),
-        buildTabFromDefinition(TAB_DEFINITIONS.magic)
-    ];
+    // Note: WiFi check is async, filtering happens in renderBottomTabs()
+    return tabs;
+}
+
+async function getTabsForRenderingFiltered() {
+    let tabs = getTabsForRendering();
+
+    // Filter out tabs that require WiFi when not on WiFi
+    const onWifi = await isOnWifi();
+    if (!onWifi) {
+        tabs = tabs.filter(tab => tab.id !== 'apps');
+    }
+
+    return tabs;
 }
 
 function getActiveTabId() {
@@ -250,12 +284,12 @@ function setActiveTab(tabId) {
     applyTabVisibility(desired, tabs);
 }
 
-function renderBottomTabs() {
+async function renderBottomTabs() {
     const nav = document.getElementById('bottomTabNav');
     const buttonsContainer = document.getElementById('bottomTabButtons');
     if (!nav || !buttonsContainer) return;
 
-    const tabs = getTabsForRendering();
+    const tabs = await getTabsForRenderingFiltered();
     nav.classList.remove('hidden');
     buttonsContainer.innerHTML = '';
 
@@ -738,12 +772,30 @@ window.addEventListener('DOMContentLoaded', async () => {
     initGoveeControls();
     await loadToddlerContent();
 
-    // Run device discovery at startup
-    if (isNativeRuntime) {
+    // Run device discovery at startup only if on WiFi
+    if (isNativeRuntime && await isOnWifi()) {
         discoverAndRegisterAllDevices().catch(err => {
             console.warn('Startup discovery failed:', err);
         });
     }
+
+    // Listen for network connectivity changes
+    window.addEventListener('online', async () => {
+        console.log('Network connection changed');
+        await renderBottomTabs(); // Re-render tabs (show Roku tab if on WiFi)
+        // Trigger device discovery if on WiFi
+        if (isNativeRuntime && await isOnWifi()) {
+            console.log('WiFi detected, running device discovery');
+            discoverAndRegisterAllDevices().catch(err => {
+                console.warn('Online discovery failed:', err);
+            });
+        }
+    });
+
+    window.addEventListener('offline', async () => {
+        console.log('Network connection lost');
+        await renderBottomTabs(); // Re-render tabs to hide Roku tab
+    });
 
     const savedIp = localStorage.getItem(STORAGE_KEY);
     if (savedIp) {
@@ -2732,6 +2784,11 @@ async function goveeDiscoverDevices(timeoutMs = 3000) {
         return;
     }
 
+    if (!await isOnWifi()) {
+        setGoveeStatus('No WiFi connection. Please connect to WiFi (not mobile data) to discover Govee devices.', 'error');
+        return;
+    }
+
     console.log('🔍 Starting Govee device discovery...');
     console.log('📡 Sending multicast probe to 239.255.255.250:4001');
     console.log('👂 Listening for responses on UDP 4002');
@@ -3830,6 +3887,11 @@ const COMMON_APPS = [
 async function discoverRoku() {
     if (!isNativeRuntime) {
         showStatus('Roku discovery requires the native app. Please use the Tauri build.', 'error');
+        return;
+    }
+
+    if (!await isOnWifi()) {
+        showStatus('No WiFi connection. Please connect to WiFi (not mobile data) to discover Roku devices.', 'error');
         return;
     }
 

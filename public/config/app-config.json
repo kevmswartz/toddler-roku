@@ -66,7 +66,7 @@
         },
         {
           "id": "powerButton",
-          "emoji": "⏻",
+          "emoji": "🔘",
           "handler": "sendKey",
           "args": ["PowerOff"]
         }

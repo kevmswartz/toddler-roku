@@ -103,6 +103,11 @@ async fn roomsense_scan(timeout_ms: Option<u64>) -> Result<Vec<serde_json::Value
         .map_err(|err| err.to_string())
 }
 
+#[tauri::command]
+fn is_wifi_connected() -> Result<bool, String> {
+    bridges::network::is_connected_to_wifi()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -123,7 +128,8 @@ pub fn run() {
             govee_cloud_devices,
             govee_cloud_control,
             govee_cloud_state,
-            roomsense_scan
+            roomsense_scan,
+            is_wifi_connected
         ])
         .run(tauri::generate_context!())
         .expect("error while running Roku Control");
