@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Authentication - Toddler Phone Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .rate-limit-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .example {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .example h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .example pre {
+            background: #2d2d2d;
+            color: #f8f8f8;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Test Authentication</h1>
+        <p class="subtitle">Test your passphrase and view rate limiting info</p>
+
+        <form id="testForm">
+            <div class="form-group">
+                <label for="passphrase">Enter Your 5-Word Passphrase:</label>
+                <input
+                    type="text"
+                    id="passphrase"
+                    placeholder="e.g., blue mountain coffee morning sunshine"
+                    required
+                >
+            </div>
+
+            <button type="submit" class="button" id="submitBtn">
+                Test Passphrase
+            </button>
+        </form>
+
+        <div id="result"></div>
+
+        <div class="example">
+            <h3>💡 Usage Examples</h3>
+
+            <p style="margin-bottom: 15px; color: #555; font-size: 14px;">
+                Use this passphrase to update your configuration:
+            </p>
+
+            <pre>curl -X POST https://toddler-phone-control.netlify.app/api/config \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer blue mountain coffee morning sunshine" \\
+  -d '{"tabs": [...]}'</pre>
+
+            <p style="margin-top: 15px; color: #555; font-size: 14px;">
+                <strong>Default passphrase:</strong> <code>blue mountain coffee morning sunshine</code>
+            </p>
+            <p style="margin-top: 10px; color: #555; font-size: 14px;">
+                Set custom passphrase via environment variable: <code>CONFIG_PASSPHRASE</code>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('testForm');
+        const passphraseInput = document.getElementById('passphrase');
+        const submitBtn = document.getElementById('submitBtn');
+        const resultDiv = document.getElementById('result');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const passphrase = passphraseInput.value.trim();
+
+            if (!passphrase) {
+                showResult('Please enter a passphrase', 'error');
+                return;
+            }
+
+            // Disable button during request
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Testing...';
+
+            try {
+                // Test authentication by attempting to fetch config
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${passphrase}`
+                    },
+                    body: JSON.stringify({
+                        // Empty update to test auth without changing anything
+                        _test: true
+                    })
+                });
+
+                const data = await response.json();
+
+                // Extract rate limit headers
+                const rateLimit = {
+                    limit: response.headers.get('X-RateLimit-Limit'),
+                    remaining: response.headers.get('X-RateLimit-Remaining'),
+                    reset: response.headers.get('X-RateLimit-Reset')
+                };
+
+                let rateLimitInfo = '';
+                if (rateLimit.limit) {
+                    rateLimitInfo = `
+                        <div class="rate-limit-info">
+                            <strong>Rate Limit:</strong> ${rateLimit.remaining}/${rateLimit.limit} attempts remaining
+                            ${rateLimit.reset ? `<br>Resets in: ${rateLimit.reset} minutes` : ''}
+                        </div>
+                    `;
+                }
+
+                if (response.ok) {
+                    showResult(
+                        '✅ Success! Your passphrase is correct.' + rateLimitInfo,
+                        'success'
+                    );
+                } else if (response.status === 429) {
+                    showResult(
+                        `⏱️ Rate limit exceeded. ${data.error}` + rateLimitInfo,
+                        'error'
+                    );
+                } else if (response.status === 401) {
+                    showResult(
+                        '❌ Invalid passphrase. Please try again.' + rateLimitInfo,
+                        'error'
+                    );
+                } else {
+                    showResult(
+                        `❌ Error: ${data.error || 'Unknown error'}` + rateLimitInfo,
+                        'error'
+                    );
+                }
+            } catch (error) {
+                showResult(
+                    `❌ Network error: ${error.message}`,
+                    'error'
+                );
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Test Passphrase';
+            }
+        });
+
+        function showResult(message, type) {
+            resultDiv.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "toddler-phone-control-functions",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Netlify Functions for Toddler Phone Control configuration service",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

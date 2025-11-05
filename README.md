@@ -186,6 +186,13 @@ npm run content
 
 Want to update content without rebuilding the app?
 
+**Option 1: Netlify Deployment (Recommended)**
+1. Deploy this repo to Netlify (it's already configured!)
+2. In app settings, set remote URL: `https://toddler-phone-control.netlify.app/api/config`
+3. Update your config via API without rebuilding the app
+4. See `netlify/README.md` for complete guide
+
+**Option 2: CDN Hosting**
 1. Upload your `default.json` to a CDN (see `BUNNY_CDN_SETUP.md`)
 2. In app settings, set remote URL: `https://your-cdn.com/default.json`
 3. App always fetches fresh content from URL
@@ -195,6 +202,7 @@ Want to update content without rebuilding the app?
 - Update content anytime without rebuilding
 - Still works offline (uses bundled fallback)
 - Perfect for family with changing content needs
+- Netlify option includes API for easy config management
 
 ### Image Assets
 
@@ -461,6 +469,7 @@ These are kept in the repo for easy family distribution.
 - **CLAUDE.md** - Detailed architecture and developer guide
 - **REFACTOR_SUMMARY.md** - Recent simplification changes (~700 lines removed!)
 - **BUNNY_CDN_SETUP.md** - Guide for migrating images to CDN
+- **netlify/README.md** - Netlify deployment guide with API endpoints for config management
 
 ---
 
