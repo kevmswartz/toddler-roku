@@ -1,27 +1,29 @@
 import { getStore } from "@netlify/blobs";
 
 /**
- * Simple passphrase authentication with rate limiting
- * Uses 5-word passphrase stored in environment variable
+ * Passphrase validation with rate limiting
+ * Any valid 5+ word passphrase is accepted (each stores separate config)
  */
 
-// Default passphrase (should be overridden with env var)
-const DEFAULT_PASSPHRASE = "blue mountain coffee morning sunshine";
-
-// Rate limit: 5 attempts per hour per IP
-const RATE_LIMIT_ATTEMPTS = 5;
+// Rate limit: 10 attempts per hour per IP
+const RATE_LIMIT_ATTEMPTS = 10;
 const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
 
 /**
- * Verify passphrase matches the configured one
+ * Verify passphrase is valid (5+ words)
+ * Does NOT check against a specific passphrase - any valid passphrase works
  */
 export function verifyPassphrase(providedPassphrase) {
-  const configuredPassphrase = process.env.CONFIG_PASSPHRASE || DEFAULT_PASSPHRASE;
-
   // Normalize: lowercase, trim, single spaces
-  const normalize = (str) => str.toLowerCase().trim().replace(/\s+/g, ' ');
+  const normalized = providedPassphrase.toLowerCase().trim().replace(/\s+/g, ' ');
 
-  return normalize(providedPassphrase) === normalize(configuredPassphrase);
+  if (!normalized) {
+    return false;
+  }
+
+  // Check for at least 5 words
+  const words = normalized.split(' ');
+  return words.length >= 5;
 }
 
 /**
@@ -143,7 +145,7 @@ export async function authenticateRequest(req) {
     return {
       success: false,
       status: 401,
-      error: 'Invalid passphrase',
+      error: 'Invalid passphrase: must be at least 5 words separated by spaces',
       headers: {
         'X-RateLimit-Limit': RATE_LIMIT_ATTEMPTS.toString(),
         'X-RateLimit-Remaining': rateCheck.remaining.toString()

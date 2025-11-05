@@ -401,6 +401,46 @@
                 </div>
             </div>
             <p id="toddlerContentCacheInfo" class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-100"></p>
+
+            <!-- Cloud Config Editor -->
+            <div id="cloudConfigEditor" class="mt-6 hidden space-y-4">
+                <div class="rounded-3xl bg-white/10 p-6 space-y-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Edit & Save Cloud Config</h3>
+                        <p class="mt-1 text-xs text-indigo-100/80">Make changes to your button layout and save it to the cloud with your passphrase.</p>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="flex flex-col gap-2">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Configuration JSON</span>
+                            <textarea
+                                id="cloudConfigJson"
+                                rows="12"
+                                spellcheck="false"
+                                class="w-full rounded-2xl border border-white/20 bg-black/30 px-4 py-3 font-mono text-xs text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-black/40 focus:outline-none focus:ring-2 focus:ring-white/50"
+                                placeholder='{"tabs": [...]}'></textarea>
+                        </label>
+                        <div class="flex flex-wrap gap-3">
+                            <button
+                                onclick="loadCurrentConfigIntoEditor()"
+                                class="rounded-2xl bg-white/15 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
+                                Load Current Config
+                            </button>
+                            <button
+                                onclick="saveConfigToCloud()"
+                                class="rounded-2xl bg-emerald-500/30 px-5 py-3 text-sm font-semibold text-emerald-50 shadow-lg transition hover:bg-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-200/60">
+                                💾 Save to Cloud
+                            </button>
+                            <button
+                                onclick="validateConfigJson()"
+                                class="rounded-2xl bg-white/15 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
+                                Validate JSON
+                            </button>
+                        </div>
+                        <p class="text-xs text-indigo-100/70">Tip: Click "Load Current Config" to see what's currently loaded, make your edits, then "Save to Cloud".</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-100">
                 Bundled configuration lives in <code class="font-mono text-[11px] text-white">config/app-config.json</code>. Add <code class="font-mono text-[11px] text-white">app-config.custom.json</code> beside it for local tweaks—Git will ignore that file.
             </div>
