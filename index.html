@@ -601,6 +601,53 @@
                 <div id="goveeCloudDeviceList" class="grid gap-4"></div>
             </div>
 
+            <div class="mt-6 rounded-3xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 p-6 space-y-4 border-2 border-blue-400/30">
+                <div>
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span>📡</span>
+                        <span>Bluetooth Scanner</span>
+                    </h3>
+                    <p class="mt-1 text-xs text-indigo-100/90 max-w-2xl">Scan for nearby Bluetooth devices and view their signal strength (RSSI) for room detection setup.</p>
+                </div>
+
+                <!-- Scan Controls -->
+                <div class="rounded-2xl bg-white/10 p-4 space-y-3">
+                    <div class="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onclick="scanBluetoothDevices()"
+                            id="btScanButton"
+                            class="rounded-2xl bg-white/20 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50">
+                            🔍 Scan for Devices
+                        </button>
+                        <span id="btScanStatus" class="text-xs text-indigo-100/80">Ready to scan</span>
+                    </div>
+                    <p class="text-xs text-indigo-100/70">Scan takes 5 seconds. You'll see nearby Bluetooth devices with their signal strength.</p>
+                </div>
+
+                <!-- Scan Results -->
+                <div id="btScanResults" class="hidden rounded-2xl bg-white/10 p-4 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-sm font-semibold uppercase tracking-wide text-indigo-200">Discovered Devices</h4>
+                        <span id="btDeviceCount" class="text-xs text-indigo-100/80">0 devices</span>
+                    </div>
+                    <div id="btDeviceList" class="space-y-3 max-h-96 overflow-y-auto">
+                        <!-- Device cards will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Room Detection Info -->
+                <div class="rounded-2xl bg-white/10 p-4 space-y-3">
+                    <h4 class="text-sm font-semibold uppercase tracking-wide text-indigo-200">Room Detection Tips</h4>
+                    <ul class="space-y-2 text-xs text-indigo-100/80">
+                        <li>• Use Govee lights or other Bluetooth devices as "beacons" in each room</li>
+                        <li>• Stand in a room and scan to see which devices have the strongest signal (highest RSSI, e.g. -40 is stronger than -70)</li>
+                        <li>• Copy device addresses from scan results to configure room beacons in <code>rooms.json</code></li>
+                        <li>• Typical RSSI values: -30 to -50 (very close), -50 to -70 (same room), -70 to -90 (far away)</li>
+                    </ul>
+                </div>
+            </div>
+
             <div class="mt-6 rounded-3xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 p-6 space-y-4 border-2 border-purple-400/30">
                 <div>
                     <h3 class="text-lg font-bold text-white flex items-center gap-2">

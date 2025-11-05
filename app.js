@@ -2042,6 +2042,149 @@ function filterControlsByRoom() {
     console.log(`  Govee devices:`, roomData.devices?.govee || []);
 }
 
+// Bluetooth Scanner UI Functions
+async function scanBluetoothDevices() {
+    if (!isNativeRuntime || !tauriInvoke) {
+        showStatus('Bluetooth scanning requires native runtime', 'error');
+        return;
+    }
+
+    const button = document.getElementById('btScanButton');
+    const status = document.getElementById('btScanStatus');
+    const resultsDiv = document.getElementById('btScanResults');
+    const deviceList = document.getElementById('btDeviceList');
+    const deviceCount = document.getElementById('btDeviceCount');
+
+    // Update UI to scanning state
+    button.disabled = true;
+    button.textContent = '⏳ Scanning...';
+    status.textContent = 'Scanning for Bluetooth devices (5 seconds)...';
+    deviceList.innerHTML = '';
+    resultsDiv.classList.add('hidden');
+
+    try {
+        const devices = await tauriInvoke('roomsense_scan', { timeout_ms: 5000 });
+
+        console.log(`📡 Bluetooth scan complete: ${devices.length} devices found`, devices);
+
+        // Filter out info messages
+        const realDevices = devices.filter(d => d.type !== 'info');
+
+        // Update device count
+        deviceCount.textContent = `${realDevices.length} device${realDevices.length !== 1 ? 's' : ''}`;
+
+        if (realDevices.length === 0) {
+            deviceList.innerHTML = `
+                <div class="rounded-2xl bg-white/10 p-4 text-center text-sm text-indigo-100/80">
+                    No Bluetooth devices found. Make sure Bluetooth is enabled and devices are nearby.
+                </div>
+            `;
+        } else {
+            // Sort by RSSI (strongest signal first)
+            realDevices.sort((a, b) => (b.rssi || -999) - (a.rssi || -999));
+
+            // Create device cards
+            realDevices.forEach(device => {
+                const card = createBluetoothDeviceCard(device);
+                deviceList.appendChild(card);
+            });
+        }
+
+        // Show results
+        resultsDiv.classList.remove('hidden');
+        status.textContent = `Scan complete! Found ${realDevices.length} device${realDevices.length !== 1 ? 's' : ''}`;
+
+    } catch (error) {
+        console.error('Bluetooth scan failed:', error);
+        status.textContent = `Scan failed: ${error}`;
+        showStatus(`Bluetooth scan failed: ${error}`, 'error');
+    } finally {
+        // Reset button
+        button.disabled = false;
+        button.textContent = '🔍 Scan for Devices';
+    }
+}
+
+function createBluetoothDeviceCard(device) {
+    const card = document.createElement('div');
+    card.className = 'rounded-2xl bg-white/10 p-4 space-y-3 border border-white/10 hover:border-white/30 transition';
+
+    const rssi = device.rssi !== null && device.rssi !== undefined ? device.rssi : null;
+    const rssiColor = rssi ? getSignalStrengthColor(rssi) : 'text-gray-400';
+    const rssiLabel = rssi ? getSignalStrengthLabel(rssi) : 'Unknown';
+
+    card.innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+                <div class="font-semibold text-white truncate">
+                    ${device.name || 'Unknown Device'}
+                </div>
+                <div class="mt-1 font-mono text-xs text-indigo-200/80 truncate">
+                    ${device.address}
+                </div>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+                <div class="font-mono text-lg font-bold ${rssiColor}">
+                    ${rssi !== null ? rssi + ' dBm' : '—'}
+                </div>
+                <div class="text-xs ${rssiColor}">
+                    ${rssiLabel}
+                </div>
+            </div>
+        </div>
+        ${device.manufacturer_data && device.manufacturer_data.length > 0 ? `
+            <details class="text-xs">
+                <summary class="cursor-pointer text-indigo-200/70 hover:text-indigo-200">Manufacturer Data</summary>
+                <div class="mt-2 font-mono text-indigo-100/60 break-all">
+                    ${device.manufacturer_data.map(m => `ID ${m.id}: ${m.data}`).join('<br>')}
+                </div>
+            </details>
+        ` : ''}
+        <button
+            onclick="copyToClipboard('${device.address}')"
+            class="w-full rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/20">
+            📋 Copy Address
+        </button>
+    `;
+
+    return card;
+}
+
+function getSignalStrengthColor(rssi) {
+    if (rssi >= -50) return 'text-emerald-400';
+    if (rssi >= -70) return 'text-yellow-400';
+    if (rssi >= -80) return 'text-orange-400';
+    return 'text-red-400';
+}
+
+function getSignalStrengthLabel(rssi) {
+    if (rssi >= -50) return '🟢 Very Strong';
+    if (rssi >= -70) return '🟡 Good';
+    if (rssi >= -80) return '🟠 Fair';
+    return '🔴 Weak';
+}
+
+async function copyToClipboard(text) {
+    try {
+        if (navigator.clipboard) {
+            await navigator.clipboard.writeText(text);
+            showStatus('Address copied to clipboard!', 'success');
+        } else {
+            // Fallback for older browsers
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showStatus('Address copied!', 'success');
+        }
+    } catch (error) {
+        console.error('Failed to copy:', error);
+        showStatus(`Failed to copy: ${error}`, 'error');
+    }
+}
+
 function updateRoomUI() {
     const room = getCurrentRoom();
     const roomIndicator = document.getElementById('currentRoomIndicator');

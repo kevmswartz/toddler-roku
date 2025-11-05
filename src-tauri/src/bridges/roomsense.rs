@@ -4,7 +4,7 @@ use serde_json::{json, Value};
 #[cfg(feature = "ble-scan")]
 use btleplug::api::{Central, Manager as _, ScanFilter, Peripheral as _};
 #[cfg(feature = "ble-scan")]
-use btleplug::platform::{Manager, Peripheral};
+use btleplug::platform::Manager;
 #[cfg(feature = "ble-scan")]
 use std::time::Duration;
 

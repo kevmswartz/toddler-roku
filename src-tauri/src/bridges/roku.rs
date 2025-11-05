@@ -110,7 +110,7 @@ pub async fn discover_roku_devices(timeout_secs: Option<u64>) -> BridgeResult<Ve
 
         while start.elapsed() < timeout {
             match socket.recv_from(&mut buf) {
-                Ok((len, addr)) => {
+                Ok((len, _addr)) => {
                     let response = String::from_utf8_lossy(&buf[..len]);
 
                     // Parse SSDP response
