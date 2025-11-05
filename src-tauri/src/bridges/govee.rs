@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 const DEFAULT_UDP_PORT: u16 = 4003;
 const DEFAULT_TIMEOUT_MS: u64 = 1500;
+const GOVEE_API_BASE: &str = "https://developer-api.govee.com";
 
 #[derive(Default)]
 pub struct GoveeSender;
@@ -266,4 +267,133 @@ pub async fn get_status(host: &str, port: Option<u16>) -> BridgeResult<GoveeStat
     })
     .await
     .map_err(|err| BridgeError::Network(err.to_string()))?
+}
+
+/// Cloud HTTP client for Govee API
+#[derive(Default)]
+pub struct GoveeCloudClient {
+    client: reqwest::blocking::Client,
+}
+
+impl GoveeCloudClient {
+    /// Get devices from Govee cloud API
+    pub async fn get_devices(&self, api_key: String) -> BridgeResult<Value> {
+        let url = format!("{}/v1/devices", GOVEE_API_BASE);
+
+        spawn_blocking(move || -> BridgeResult<Value> {
+            let client = reqwest::blocking::Client::new();
+            let response = client
+                .get(&url)
+                .header("Govee-API-Key", api_key)
+                .timeout(Duration::from_secs(10))
+                .send()
+                .map_err(|e| BridgeError::Network(format!("Failed to fetch devices: {}", e)))?;
+
+            if !response.status().is_success() {
+                let status = response.status();
+                let error_text = response.text().unwrap_or_default();
+                return Err(BridgeError::Network(format!(
+                    "API returned error {}: {}",
+                    status, error_text
+                )));
+            }
+
+            let data: Value = response
+                .json()
+                .map_err(|e| BridgeError::Invalid(format!("Invalid JSON response: {}", e)))?;
+
+            Ok(data)
+        })
+        .await
+        .map_err(|err| BridgeError::Network(err.to_string()))?
+    }
+
+    /// Send control command to Govee cloud API
+    pub async fn send_command(
+        &self,
+        api_key: String,
+        device: String,
+        model: String,
+        cmd: Value,
+    ) -> BridgeResult<Value> {
+        let url = format!("{}/v1/devices/control", GOVEE_API_BASE);
+
+        let payload = json!({
+            "device": device,
+            "model": model,
+            "cmd": cmd
+        });
+
+        spawn_blocking(move || -> BridgeResult<Value> {
+            let client = reqwest::blocking::Client::new();
+            let response = client
+                .put(&url)
+                .header("Govee-API-Key", api_key)
+                .header("Content-Type", "application/json")
+                .timeout(Duration::from_secs(10))
+                .json(&payload)
+                .send()
+                .map_err(|e| BridgeError::Network(format!("Failed to send command: {}", e)))?;
+
+            let status = response.status();
+            let response_text = response
+                .text()
+                .map_err(|e| BridgeError::Network(format!("Failed to read response: {}", e)))?;
+
+            // Try to parse as JSON
+            let response_json: Value = serde_json::from_str(&response_text)
+                .unwrap_or_else(|_| json!({
+                    "raw_response": response_text,
+                    "status_code": status.as_u16()
+                }));
+
+            if !status.is_success() {
+                return Err(BridgeError::Network(format!(
+                    "API returned error {}: {}",
+                    status, serde_json::to_string(&response_json).unwrap_or_default()
+                )));
+            }
+
+            Ok(response_json)
+        })
+        .await
+        .map_err(|err| BridgeError::Network(err.to_string()))?
+    }
+
+    /// Get device state from Govee cloud API
+    pub async fn get_device_state(
+        &self,
+        api_key: String,
+        device: String,
+        model: String,
+    ) -> BridgeResult<Value> {
+        let url = format!("{}/v1/devices/state?device={}&model={}", GOVEE_API_BASE, device, model);
+
+        spawn_blocking(move || -> BridgeResult<Value> {
+            let client = reqwest::blocking::Client::new();
+            let response = client
+                .get(&url)
+                .header("Govee-API-Key", api_key)
+                .timeout(Duration::from_secs(10))
+                .send()
+                .map_err(|e| BridgeError::Network(format!("Failed to get device state: {}", e)))?;
+
+            if !response.status().is_success() {
+                let status = response.status();
+                let error_text = response.text().unwrap_or_default();
+                return Err(BridgeError::Network(format!(
+                    "API returned error {}: {}",
+                    status, error_text
+                )));
+            }
+
+            let data: Value = response
+                .json()
+                .map_err(|e| BridgeError::Invalid(format!("Invalid JSON response: {}", e)))?;
+
+            Ok(data)
+        })
+        .await
+        .map_err(|err| BridgeError::Network(err.to_string()))?
+    }
 }
