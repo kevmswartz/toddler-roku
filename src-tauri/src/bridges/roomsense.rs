@@ -1,4 +1,4 @@
-use crate::error::{BridgeError, BridgeResult};
+use crate::error::BridgeResult;
 use serde_json::{json, Value};
 
 /// Scan for nearby BLE devices and return their RSSI values
