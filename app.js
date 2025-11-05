@@ -1880,8 +1880,15 @@ async function scanBluetoothLE(timeoutMs) {
         let devices = [];
         let completed = false;
 
-        // Create a channel handler for receiving devices
-        const handleDevices = (deviceList) => {
+        // Check if Tauri API is available
+        if (!tauriBridge || !tauriBridge.core || !tauriBridge.core.Channel) {
+            reject(new Error('Tauri BLE API not available. Running in native mode?'));
+            return;
+        }
+
+        // Create a channel for receiving device updates
+        const onDevices = new tauriBridge.core.Channel();
+        onDevices.onmessage = (deviceList) => {
             if (!completed) {
                 devices = deviceList;
             }
@@ -1891,7 +1898,7 @@ async function scanBluetoothLE(timeoutMs) {
         tauriInvoke('plugin:blec|scan', {
             timeout: timeoutMs,
             allowIbeacons: false,
-            onDevices: handleDevices
+            onDevices: onDevices
         })
         .then(() => {
             completed = true;
@@ -1900,7 +1907,7 @@ async function scanBluetoothLE(timeoutMs) {
                 address: d.address,
                 name: d.name || 'Unknown',
                 rssi: d.rssi,
-                manufacturer_data: Object.entries(d.manufacturer_data || {}).map(([id, data]) => ({
+                manufacturer_data: Object.entries(d.manufacturerData || d.manufacturer_data || {}).map(([id, data]) => ({
                     id: parseInt(id),
                     data: data.map(b => b.toString(16).padStart(2, '0')).join('')
                 })),
