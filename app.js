@@ -177,8 +177,20 @@ async function loadTabsConfig() {
     // since tabsConfig is populated by applyToddlerContent()
 }
 
-function isOnline() {
-    // Check if device is connected to a network
+async function isOnWifi() {
+    // In native mode, use the Tauri command to check WiFi (not mobile data)
+    if (isNativeRuntime && tauriInvoke) {
+        try {
+            const connected = await tauriInvoke('is_wifi_connected');
+            return connected === true;
+        } catch (error) {
+            console.warn('Failed to check WiFi status:', error);
+            // Fallback to basic online check
+            return typeof navigator !== 'undefined' && navigator.onLine !== false;
+        }
+    }
+
+    // In browser mode, fall back to basic online check
     return typeof navigator !== 'undefined' && navigator.onLine !== false;
 }
 
@@ -204,8 +216,16 @@ function getTabsForRendering() {
         ];
     }
 
-    // Filter out tabs that require WiFi when offline
-    if (!isOnline()) {
+    // Note: WiFi check is async, filtering happens in renderBottomTabs()
+    return tabs;
+}
+
+async function getTabsForRenderingFiltered() {
+    let tabs = getTabsForRendering();
+
+    // Filter out tabs that require WiFi when not on WiFi
+    const onWifi = await isOnWifi();
+    if (!onWifi) {
         tabs = tabs.filter(tab => tab.id !== 'apps');
     }
 
@@ -264,12 +284,12 @@ function setActiveTab(tabId) {
     applyTabVisibility(desired, tabs);
 }
 
-function renderBottomTabs() {
+async function renderBottomTabs() {
     const nav = document.getElementById('bottomTabNav');
     const buttonsContainer = document.getElementById('bottomTabButtons');
     if (!nav || !buttonsContainer) return;
 
-    const tabs = getTabsForRendering();
+    const tabs = await getTabsForRenderingFiltered();
     nav.classList.remove('hidden');
     buttonsContainer.innerHTML = '';
 
@@ -752,28 +772,29 @@ window.addEventListener('DOMContentLoaded', async () => {
     initGoveeControls();
     await loadToddlerContent();
 
-    // Run device discovery at startup only if online
-    if (isNativeRuntime && isOnline()) {
+    // Run device discovery at startup only if on WiFi
+    if (isNativeRuntime && await isOnWifi()) {
         discoverAndRegisterAllDevices().catch(err => {
             console.warn('Startup discovery failed:', err);
         });
     }
 
     // Listen for network connectivity changes
-    window.addEventListener('online', () => {
-        console.log('Network connection restored');
-        renderBottomTabs(); // Re-render tabs to show Roku tab
-        // Optionally trigger device discovery when coming back online
-        if (isNativeRuntime) {
+    window.addEventListener('online', async () => {
+        console.log('Network connection changed');
+        await renderBottomTabs(); // Re-render tabs (show Roku tab if on WiFi)
+        // Trigger device discovery if on WiFi
+        if (isNativeRuntime && await isOnWifi()) {
+            console.log('WiFi detected, running device discovery');
             discoverAndRegisterAllDevices().catch(err => {
                 console.warn('Online discovery failed:', err);
             });
         }
     });
 
-    window.addEventListener('offline', () => {
+    window.addEventListener('offline', async () => {
         console.log('Network connection lost');
-        renderBottomTabs(); // Re-render tabs to hide Roku tab
+        await renderBottomTabs(); // Re-render tabs to hide Roku tab
     });
 
     const savedIp = localStorage.getItem(STORAGE_KEY);
@@ -2763,8 +2784,8 @@ async function goveeDiscoverDevices(timeoutMs = 3000) {
         return;
     }
 
-    if (!isOnline()) {
-        setGoveeStatus('No network connection. Please connect to WiFi to discover Govee devices.', 'error');
+    if (!await isOnWifi()) {
+        setGoveeStatus('No WiFi connection. Please connect to WiFi (not mobile data) to discover Govee devices.', 'error');
         return;
     }
 
@@ -3869,8 +3890,8 @@ async function discoverRoku() {
         return;
     }
 
-    if (!isOnline()) {
-        showStatus('No network connection. Please connect to WiFi to discover Roku devices.', 'error');
+    if (!await isOnWifi()) {
+        showStatus('No WiFi connection. Please connect to WiFi (not mobile data) to discover Roku devices.', 'error');
         return;
     }
 
