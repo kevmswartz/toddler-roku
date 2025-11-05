@@ -340,6 +340,7 @@ function setToddlerContentPassphrase(passphrase) {
         localStorage.removeItem(TODDLER_CONTENT_PASSPHRASE_KEY);
     }
     updateToddlerContentSourceInfo();
+    updateCloudEditorVisibility();
 }
 
 function validatePassphrase(passphrase) {
@@ -396,6 +397,144 @@ function updateToddlerContentCacheMeta() {
 function setToddlerContentSource(source) {
     toddlerContentSource = source || { type: 'unknown' };
     updateToddlerContentSourceInfo();
+    updateCloudEditorVisibility();
+}
+
+function updateCloudEditorVisibility() {
+    const editor = document.getElementById('cloudConfigEditor');
+    const passphrase = getToddlerContentPassphrase().trim();
+
+    if (editor) {
+        // Show editor only if passphrase is set
+        editor.classList.toggle('hidden', !passphrase);
+    }
+}
+
+let currentLoadedConfig = null; // Store the current config for editing
+
+function loadCurrentConfigIntoEditor() {
+    const textarea = document.getElementById('cloudConfigJson');
+    if (!textarea) return;
+
+    // Use the last loaded config, or try to get from toddlerSpecialButtons
+    let config;
+    if (currentLoadedConfig) {
+        config = currentLoadedConfig;
+    } else {
+        // Rebuild config from current state
+        config = {
+            tabs: [
+                {
+                    id: 'remote',
+                    label: 'Remote',
+                    icon: '🎮',
+                    buttons: toddlerSpecialButtons.filter(b => b.category === 'kidMode-remote' || !b.category)
+                },
+                {
+                    id: 'apps',
+                    label: 'Roku',
+                    icon: '📺',
+                    buttons: toddlerSpecialButtons.filter(b => b.category === 'kidMode-content'),
+                    quickLaunch: toddlerQuickLaunchItems
+                },
+                {
+                    id: 'lights',
+                    label: 'Lights',
+                    icon: '💡',
+                    buttons: toddlerSpecialButtons.filter(b => b.category === 'lights')
+                },
+                {
+                    id: 'magic',
+                    label: 'Magic Time',
+                    icon: '⏱️',
+                    buttons: toddlerSpecialButtons.filter(b => b.category === 'magic')
+                }
+            ].filter(tab => tab.buttons.length > 0 || tab.quickLaunch?.length > 0),
+            version: '1.0.0',
+            lastUpdated: new Date().toISOString()
+        };
+    }
+
+    textarea.value = JSON.stringify(config, null, 2);
+    showStatus('Current config loaded into editor. Make your changes and click Save to Cloud.', 'info');
+}
+
+function validateConfigJson() {
+    const textarea = document.getElementById('cloudConfigJson');
+    if (!textarea) return false;
+
+    try {
+        const config = JSON.parse(textarea.value);
+
+        // Basic validation
+        if (!config.tabs || !Array.isArray(config.tabs)) {
+            showStatus('Invalid config: must have a "tabs" array.', 'error');
+            return false;
+        }
+
+        showStatus(`Valid JSON! Found ${config.tabs.length} tabs.`, 'success');
+        return true;
+    } catch (error) {
+        showStatus(`Invalid JSON: ${error.message}`, 'error');
+        return false;
+    }
+}
+
+async function saveConfigToCloud() {
+    const textarea = document.getElementById('cloudConfigJson');
+    const passphrase = getToddlerContentPassphrase().trim();
+
+    if (!passphrase) {
+        showStatus('No passphrase set. Enter a passphrase first.', 'error');
+        return;
+    }
+
+    if (!textarea || !textarea.value.trim()) {
+        showStatus('Editor is empty. Load current config or paste your JSON first.', 'error');
+        return;
+    }
+
+    // Validate JSON first
+    let config;
+    try {
+        config = JSON.parse(textarea.value);
+    } catch (error) {
+        showStatus(`Invalid JSON: ${error.message}`, 'error');
+        return;
+    }
+
+    // Basic validation
+    if (!config.tabs || !Array.isArray(config.tabs)) {
+        showStatus('Invalid config: must have a "tabs" array.', 'error');
+        return;
+    }
+
+    try {
+        showStatus('Saving to cloud...', 'info');
+
+        const response = await fetch(NETLIFY_CONFIG_API_BASE, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${passphrase}`
+            },
+            body: JSON.stringify(config)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || `HTTP ${response.status}`);
+        }
+
+        showStatus('Config saved to cloud! Refreshing...', 'success');
+
+        // Reload from cloud to verify
+        await loadToddlerContent({ forceRefresh: true });
+    } catch (error) {
+        console.error('Failed to save config to cloud:', error);
+        showStatus(`Failed to save: ${error.message}`, 'error');
+    }
 }
 
 function normalizeQuickLaunchItem(item) {
@@ -426,6 +565,9 @@ function normalizeQuickLaunchItem(item) {
 }
 
 function applyToddlerContent(data) {
+    // Store the raw config for editing
+    currentLoadedConfig = data;
+
     // Extract tabs and buttons from the unified config structure
     const tabs = Array.isArray(data?.tabs) ? data.tabs : [];
 
@@ -788,6 +930,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     initTabControls();
     initMagicControls();
     updateToddlerContentCacheMeta();
+    updateCloudEditorVisibility();
     void loadButtonTypeCatalog();
     initGoveeControls();
     await loadToddlerContent();
