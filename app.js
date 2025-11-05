@@ -1874,6 +1874,56 @@ function setCurrentRoom(roomId, source = 'manual') {
     }));
 }
 
+async function scanBluetoothLE(timeoutMs) {
+    // Use tauri-plugin-blec for BLE scanning (better Android support)
+    return new Promise((resolve, reject) => {
+        let devices = [];
+        let completed = false;
+
+        // Create a channel handler for receiving devices
+        const handleDevices = (deviceList) => {
+            if (!completed) {
+                devices = deviceList;
+            }
+        };
+
+        // Start the scan
+        tauriInvoke('plugin:blec|scan', {
+            timeout: timeoutMs,
+            allowIbeacons: false,
+            handler: handleDevices
+        })
+        .then(() => {
+            completed = true;
+            // Convert plugin format to our format
+            const convertedDevices = devices.map(d => ({
+                address: d.address,
+                name: d.name || 'Unknown',
+                rssi: d.rssi,
+                manufacturer_data: Object.entries(d.manufacturer_data || {}).map(([id, data]) => ({
+                    id: parseInt(id),
+                    data: data.map(b => b.toString(16).padStart(2, '0')).join('')
+                })),
+                type: 'ble'
+            }));
+            resolve(convertedDevices);
+        })
+        .catch((error) => {
+            completed = true;
+            console.error('BLE scan error:', error);
+            reject(error);
+        });
+
+        // Timeout fallback
+        setTimeout(() => {
+            if (!completed) {
+                completed = true;
+                resolve(devices);
+            }
+        }, timeoutMs + 1000);
+    });
+}
+
 async function scanForRoomDetection() {
     if (!isNativeRuntime || !tauriInvoke) {
         console.log('📍 Room detection requires native runtime');
@@ -1882,7 +1932,7 @@ async function scanForRoomDetection() {
 
     try {
         const timeout = roomConfig?.settings?.scanInterval || 5000;
-        const devices = await tauriInvoke('roomsense_scan', { timeout_ms: timeout });
+        const devices = await scanBluetoothLE(timeout);
 
         console.log(`📍 Scanned ${devices.length} nearby BLE devices`);
 
@@ -2063,7 +2113,7 @@ async function scanBluetoothDevices() {
     resultsDiv.classList.add('hidden');
 
     try {
-        const devices = await tauriInvoke('roomsense_scan', { timeout_ms: 5000 });
+        const devices = await scanBluetoothLE(5000);
 
         console.log(`📡 Bluetooth scan complete: ${devices.length} devices found`, devices);
 

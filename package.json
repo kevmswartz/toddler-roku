@@ -10,6 +10,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@mnlphlp/plugin-blec": "^0.8.0",
     "@tauri-apps/api": "^2.8.0",
     "canvas-confetti": "^1.9.3"
   },

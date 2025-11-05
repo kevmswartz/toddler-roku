@@ -177,6 +177,192 @@
       "description": "Permission identifier",
       "oneOf": [
         {
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-scan`\n- `allow-stop-scan`\n- `allow-connect`\n- `allow-disconnect`\n- `allow-connection-state`\n- `allow-send`\n- `allow-recv`\n- `allow-send-string`\n- `allow-recv-string`\n- `allow-subscribe`\n- `allow-subscribe-string`\n- `allow-unsubscribe`\n- `allow-scanning-state`",
+          "type": "string",
+          "const": "blec:default",
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-scan`\n- `allow-stop-scan`\n- `allow-connect`\n- `allow-disconnect`\n- `allow-connection-state`\n- `allow-send`\n- `allow-recv`\n- `allow-send-string`\n- `allow-recv-string`\n- `allow-subscribe`\n- `allow-subscribe-string`\n- `allow-unsubscribe`\n- `allow-scanning-state`"
+        },
+        {
+          "description": "Enables the check_permissions command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:allow-check-permissions",
+          "markdownDescription": "Enables the check_permissions command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the connect command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:allow-connect",
+          "markdownDescription": "Enables the connect command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the connection_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:allow-connection-state",
+          "markdownDescription": "Enables the connection_state command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the disconnect command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:allow-disconnect",
+          "markdownDescription": "Enables the disconnect command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the ping command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:allow-ping",
+          "markdownDescription": "Enables the ping command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the recv command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:allow-recv",
+          "markdownDescription": "Enables the recv command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the recv_string command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:allow-recv-string",
+          "markdownDescription": "Enables the recv_string command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the scan command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:allow-scan",
+          "markdownDescription": "Enables the scan command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the scanning_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:allow-scanning-state",
+          "markdownDescription": "Enables the scanning_state command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the send command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:allow-send",
+          "markdownDescription": "Enables the send command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the send_string command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:allow-send-string",
+          "markdownDescription": "Enables the send_string command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the stop_scan command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:allow-stop-scan",
+          "markdownDescription": "Enables the stop_scan command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the subscribe command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:allow-subscribe",
+          "markdownDescription": "Enables the subscribe command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the subscribe_string command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:allow-subscribe-string",
+          "markdownDescription": "Enables the subscribe_string command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the unsubscribe command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:allow-unsubscribe",
+          "markdownDescription": "Enables the unsubscribe command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the check_permissions command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:deny-check-permissions",
+          "markdownDescription": "Denies the check_permissions command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the connect command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:deny-connect",
+          "markdownDescription": "Denies the connect command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the connection_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:deny-connection-state",
+          "markdownDescription": "Denies the connection_state command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the disconnect command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:deny-disconnect",
+          "markdownDescription": "Denies the disconnect command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ping command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:deny-ping",
+          "markdownDescription": "Denies the ping command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the recv command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:deny-recv",
+          "markdownDescription": "Denies the recv command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the recv_string command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:deny-recv-string",
+          "markdownDescription": "Denies the recv_string command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the scan command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:deny-scan",
+          "markdownDescription": "Denies the scan command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the scanning_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:deny-scanning-state",
+          "markdownDescription": "Denies the scanning_state command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the send command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:deny-send",
+          "markdownDescription": "Denies the send command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the send_string command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:deny-send-string",
+          "markdownDescription": "Denies the send_string command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the stop_scan command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:deny-stop-scan",
+          "markdownDescription": "Denies the stop_scan command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the subscribe command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:deny-subscribe",
+          "markdownDescription": "Denies the subscribe command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the subscribe_string command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:deny-subscribe-string",
+          "markdownDescription": "Denies the subscribe_string command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the unsubscribe command without any pre-configured scope.",
+          "type": "string",
+          "const": "blec:deny-unsubscribe",
+          "markdownDescription": "Denies the unsubscribe command without any pre-configured scope."
+        },
+        {
           "description": "Default core plugins set.\n#### This default permission set includes:\n\n- `core:path:default`\n- `core:event:default`\n- `core:window:default`\n- `core:webview:default`\n- `core:app:default`\n- `core:image:default`\n- `core:resources:default`\n- `core:menu:default`\n- `core:tray:default`",
           "type": "string",
           "const": "core:default",
