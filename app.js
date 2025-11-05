@@ -20,7 +20,8 @@ const CONFIG_BASE_PATH = 'config';
 const APP_CONFIG_PATH = `${CONFIG_BASE_PATH}/app-config.json`;
 const APP_CONFIG_CUSTOM_PATH = `${CONFIG_BASE_PATH}/app-config.custom.json`;
 const BUTTON_TYPES_CONFIG_PATH = `${CONFIG_BASE_PATH}/button-types.json`;
-const TODDLER_CONTENT_URL_KEY = 'toddler_content_url';
+const TODDLER_CONTENT_PASSPHRASE_KEY = 'toddler_content_passphrase';
+const NETLIFY_CONFIG_API_BASE = 'https://toddler-phone-control.netlify.app/api/config';
 const TIMER_CIRCUMFERENCE = 2 * Math.PI * 54;
 const GOVEE_IP_STORAGE_KEY = 'govee_ip';
 const GOVEE_PORT_STORAGE_KEY = 'govee_port';
@@ -328,32 +329,51 @@ function initTabControls() {
     renderBottomTabs();
 }
 
-function getToddlerContentUrl() {
-    return localStorage.getItem(TODDLER_CONTENT_URL_KEY) || '';
+function getToddlerContentPassphrase() {
+    return localStorage.getItem(TODDLER_CONTENT_PASSPHRASE_KEY) || '';
 }
 
-function setToddlerContentUrl(url) {
-    if (url) {
-        localStorage.setItem(TODDLER_CONTENT_URL_KEY, url);
+function setToddlerContentPassphrase(passphrase) {
+    if (passphrase) {
+        localStorage.setItem(TODDLER_CONTENT_PASSPHRASE_KEY, passphrase);
     } else {
-        localStorage.removeItem(TODDLER_CONTENT_URL_KEY);
+        localStorage.removeItem(TODDLER_CONTENT_PASSPHRASE_KEY);
     }
     updateToddlerContentSourceInfo();
 }
 
+function validatePassphrase(passphrase) {
+    const trimmed = passphrase.trim();
+    if (!trimmed) return { valid: false, error: 'Passphrase cannot be empty' };
+
+    const words = trimmed.split(/\s+/);
+    if (words.length < 5) {
+        return { valid: false, error: `Passphrase must have at least 5 words (found ${words.length})` };
+    }
+
+    return { valid: true };
+}
+
+function buildCloudConfigUrl(passphrase) {
+    if (!passphrase) return null;
+    const encoded = encodeURIComponent(passphrase);
+    return `${NETLIFY_CONFIG_API_BASE}?passphrase=${encoded}`;
+}
+
 function updateToddlerContentSourceInfo() {
     const info = document.getElementById('toddlerContentCacheInfo');
-    const urlInput = document.getElementById('toddlerContentUrl');
-    const url = getToddlerContentUrl().trim();
+    const passphraseInput = document.getElementById('toddlerContentPassphrase');
+    const passphrase = getToddlerContentPassphrase().trim();
 
-    if (urlInput && urlInput !== document.activeElement) {
-        urlInput.value = url;
+    if (passphraseInput && passphraseInput !== document.activeElement) {
+        passphraseInput.value = passphrase;
     }
 
     if (!info) return;
 
-    if (url) {
-        info.textContent = `Source: ${url} (remote URL, always fetches fresh)`;
+    if (passphrase) {
+        const wordCount = passphrase.split(/\s+/).length;
+        info.textContent = `Using cloud config with your ${wordCount}-word passphrase. Always fetches fresh from Netlify.`;
         return;
     }
 
@@ -364,7 +384,7 @@ function updateToddlerContentSourceInfo() {
     } else if (toddlerContentSource?.type === 'empty') {
         info.textContent = 'No kid-mode buttons available. Check your config files.';
     } else {
-        info.textContent = 'Kid-mode button source not set yet.';
+        info.textContent = 'No passphrase set. Using bundled default buttons.';
     }
 }
 
@@ -578,25 +598,25 @@ function renderButtonTypeCatalog(catalog) {
     container.classList.toggle('hidden', !buttonTypes.length && !providers.length);
 }
 
-async function saveToddlerContentUrl() {
-    const input = document.getElementById('toddlerContentUrl');
+async function saveToddlerContentPassphrase() {
+    const input = document.getElementById('toddlerContentPassphrase');
     if (!input) return;
 
-    const rawUrl = input.value.trim();
-    if (rawUrl) {
-        try {
-            // Validate URL format
-            new URL(rawUrl);
-        } catch (error) {
-            showStatus('Enter a valid URL for kid-mode buttons.', 'error');
+    const rawPassphrase = input.value.trim();
+    if (rawPassphrase) {
+        // Validate passphrase
+        const validation = validatePassphrase(rawPassphrase);
+        if (!validation.valid) {
+            showStatus(validation.error, 'error');
             return;
         }
-        setToddlerContentUrl(rawUrl);
+        setToddlerContentPassphrase(rawPassphrase);
         await loadToddlerContent({ forceRefresh: true });
+        showStatus(`Passphrase saved! Loading config from cloud...`, 'success');
     } else {
-        setToddlerContentUrl('');
+        setToddlerContentPassphrase('');
         await loadToddlerContent({ forceRefresh: true });
-        showStatus('Kid-mode button URL cleared. Using bundled defaults.', 'info');
+        showStatus('Passphrase cleared. Using bundled defaults.', 'info');
     }
 }
 
@@ -604,9 +624,9 @@ async function refreshToddlerContent() {
     await loadToddlerContent({ forceRefresh: true });
 }
 
-function clearToddlerContentCache() {
-    // No cache to clear - just reload content
-    showStatus('Reloading kid-mode buttons...', 'info');
+function clearToddlerContentPassphrase() {
+    setToddlerContentPassphrase('');
+    showStatus('Reloading with bundled buttons...', 'info');
     loadToddlerContent({ forceRefresh: true });
 }
 
@@ -825,20 +845,23 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadToddlerContent({ forceRefresh = false } = {}) {
-    const remoteUrl = getToddlerContentUrl().trim();
+    const passphrase = getToddlerContentPassphrase().trim();
 
-    // If remote URL is configured, try fetching from it (always fresh, no cache)
-    if (remoteUrl) {
-        try {
-            const remoteData = await fetchToddlerContentFromUrl(remoteUrl);
-            setToddlerContentSource({ type: 'remote', url: remoteUrl });
-            applyToddlerContent(remoteData);
-            showStatus('Kid-mode buttons loaded from remote URL.', 'success');
-            return;
-        } catch (error) {
-            console.error('Failed to fetch remote toddler content:', error);
-            showStatus('Remote URL failed. Falling back to local config.', 'error');
-            // Fall through to local loading
+    // If passphrase is configured, try fetching from cloud (always fresh, no cache)
+    if (passphrase) {
+        const cloudUrl = buildCloudConfigUrl(passphrase);
+        if (cloudUrl) {
+            try {
+                const remoteData = await fetchToddlerContentFromUrl(cloudUrl);
+                setToddlerContentSource({ type: 'cloud', passphrase: '***' }); // Don't expose passphrase
+                applyToddlerContent(remoteData);
+                showStatus('Kid-mode buttons loaded from cloud.', 'success');
+                return;
+            } catch (error) {
+                console.error('Failed to fetch cloud toddler content:', error);
+                showStatus('Cloud config failed. Falling back to local config.', 'error');
+                // Fall through to local loading
+            }
         }
     }
 
@@ -847,8 +870,8 @@ async function loadToddlerContent({ forceRefresh = false } = {}) {
     if (localContent) {
         setToddlerContentSource(localContent.source);
         applyToddlerContent(localContent.data);
-        if (!remoteUrl) {
-            // No remote URL configured - this is the primary source
+        if (!passphrase) {
+            // No passphrase configured - this is the primary source
             if (localContent.source.type === 'custom') {
                 showStatus('Kid-mode buttons loaded from local override.', 'info');
             } else {

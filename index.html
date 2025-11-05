@@ -366,36 +366,37 @@
         <section id="contentSourceSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h2 class="text-2xl font-bold text-white">Kid Button Source</h2>
-                    <p class="mt-1 text-sm text-indigo-100">Pull toddler buttons from a remote JSON file and keep a local cache for offline use.</p>
+                    <h2 class="text-2xl font-bold text-white">Kid Button Cloud Config</h2>
+                    <p class="mt-1 text-sm text-indigo-100">Set your personal passphrase to load custom button layouts from the cloud.</p>
                 </div>
             </div>
 
             <div class="mt-6 grid gap-4 md:grid-cols-[2fr,1fr] md:items-start">
                 <label class="flex flex-col gap-3">
-                    <span class="text-sm font-semibold uppercase tracking-wide text-indigo-200">Remote JSON URL</span>
+                    <span class="text-sm font-semibold uppercase tracking-wide text-indigo-200">Config Passphrase</span>
                     <input
-                        id="toddlerContentUrl"
-                        type="url"
-                        inputmode="url"
-                        placeholder="https://raw.githubusercontent.com/username/repo/main/toddler-content.json"
+                        id="toddlerContentPassphrase"
+                        type="text"
+                        inputmode="text"
+                        placeholder="blue mountain coffee morning sunshine"
                         class="w-full rounded-2xl border border-white/20 bg-white/15 px-5 py-4 text-sm font-semibold text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50" />
+                    <span class="text-xs text-indigo-200/70">Enter at least 5 words separated by spaces. Each unique passphrase stores a separate configuration.</span>
                 </label>
                 <div class="flex flex-col gap-3 md:items-end">
                     <button
-                        onclick="saveToddlerContentUrl()"
+                        onclick="saveToddlerContentPassphrase()"
                         class="rounded-2xl bg-white/20 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/30 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/50">
-                        Save URL &amp; Refresh
+                        Save Passphrase
                     </button>
                     <button
                         onclick="refreshToddlerContent()"
                         class="rounded-2xl bg-white/15 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
-                        Refresh from Remote
+                        Refresh from Cloud
                     </button>
                     <button
-                        onclick="clearToddlerContentCache()"
+                        onclick="clearToddlerContentPassphrase()"
                         class="rounded-2xl bg-rose-500/30 px-5 py-3 text-sm font-semibold text-rose-50 shadow-lg transition hover:bg-rose-500/40 focus:outline-none focus:ring-2 focus:ring-rose-200/60">
-                        Clear Cached Copy
+                        Clear Passphrase
                     </button>
                 </div>
             </div>
