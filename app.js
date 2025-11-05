@@ -1889,12 +1889,15 @@ async function scanBluetoothLE(timeoutMs) {
         // Create a channel for receiving device updates
         const onDevices = new tauriBridge.core.Channel();
         onDevices.onmessage = (deviceList) => {
+            console.log('BLE scan channel message received:', deviceList);
             if (!completed) {
                 devices = deviceList;
+                console.log('Updated devices array, now has:', devices.length, 'devices');
             }
         };
 
         // Start the scan
+        console.log('Starting BLE scan with timeout:', timeoutMs);
         tauriInvoke('plugin:blec|scan', {
             timeout: timeoutMs,
             allowIbeacons: false,
@@ -1902,6 +1905,9 @@ async function scanBluetoothLE(timeoutMs) {
         })
         .then(() => {
             completed = true;
+            console.log('BLE scan completed. Devices array has:', devices.length, 'devices');
+            console.log('Raw devices:', devices);
+
             // Convert plugin format to our format
             const convertedDevices = devices.map(d => ({
                 address: d.address,
@@ -1913,6 +1919,7 @@ async function scanBluetoothLE(timeoutMs) {
                 })),
                 type: 'ble'
             }));
+            console.log('Converted devices:', convertedDevices);
             resolve(convertedDevices);
         })
         .catch((error) => {
