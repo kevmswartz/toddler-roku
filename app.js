@@ -1094,13 +1094,28 @@ function renderLightsButtons(buttons = []) {
 
     column.innerHTML = '';
 
-    if (buttons.length === 0) {
+    // Filter buttons by current room
+    const activeRoomId = getCurrentRoom();
+    const filteredButtons = buttons.filter(config => {
+        // If no rooms specified, show in all rooms
+        if (!config.rooms || config.rooms.length === 0) {
+            return true;
+        }
+        // If no active room (showing all rooms), show all buttons
+        if (!activeRoomId) {
+            return true;
+        }
+        // Otherwise, only show if current room is in the button's rooms array
+        return config.rooms.includes(activeRoomId);
+    });
+
+    if (filteredButtons.length === 0) {
         const emptyState = document.createElement('div');
         emptyState.className = 'col-span-full rounded-3xl bg-white/10 px-6 py-8 text-center text-lg font-semibold text-indigo-100';
-        emptyState.textContent = 'No light buttons configured yet.';
+        emptyState.textContent = activeRoomId ? 'No lights available in this room.' : 'No light buttons configured yet.';
         column.appendChild(emptyState);
     } else {
-        buttons.forEach(config => {
+        filteredButtons.forEach(config => {
             const element = createQuickButtonElement(config);
             if (element) {
                 column.appendChild(element);
@@ -2426,26 +2441,31 @@ async function manuallyLocateRoom() {
 
 function filterControlsByRoom() {
     // Filter buttons/controls to show only those relevant to current room
-    // This will be implemented when we add room assignments to buttons
 
     const room = getCurrentRoom();
 
-    if (!room || !roomConfig) {
-        // Show all controls if no room selected
+    if (!roomConfig) {
         return;
     }
 
-    const roomData = roomConfig.rooms.find(r => r.id === room);
-    if (!roomData) {
-        return;
+    if (room) {
+        const roomData = roomConfig.rooms.find(r => r.id === room);
+        if (roomData) {
+            console.log(`🔍 Filtering controls for room: ${roomData.name}`);
+            console.log(`  Roku devices:`, roomData.devices?.roku || []);
+            console.log(`  Govee devices:`, roomData.devices?.govee || []);
+        }
+    } else {
+        console.log(`🔍 Showing all controls (no room selected)`);
     }
 
-    console.log(`🔍 Filtering controls for room: ${roomData.name}`);
-
-    // TODO: Implement actual filtering logic
-    // For now, just log which devices belong to this room
-    console.log(`  Roku devices:`, roomData.devices?.roku || []);
-    console.log(`  Govee devices:`, roomData.devices?.govee || []);
+    // Re-render lights buttons with room filtering
+    if (tabsConfig && Array.isArray(tabsConfig.tabs)) {
+        const lightsTab = tabsConfig.tabs.find(tab => tab.id === 'lights');
+        if (lightsTab && Array.isArray(lightsTab.buttons)) {
+            renderLightsButtons(lightsTab.buttons);
+        }
+    }
 }
 
 // Bluetooth Scanner UI Functions
