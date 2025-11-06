@@ -1,14 +1,34 @@
 import { getStore } from "@netlify/blobs";
 
 /**
+ * CORS headers to include in all responses
+ */
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization"
+};
+
+/**
  * Netlify Function to list all stored configurations
  * GET /api/config-list - Returns list of all config keys and metadata
  */
 export default async (req, context) => {
+  // Handle OPTIONS for CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: CORS_HEADERS
+    });
+  }
+
   if (req.method !== "GET") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
-      headers: { "Content-Type": "application/json" }
+      headers: {
+        "Content-Type": "application/json",
+        ...CORS_HEADERS
+      }
     });
   }
 
@@ -39,7 +59,8 @@ export default async (req, context) => {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "no-cache"
+        "Cache-Control": "no-cache",
+        ...CORS_HEADERS
       }
     });
   } catch (error) {
@@ -48,7 +69,10 @@ export default async (req, context) => {
       error: error.message
     }), {
       status: 500,
-      headers: { "Content-Type": "application/json" }
+      headers: {
+        "Content-Type": "application/json",
+        ...CORS_HEADERS
+      }
     });
   }
 };
