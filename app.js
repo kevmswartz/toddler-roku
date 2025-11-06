@@ -2317,6 +2317,65 @@ function stopRoomDetection() {
     }
 }
 
+async function toggleRoomAutoDetect() {
+    if (!roomConfig) {
+        showStatus('No room configuration loaded', 'error');
+        return;
+    }
+
+    if (!isNativeRuntime) {
+        showStatus('Auto room detection requires the native app', 'error');
+        return;
+    }
+
+    // Toggle the setting
+    const newState = !roomConfig.settings.autoDetect;
+    roomConfig.settings.autoDetect = newState;
+    saveRoomConfig(roomConfig);
+
+    // Update UI
+    updateRoomUI();
+
+    // Start or stop detection based on new state
+    if (newState) {
+        startRoomDetection();
+        showStatus('🔍 Auto room detection enabled', 'success');
+    } else {
+        stopRoomDetection();
+        showStatus('🔍 Auto room detection disabled', 'success');
+    }
+}
+
+async function manuallyLocateRoom() {
+    if (!roomConfig || roomConfig.rooms.length === 0) {
+        showStatus('No rooms configured', 'error');
+        return;
+    }
+
+    if (!isNativeRuntime) {
+        showStatus('Room detection requires the native app', 'error');
+        return;
+    }
+
+    const button = document.getElementById('roomLocateButton');
+    if (button) {
+        button.disabled = true;
+    }
+
+    try {
+        showStatus('📡 Scanning for nearby devices...', 'info');
+        await performRoomDetection();
+        showStatus('✅ Room detection complete', 'success');
+    } catch (error) {
+        console.error('Manual room detection failed:', error);
+        showStatus('❌ Room detection failed', 'error');
+    } finally {
+        if (button) {
+            button.disabled = false;
+        }
+    }
+}
+
 function filterControlsByRoom() {
     // Filter buttons/controls to show only those relevant to current room
     // This will be implemented when we add room assignments to buttons
@@ -2489,23 +2548,51 @@ function updateRoomUI() {
     const roomIndicator = document.getElementById('currentRoomIndicator');
     const roomSelector = document.getElementById('roomSelector');
     const roomSelectorBar = document.getElementById('roomSelectorBar');
+    const autoDetectToggle = document.getElementById('roomAutoDetectToggle');
+    const autoDetectIcon = document.getElementById('roomAutoDetectIcon');
 
     if (!roomIndicator || !roomSelector) return;
 
-    // Populate room selector dropdown
+    // Populate room selector dropdown with inline styles for Windows compatibility
     if (roomConfig && roomConfig.rooms && roomConfig.rooms.length > 0) {
-        roomSelector.innerHTML = '<option value="">All Rooms</option>';
+        // Clear and add "All Rooms" option with inline styling
+        roomSelector.innerHTML = '';
+        const allRoomsOption = document.createElement('option');
+        allRoomsOption.value = '';
+        allRoomsOption.textContent = 'All Rooms';
+        allRoomsOption.style.backgroundColor = '#1e1b4b';
+        allRoomsOption.style.color = 'white';
+        roomSelector.appendChild(allRoomsOption);
 
+        // Add room options with inline styling
         roomConfig.rooms.forEach(r => {
             const option = document.createElement('option');
             option.value = r.id;
             option.textContent = `${r.emoji || '📍'} ${r.name}`;
+            option.style.backgroundColor = '#1e1b4b';
+            option.style.color = 'white';
             roomSelector.appendChild(option);
         });
 
         // Show room selector bar
         if (roomSelectorBar) {
             roomSelectorBar.classList.remove('hidden');
+        }
+    }
+
+    // Update auto-detect toggle button appearance
+    if (autoDetectToggle && autoDetectIcon) {
+        const isAutoDetectEnabled = roomConfig?.settings?.autoDetect || false;
+        if (isAutoDetectEnabled) {
+            autoDetectToggle.classList.add('bg-green-500/30', 'border-green-400/50');
+            autoDetectToggle.classList.remove('bg-white/10', 'border-white/30');
+            autoDetectIcon.textContent = '🔍✓';
+            autoDetectToggle.title = 'Auto room detection enabled (click to disable)';
+        } else {
+            autoDetectToggle.classList.remove('bg-green-500/30', 'border-green-400/50');
+            autoDetectToggle.classList.add('bg-white/10', 'border-white/30');
+            autoDetectIcon.textContent = '🔍';
+            autoDetectToggle.title = 'Auto room detection disabled (click to enable)';
         }
     }
 
