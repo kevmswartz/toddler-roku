@@ -2372,8 +2372,28 @@ async function manuallyLocateRoom() {
 
     try {
         showStatus('📡 Scanning for nearby devices...', 'info');
-        await performRoomDetection();
-        showStatus('✅ Room detection complete', 'success');
+
+        // Scan for devices (works regardless of autoDetect setting)
+        const devices = await scanForRoomDetection();
+        if (!devices) {
+            showStatus('❌ Failed to scan for devices', 'error');
+            return;
+        }
+
+        // Detect room from RSSI
+        const detectedRoomId = detectRoomFromRSSI(devices);
+
+        if (detectedRoomId) {
+            // Find room data to show the name
+            const roomData = roomConfig.rooms.find(r => r.id === detectedRoomId);
+            const roomName = roomData ? `${roomData.emoji || '📍'} ${roomData.name}` : detectedRoomId;
+
+            // Update current room
+            setCurrentRoom(detectedRoomId, 'manual');
+            showStatus(`✅ Found room: ${roomName}`, 'success');
+        } else {
+            showStatus('📍 No matching room found', 'info');
+        }
     } catch (error) {
         console.error('Manual room detection failed:', error);
         showStatus('❌ Room detection failed', 'error');
