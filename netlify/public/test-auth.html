@@ -222,17 +222,24 @@
             submitBtn.textContent = 'Testing...';
 
             try {
-                // Test authentication by attempting to fetch config
+                // Test authentication by attempting to fetch config with passphrase
+                // First, get the current config to test read access
+                const getResponse = await fetch(`/api/config?passphrase=${encodeURIComponent(passphrase)}`);
+
+                if (!getResponse.ok) {
+                    throw new Error(`Failed to fetch config: ${getResponse.statusText}`);
+                }
+
+                const currentConfig = await getResponse.json();
+
+                // Now test POST authentication with the current config
                 const response = await fetch('/api/config', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${passphrase}`
                     },
-                    body: JSON.stringify({
-                        // Empty update to test auth without changing anything
-                        _test: true
-                    })
+                    body: JSON.stringify(currentConfig)
                 });
 
                 const data = await response.json();
