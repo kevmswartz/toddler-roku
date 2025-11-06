@@ -11,6 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "@mnlphlp/plugin-blec": "^0.8.0",
+    "@netlify/blobs": "^10.3.3",
     "@tauri-apps/api": "^2.8.0",
     "canvas-confetti": "^1.9.3"
   },
