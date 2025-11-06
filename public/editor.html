@@ -853,7 +853,7 @@
                                 <div class="device-item">
                                     <div class="device-info">
                                         <span class="device-name">${device.name || 'Unnamed'}</span>
-                                        <span>${device.ip}:${device.port || 4003}</span>
+                                        <span>${device.mac ? device.mac + ' • ' : ''}${device.ip}:${device.port || 4003}</span>
                                     </div>
                                 </div>
                             `).join('') : '<div style="text-align: center; color: #999; padding: 10px;">No Govee devices</div>'}
@@ -899,6 +899,7 @@
             goveeContainer.innerHTML = (room.devices?.govee || []).map((device, i) => `
                 <div class="input-group" style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
                     <input type="text" placeholder="Name" value="${device.name || ''}" data-govee-index="${i}" data-field="name" style="margin-bottom: 8px;">
+                    <input type="text" placeholder="MAC Address (e.g., AA:BB:CC:DD:EE:FF)" value="${device.mac || ''}" data-govee-index="${i}" data-field="mac" style="margin-bottom: 8px;">
                     <input type="text" placeholder="IP Address" value="${device.ip || ''}" data-govee-index="${i}" data-field="ip" style="margin-bottom: 8px;">
                     <input type="number" placeholder="Port (default: 4003)" value="${device.port || 4003}" data-govee-index="${i}" data-field="port">
                     <button class="btn-danger btn-sm" onclick="removeGoveeDevice(${i})" style="margin-top: 8px;">Remove</button>
@@ -935,6 +936,7 @@
             div.style.cssText = 'background: white; padding: 10px; border-radius: 6px; margin-bottom: 10px;';
             div.innerHTML = `
                 <input type="text" placeholder="Name" data-govee-index="${index}" data-field="name" style="margin-bottom: 8px;">
+                <input type="text" placeholder="MAC Address (e.g., AA:BB:CC:DD:EE:FF)" data-govee-index="${index}" data-field="mac" style="margin-bottom: 8px;">
                 <input type="text" placeholder="IP Address" data-govee-index="${index}" data-field="ip" style="margin-bottom: 8px;">
                 <input type="number" placeholder="Port (default: 4003)" value="4003" data-govee-index="${index}" data-field="port">
                 <button class="btn-danger btn-sm" onclick="removeGoveeDevice(${index})" style="margin-top: 8px;">Remove</button>
