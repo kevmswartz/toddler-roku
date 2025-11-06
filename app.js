@@ -2599,10 +2599,25 @@ function updateRoomUI() {
     const autoDetectToggle = document.getElementById('roomAutoDetectToggle');
     const autoDetectIcon = document.getElementById('roomAutoDetectIcon');
 
-    if (!roomIndicator || !roomSelector) return;
+    console.log('🏠 updateRoomUI called', {
+        hasRoomConfig: !!roomConfig,
+        roomsCount: roomConfig?.rooms?.length || 0,
+        currentRoom: room,
+        elementsFound: {
+            roomIndicator: !!roomIndicator,
+            roomSelector: !!roomSelector,
+            roomSelectorBar: !!roomSelectorBar
+        }
+    });
+
+    if (!roomIndicator || !roomSelector) {
+        console.warn('⚠️ Room UI elements not found in DOM');
+        return;
+    }
 
     // Populate room selector dropdown with inline styles for Windows compatibility
     if (roomConfig && roomConfig.rooms && roomConfig.rooms.length > 0) {
+        console.log('✅ Showing room selector with', roomConfig.rooms.length, 'rooms');
         // Clear and add "All Rooms" option with inline styling
         roomSelector.innerHTML = '';
         const allRoomsOption = document.createElement('option');
@@ -2624,8 +2639,17 @@ function updateRoomUI() {
 
         // Show room selector bar
         if (roomSelectorBar) {
+            console.log('✅ Removing hidden class from roomSelectorBar');
             roomSelectorBar.classList.remove('hidden');
+        } else {
+            console.warn('⚠️ roomSelectorBar element not found!');
         }
+    } else {
+        console.log('❌ Room config not ready or no rooms available', {
+            hasRoomConfig: !!roomConfig,
+            hasRooms: !!roomConfig?.rooms,
+            roomsLength: roomConfig?.rooms?.length
+        });
     }
 
     // Update auto-detect toggle button appearance

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toddler Phone Control - Config Editor</title>
+    <title>Toddler Phone Control - Visual Editor</title>
     <style>
         * {
             margin: 0;
@@ -16,17 +16,15 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
 
         .container {
             background: white;
             border-radius: 12px;
             padding: 30px;
-            max-width: 900px;
+            max-width: 1200px;
             width: 100%;
+            margin: 0 auto;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
 
@@ -42,6 +40,46 @@
             font-size: 14px;
         }
 
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            padding: 12px 20px;
+            border: none;
+            background: none;
+            color: #666;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            color: #667eea;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Input Groups */
         .input-group {
             margin-bottom: 20px;
         }
@@ -54,7 +92,10 @@
             font-size: 14px;
         }
 
-        input[type="text"] {
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid #e0e0e0;
@@ -63,36 +104,26 @@
             transition: border-color 0.3s;
         }
 
-        input[type="text"]:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        textarea {
-            width: 100%;
-            min-height: 400px;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            resize: vertical;
-            transition: border-color 0.3s;
-        }
-
+        input:focus,
+        select:focus,
         textarea:focus {
             outline: none;
             border-color: #667eea;
         }
 
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            flex-wrap: wrap;
+        textarea {
+            min-height: 100px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            resize: vertical;
         }
 
+        .help-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        /* Buttons */
         button {
             padding: 12px 24px;
             border: none;
@@ -101,17 +132,11 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
-            flex: 1;
-            min-width: 120px;
         }
 
         button:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        button:active {
-            transform: translateY(0);
         }
 
         button:disabled {
@@ -125,17 +150,14 @@
             color: white;
         }
 
-        .btn-primary:hover {
-            background: #5568d3;
-        }
-
         .btn-success {
             background: #10b981;
             color: white;
         }
 
-        .btn-success:hover {
-            background: #059669;
+        .btn-danger {
+            background: #ef4444;
+            color: white;
         }
 
         .btn-secondary {
@@ -143,14 +165,282 @@
             color: white;
         }
 
-        .btn-secondary:hover {
-            background: #4b5563;
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 12px;
         }
 
+        /* Room Cards */
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .room-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            background: #f9fafb;
+        }
+
+        .room-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .room-emoji {
+            font-size: 32px;
+        }
+
+        .room-info h3 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .room-info .room-id {
+            font-size: 12px;
+            color: #888;
+            font-family: monospace;
+        }
+
+        .device-section {
+            margin-bottom: 20px;
+        }
+
+        .device-section h4 {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .device-list {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            min-height: 60px;
+        }
+
+        .device-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .device-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .device-info {
+            font-size: 13px;
+            font-family: monospace;
+            color: #374151;
+        }
+
+        .device-name {
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        /* YouTube Item Cards */
+        .youtube-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .youtube-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+            transition: transform 0.3s;
+        }
+
+        .youtube-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .youtube-thumbnail {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .youtube-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .youtube-info {
+            padding: 15px;
+        }
+
+        .youtube-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .youtube-video-id {
+            font-size: 12px;
+            color: #888;
+            font-family: monospace;
+            margin-bottom: 12px;
+        }
+
+        .youtube-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* App Cards */
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .app-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+            transition: transform 0.3s;
+        }
+
+        .app-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .app-thumbnail {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .app-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .app-info {
+            padding: 15px;
+        }
+
+        .app-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        .app-id {
+            font-size: 11px;
+            color: #888;
+            font-family: monospace;
+            margin-bottom: 12px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+            color: #333;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: #333;
+            transform: none;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* Message */
         .message {
             padding: 12px 16px;
             border-radius: 8px;
-            margin-top: 15px;
+            margin-bottom: 20px;
             font-size: 14px;
             display: none;
         }
@@ -177,10 +467,43 @@
             border: 1px solid #3b82f6;
         }
 
-        .help-text {
-            font-size: 12px;
-            color: #888;
-            margin-top: 5px;
+        /* Config Section */
+        .config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .add-button {
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
         }
 
         .loading {
@@ -197,35 +520,12 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-
-        .stats {
-            display: flex;
-            gap: 20px;
-            margin-top: 10px;
-            font-size: 12px;
-            color: #666;
-        }
-
-        .stat {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎮 Config Editor</h1>
-        <p class="subtitle">Edit your Toddler Phone Control configuration online</p>
-
-        <div class="input-group">
-            <label for="configType">Config Type</label>
-            <select id="configType" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; transition: border-color 0.3s;">
-                <option value="app-config">App Config (Tabs & Buttons)</option>
-                <option value="rooms">Rooms Config (Location Detection)</option>
-            </select>
-            <div class="help-text">Select which configuration you want to edit.</div>
-        </div>
+        <h1>🎮 Visual Config Editor</h1>
+        <p class="subtitle">Manage your Toddler Phone Control configuration with visual forms</p>
 
         <div class="input-group">
             <label for="passphrase">Passphrase (5+ words)</label>
@@ -235,70 +535,187 @@
                 placeholder="e.g., my awesome roku button setup"
                 autocomplete="off"
             >
-            <div class="help-text">Enter at least 5 words separated by spaces. Each passphrase stores its own config.</div>
+            <div class="help-text">Enter at least 5 words separated by spaces to load/save your config.</div>
         </div>
 
-        <div class="button-group">
-            <button class="btn-primary" onclick="loadConfig()">
-                <span id="loadText">Load Config</span>
+        <div class="button-group" style="margin-bottom: 30px;">
+            <button class="btn-primary" onclick="loadAllConfigs()">
+                <span id="loadText">📥 Load Configs</span>
             </button>
-            <button class="btn-secondary" onclick="loadDefaultConfig()">
-                Load Default (Minimal)
-            </button>
-            <button class="btn-secondary" onclick="validateJSON()">
-                Validate JSON
-            </button>
-            <button class="btn-success" onclick="saveConfig()">
-                <span id="saveText">Save to Cloud</span>
+            <button class="btn-success" onclick="saveAllConfigs()">
+                <span id="saveText">💾 Save All to Cloud</span>
             </button>
         </div>
 
-        <div class="message" id="message"></div>
+        <div class="message" id="globalMessage"></div>
 
-        <div class="input-group" style="margin-top: 20px;">
-            <label for="jsonEditor">Configuration JSON</label>
-            <textarea
-                id="jsonEditor"
-                placeholder="Click 'Load Config' to fetch your configuration..."
-                spellcheck="false"
-            ></textarea>
-            <div class="stats">
-                <div class="stat">
-                    <span>📝</span>
-                    <span id="lineCount">0 lines</span>
-                </div>
-                <div class="stat">
-                    <span>💾</span>
-                    <span id="charCount">0 characters</span>
-                </div>
+        <nav class="tab-nav">
+            <button class="tab-button active" data-tab="rooms">🏠 Rooms & Devices</button>
+            <button class="tab-button" data-tab="youtube">📺 YouTube Quick Launch</button>
+            <button class="tab-button" data-tab="apps">🎬 App Buttons</button>
+            <button class="tab-button" data-tab="json">⚙️ Raw JSON</button>
+        </nav>
+
+        <!-- Rooms Tab -->
+        <div class="tab-content active" id="rooms-tab">
+            <div class="config-header">
+                <h2>Room Device Assignments</h2>
+                <button class="add-button" onclick="addRoom()">
+                    ➕ Add Room
+                </button>
+            </div>
+            <div id="roomsContainer" class="room-grid"></div>
+        </div>
+
+        <!-- YouTube Tab -->
+        <div class="tab-content" id="youtube-tab">
+            <div class="config-header">
+                <h2>YouTube Quick Launch Videos</h2>
+                <button class="add-button" onclick="addYouTubeVideo()">
+                    ➕ Add Video
+                </button>
+            </div>
+            <div id="youtubeContainer" class="youtube-grid"></div>
+        </div>
+
+        <!-- Apps Tab -->
+        <div class="tab-content" id="apps-tab">
+            <div class="config-header">
+                <h2>App Buttons</h2>
+                <button class="add-button" onclick="addAppButton()">
+                    ➕ Add App
+                </button>
+            </div>
+            <div id="appsContainer" class="app-grid"></div>
+        </div>
+
+        <!-- JSON Tab -->
+        <div class="tab-content" id="json-tab">
+            <div class="input-group">
+                <label>App Config JSON</label>
+                <textarea id="appConfigJson" placeholder="Load configs to edit raw JSON..."></textarea>
+            </div>
+            <div class="input-group">
+                <label>Rooms Config JSON</label>
+                <textarea id="roomsConfigJson" placeholder="Load configs to edit raw JSON..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room Edit Modal -->
+    <div class="modal" id="roomModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="roomModalTitle">Edit Room</h2>
+                <button class="modal-close" onclick="closeRoomModal()">×</button>
+            </div>
+            <div class="input-group">
+                <label>Room Name</label>
+                <input type="text" id="roomName" placeholder="e.g., Living Room">
+            </div>
+            <div class="input-group">
+                <label>Emoji</label>
+                <input type="text" id="roomEmoji" placeholder="🛋️" maxlength="2">
+            </div>
+            <div class="input-group">
+                <label>Room ID (lowercase, no spaces)</label>
+                <input type="text" id="roomId" placeholder="living_room">
+            </div>
+            <h4 style="margin-top: 20px; margin-bottom: 10px;">Roku Devices</h4>
+            <div id="roomRokuDevices"></div>
+            <button class="btn-secondary btn-sm" onclick="addRokuDevice()" style="margin-bottom: 20px;">+ Add Roku</button>
+
+            <h4 style="margin-bottom: 10px;">Govee Lights</h4>
+            <div id="roomGoveeDevices"></div>
+            <button class="btn-secondary btn-sm" onclick="addGoveeDevice()">+ Add Govee</button>
+
+            <div class="modal-actions">
+                <button class="btn-success" onclick="saveRoom()">Save Room</button>
+                <button class="btn-danger" onclick="deleteRoom()">Delete Room</button>
+                <button class="btn-secondary" onclick="closeRoomModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- YouTube Edit Modal -->
+    <div class="modal" id="youtubeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="youtubeModalTitle">Add YouTube Video</h2>
+                <button class="modal-close" onclick="closeYouTubeModal()">×</button>
+            </div>
+            <div class="input-group">
+                <label>YouTube URL or Video ID</label>
+                <input type="text" id="youtubeUrl" placeholder="https://youtube.com/watch?v=... or just the video ID">
+                <div class="help-text">Paste a full YouTube URL or just the video ID (e.g., XqZsoesa55w)</div>
+            </div>
+            <div class="input-group">
+                <label>Label</label>
+                <input type="text" id="youtubeLabel" placeholder="e.g., Baby Shark">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-success" onclick="saveYouTubeVideo()">Save Video</button>
+                <button class="btn-secondary" onclick="closeYouTubeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Edit Modal -->
+    <div class="modal" id="appModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="appModalTitle">Add App Button</h2>
+                <button class="modal-close" onclick="closeAppModal()">×</button>
+            </div>
+            <div class="input-group">
+                <label>App Name</label>
+                <input type="text" id="appName" placeholder="e.g., Disney+">
+            </div>
+            <div class="input-group">
+                <label>App ID (Roku Channel ID)</label>
+                <input type="text" id="appId" placeholder="e.g., 291097">
+                <div class="help-text">Find Roku app IDs at channelstore.roku.com</div>
+            </div>
+            <div class="input-group">
+                <label>Emoji</label>
+                <input type="text" id="appEmoji" placeholder="🧚" maxlength="2">
+            </div>
+            <div class="input-group">
+                <label>Label (optional)</label>
+                <input type="text" id="appLabel" placeholder="Disney+">
+            </div>
+            <div class="input-group">
+                <label>Thumbnail URL (optional)</label>
+                <input type="text" id="appThumbnail" placeholder="https://...">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-success" onclick="saveAppButton()">Save App</button>
+                <button class="btn-secondary" onclick="closeAppModal()">Cancel</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Configuration
-        const API_BASE_URL = '/api/config'; // Change this if hosting elsewhere
+        const API_BASE_URL = '/api/config';
+        let appConfig = null;
+        let roomsConfig = null;
+        let currentEditingRoomIndex = -1;
+        let currentEditingYouTubeIndex = -1;
+        let currentEditingAppIndex = -1;
 
-        // Elements
-        const configTypeSelect = document.getElementById('configType');
-        const passphraseInput = document.getElementById('passphrase');
-        const jsonEditor = document.getElementById('jsonEditor');
-        const messageDiv = document.getElementById('message');
-        const lineCountSpan = document.getElementById('lineCount');
-        const charCountSpan = document.getElementById('charCount');
-
-        // Update stats when textarea changes
-        jsonEditor.addEventListener('input', updateStats);
-
-        function updateStats() {
-            const text = jsonEditor.value;
-            const lines = text.split('\n').length;
-            const chars = text.length;
-            lineCountSpan.textContent = `${lines} line${lines !== 1 ? 's' : ''}`;
-            charCountSpan.textContent = `${chars} character${chars !== 1 ? 's' : ''}`;
-        }
+        // Tab switching
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.dataset.tab;
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                button.classList.add('active');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+            });
+        });
 
         function showMessage(text, type = 'info') {
+            const messageDiv = document.getElementById('globalMessage');
             messageDiv.textContent = text;
             messageDiv.className = `message ${type} show`;
             setTimeout(() => {
@@ -307,192 +724,534 @@
         }
 
         function getPassphrase() {
-            const passphrase = passphraseInput.value.trim();
+            const passphrase = document.getElementById('passphrase').value.trim();
             if (!passphrase) {
                 showMessage('Please enter a passphrase', 'error');
                 return null;
             }
-
             const words = passphrase.split(/\s+/);
             if (words.length < 5) {
                 showMessage(`Passphrase must be at least 5 words (you have ${words.length})`, 'error');
                 return null;
             }
-
             return passphrase;
         }
 
-        async function loadConfig() {
+        async function loadAllConfigs() {
             const passphrase = getPassphrase();
             if (!passphrase) return;
 
-            const configType = configTypeSelect.value;
-            const loadBtn = document.querySelector('.btn-primary');
-            const loadText = document.getElementById('loadText');
-            const originalText = loadText.textContent;
-
             try {
-                loadBtn.disabled = true;
-                loadText.innerHTML = '<span class="loading"></span>Loading...';
+                const [appResponse, roomsResponse] = await Promise.all([
+                    fetch(`${API_BASE_URL}?passphrase=${encodeURIComponent(passphrase)}&type=app-config&_t=${Date.now()}`, { cache: 'no-store' }),
+                    fetch(`${API_BASE_URL}?passphrase=${encodeURIComponent(passphrase)}&type=rooms&_t=${Date.now()}`, { cache: 'no-store' })
+                ]);
 
-                // Add timestamp to prevent caching
-                const url = `${API_BASE_URL}?passphrase=${encodeURIComponent(passphrase)}&type=${encodeURIComponent(configType)}&_t=${Date.now()}`;
-                const response = await fetch(url, { cache: 'no-store' });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                if (!appResponse.ok || !roomsResponse.ok) {
+                    throw new Error('Failed to load configs');
                 }
 
-                const config = await response.json();
-                jsonEditor.value = JSON.stringify(config, null, 2);
-                updateStats();
-                showMessage(`✅ ${configType} config loaded successfully!`, 'success');
+                appConfig = await appResponse.json();
+                roomsConfig = await roomsResponse.json();
+
+                renderAllViews();
+                showMessage('✅ Configs loaded successfully!', 'success');
             } catch (error) {
-                showMessage(`❌ Failed to load config: ${error.message}`, 'error');
-                console.error(error);
-            } finally {
-                loadBtn.disabled = false;
-                loadText.textContent = originalText;
-            }
-        }
-
-        async function loadDefaultConfig() {
-            const configType = configTypeSelect.value;
-
-            try {
-                // Fetch without passphrase to get default config (add timestamp to prevent caching)
-                const url = `${API_BASE_URL}?type=${encodeURIComponent(configType)}&_t=${Date.now()}`;
-                const response = await fetch(url, { cache: 'no-store' });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const config = await response.json();
-                jsonEditor.value = JSON.stringify(config, null, 2);
-                updateStats();
-                showMessage(`✅ Default ${configType} config loaded!`, 'info');
-            } catch (error) {
-                showMessage(`❌ Failed to load default config: ${error.message}`, 'error');
+                showMessage(`❌ Failed to load: ${error.message}`, 'error');
                 console.error(error);
             }
         }
 
-        function validateJSON() {
-            const text = jsonEditor.value.trim();
-            const configType = configTypeSelect.value;
+        async function saveAllConfigs() {
+            const passphrase = getPassphrase();
+            if (!passphrase) return;
 
-            if (!text) {
-                showMessage('Editor is empty', 'error');
-                return false;
-            }
-
+            // Sync JSON changes back to objects
             try {
-                const parsed = JSON.parse(text);
-
-                // Validate based on config type
-                if (configType === 'app-config') {
-                    if (!parsed.tabs || !Array.isArray(parsed.tabs)) {
-                        throw new Error('App config must have a "tabs" array');
-                    }
-                    if (parsed.tabs.length === 0) {
-                        throw new Error('App config must have at least one tab');
-                    }
-                    showMessage(`✅ JSON is valid! Found ${parsed.tabs.length} tab(s)`, 'success');
-                } else if (configType === 'rooms') {
-                    if (!parsed.rooms || !Array.isArray(parsed.rooms)) {
-                        throw new Error('Rooms config must have a "rooms" array');
-                    }
-                    if (!parsed.settings || typeof parsed.settings !== 'object') {
-                        throw new Error('Rooms config must have a "settings" object');
-                    }
-                    showMessage(`✅ JSON is valid! Found ${parsed.rooms.length} room(s)`, 'success');
-                }
-
-                return true;
+                const appJsonText = document.getElementById('appConfigJson').value.trim();
+                const roomsJsonText = document.getElementById('roomsConfigJson').value.trim();
+                if (appJsonText) appConfig = JSON.parse(appJsonText);
+                if (roomsJsonText) roomsConfig = JSON.parse(roomsJsonText);
             } catch (error) {
                 showMessage(`❌ Invalid JSON: ${error.message}`, 'error');
-                return false;
-            }
-        }
-
-        async function saveConfig() {
-            const passphrase = getPassphrase();
-            if (!passphrase) return;
-
-            // Validate JSON first
-            if (!validateJSON()) {
                 return;
             }
 
-            const configType = configTypeSelect.value;
-            const saveBtn = document.querySelector('.btn-success');
-            const saveText = document.getElementById('saveText');
-            const originalText = saveText.textContent;
-
             try {
-                saveBtn.disabled = true;
-                saveText.innerHTML = '<span class="loading"></span>Saving...';
+                const [appResponse, roomsResponse] = await Promise.all([
+                    fetch(`${API_BASE_URL}?type=app-config`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${passphrase}`
+                        },
+                        body: JSON.stringify(appConfig)
+                    }),
+                    fetch(`${API_BASE_URL}?type=rooms`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${passphrase}`
+                        },
+                        body: JSON.stringify(roomsConfig)
+                    })
+                ]);
 
-                const config = JSON.parse(jsonEditor.value);
-
-                const url = `${API_BASE_URL}?type=${encodeURIComponent(configType)}`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${passphrase}`
-                    },
-                    body: JSON.stringify(config)
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
+                if (!appResponse.ok || !roomsResponse.ok) {
+                    throw new Error('Failed to save configs');
                 }
 
-                if (result.success) {
-                    showMessage(`✅ ${configType} config saved to cloud successfully!`, 'success');
-
-                    // Update the editor with the returned config (includes lastUpdated timestamp)
-                    if (result.config) {
-                        jsonEditor.value = JSON.stringify(result.config, null, 2);
-                        updateStats();
-                    }
-                } else {
-                    throw new Error(result.error || 'Save failed');
-                }
+                showMessage('✅ All configs saved to cloud!', 'success');
             } catch (error) {
                 showMessage(`❌ Failed to save: ${error.message}`, 'error');
                 console.error(error);
-            } finally {
-                saveBtn.disabled = false;
-                saveText.textContent = originalText;
             }
+        }
+
+        function renderAllViews() {
+            renderRooms();
+            renderYouTubeVideos();
+            renderAppButtons();
+            document.getElementById('appConfigJson').value = JSON.stringify(appConfig, null, 2);
+            document.getElementById('roomsConfigJson').value = JSON.stringify(roomsConfig, null, 2);
+        }
+
+        // ===== ROOMS =====
+        function renderRooms() {
+            const container = document.getElementById('roomsContainer');
+            if (!roomsConfig || !roomsConfig.rooms || roomsConfig.rooms.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏠</div><p>No rooms configured. Click "Add Room" to get started.</p></div>';
+                return;
+            }
+
+            container.innerHTML = roomsConfig.rooms.map((room, index) => `
+                <div class="room-card">
+                    <div class="room-header">
+                        <div class="room-emoji">${room.emoji || '🏠'}</div>
+                        <div class="room-info">
+                            <h3>${room.name}</h3>
+                            <div class="room-id">${room.id}</div>
+                        </div>
+                    </div>
+                    <div class="device-section">
+                        <h4>📺 Roku Devices (${room.devices?.roku?.length || 0})</h4>
+                        <div class="device-list">
+                            ${room.devices?.roku?.length > 0 ? room.devices.roku.map(device => `
+                                <div class="device-item">
+                                    <div class="device-info">
+                                        <span class="device-name">${device.name || 'Unnamed'}</span>
+                                        <span>${device.ip}</span>
+                                    </div>
+                                </div>
+                            `).join('') : '<div style="text-align: center; color: #999; padding: 10px;">No Roku devices</div>'}
+                        </div>
+                    </div>
+                    <div class="device-section">
+                        <h4>💡 Govee Lights (${room.devices?.govee?.length || 0})</h4>
+                        <div class="device-list">
+                            ${room.devices?.govee?.length > 0 ? room.devices.govee.map(device => `
+                                <div class="device-item">
+                                    <div class="device-info">
+                                        <span class="device-name">${device.name || 'Unnamed'}</span>
+                                        <span>${device.ip}:${device.port || 4003}</span>
+                                    </div>
+                                </div>
+                            `).join('') : '<div style="text-align: center; color: #999; padding: 10px;">No Govee devices</div>'}
+                        </div>
+                    </div>
+                    <button class="btn-primary btn-sm" style="width: 100%; margin-top: 10px;" onclick="editRoom(${index})">
+                        ✏️ Edit Room
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addRoom() {
+            currentEditingRoomIndex = -1;
+            document.getElementById('roomModalTitle').textContent = 'Add New Room';
+            document.getElementById('roomName').value = '';
+            document.getElementById('roomEmoji').value = '🏠';
+            document.getElementById('roomId').value = '';
+            document.getElementById('roomRokuDevices').innerHTML = '';
+            document.getElementById('roomGoveeDevices').innerHTML = '';
+            document.getElementById('roomModal').classList.add('show');
+        }
+
+        function editRoom(index) {
+            currentEditingRoomIndex = index;
+            const room = roomsConfig.rooms[index];
+            document.getElementById('roomModalTitle').textContent = 'Edit Room';
+            document.getElementById('roomName').value = room.name;
+            document.getElementById('roomEmoji').value = room.emoji || '🏠';
+            document.getElementById('roomId').value = room.id;
+
+            // Render device inputs
+            const rokuContainer = document.getElementById('roomRokuDevices');
+            rokuContainer.innerHTML = (room.devices?.roku || []).map((device, i) => `
+                <div class="input-group" style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+                    <input type="text" placeholder="Name" value="${device.name || ''}" data-roku-index="${i}" data-field="name" style="margin-bottom: 8px;">
+                    <input type="text" placeholder="IP Address" value="${device.ip || ''}" data-roku-index="${i}" data-field="ip">
+                    <button class="btn-danger btn-sm" onclick="removeRokuDevice(${i})" style="margin-top: 8px;">Remove</button>
+                </div>
+            `).join('');
+
+            const goveeContainer = document.getElementById('roomGoveeDevices');
+            goveeContainer.innerHTML = (room.devices?.govee || []).map((device, i) => `
+                <div class="input-group" style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+                    <input type="text" placeholder="Name" value="${device.name || ''}" data-govee-index="${i}" data-field="name" style="margin-bottom: 8px;">
+                    <input type="text" placeholder="IP Address" value="${device.ip || ''}" data-govee-index="${i}" data-field="ip" style="margin-bottom: 8px;">
+                    <input type="number" placeholder="Port (default: 4003)" value="${device.port || 4003}" data-govee-index="${i}" data-field="port">
+                    <button class="btn-danger btn-sm" onclick="removeGoveeDevice(${i})" style="margin-top: 8px;">Remove</button>
+                </div>
+            `).join('');
+
+            document.getElementById('roomModal').classList.add('show');
+        }
+
+        function addRokuDevice() {
+            const container = document.getElementById('roomRokuDevices');
+            const index = container.children.length;
+            const div = document.createElement('div');
+            div.className = 'input-group';
+            div.style.cssText = 'background: white; padding: 10px; border-radius: 6px; margin-bottom: 10px;';
+            div.innerHTML = `
+                <input type="text" placeholder="Name" data-roku-index="${index}" data-field="name" style="margin-bottom: 8px;">
+                <input type="text" placeholder="IP Address" data-roku-index="${index}" data-field="ip">
+                <button class="btn-danger btn-sm" onclick="removeRokuDevice(${index})" style="margin-top: 8px;">Remove</button>
+            `;
+            container.appendChild(div);
+        }
+
+        function removeRokuDevice(index) {
+            const container = document.getElementById('roomRokuDevices');
+            container.children[index].remove();
+        }
+
+        function addGoveeDevice() {
+            const container = document.getElementById('roomGoveeDevices');
+            const index = container.children.length;
+            const div = document.createElement('div');
+            div.className = 'input-group';
+            div.style.cssText = 'background: white; padding: 10px; border-radius: 6px; margin-bottom: 10px;';
+            div.innerHTML = `
+                <input type="text" placeholder="Name" data-govee-index="${index}" data-field="name" style="margin-bottom: 8px;">
+                <input type="text" placeholder="IP Address" data-govee-index="${index}" data-field="ip" style="margin-bottom: 8px;">
+                <input type="number" placeholder="Port (default: 4003)" value="4003" data-govee-index="${index}" data-field="port">
+                <button class="btn-danger btn-sm" onclick="removeGoveeDevice(${index})" style="margin-top: 8px;">Remove</button>
+            `;
+            container.appendChild(div);
+        }
+
+        function removeGoveeDevice(index) {
+            const container = document.getElementById('roomGoveeDevices');
+            container.children[index].remove();
+        }
+
+        function saveRoom() {
+            const name = document.getElementById('roomName').value.trim();
+            const emoji = document.getElementById('roomEmoji').value.trim();
+            const id = document.getElementById('roomId').value.trim();
+
+            if (!name || !id) {
+                showMessage('Room name and ID are required', 'error');
+                return;
+            }
+
+            // Collect Roku devices
+            const rokuDevices = Array.from(document.querySelectorAll('[data-roku-index]'))
+                .reduce((acc, input) => {
+                    const index = parseInt(input.dataset.rokuIndex);
+                    const field = input.dataset.field;
+                    if (!acc[index]) acc[index] = {};
+                    acc[index][field] = input.value.trim();
+                    return acc;
+                }, [])
+                .filter(device => device.ip);
+
+            // Collect Govee devices
+            const goveeDevices = Array.from(document.querySelectorAll('[data-govee-index]'))
+                .reduce((acc, input) => {
+                    const index = parseInt(input.dataset.goveeIndex);
+                    const field = input.dataset.field;
+                    if (!acc[index]) acc[index] = {};
+                    acc[index][field] = input.value.trim();
+                    return acc;
+                }, [])
+                .filter(device => device.ip)
+                .map(device => ({
+                    ...device,
+                    port: parseInt(device.port) || 4003
+                }));
+
+            const room = {
+                id,
+                name,
+                emoji,
+                beacons: currentEditingRoomIndex >= 0 ? roomsConfig.rooms[currentEditingRoomIndex].beacons : [],
+                devices: {
+                    roku: rokuDevices,
+                    govee: goveeDevices
+                }
+            };
+
+            if (currentEditingRoomIndex >= 0) {
+                roomsConfig.rooms[currentEditingRoomIndex] = room;
+            } else {
+                roomsConfig.rooms.push(room);
+            }
+
+            renderAllViews();
+            closeRoomModal();
+            showMessage('✅ Room saved! Remember to click "Save All to Cloud"', 'success');
+        }
+
+        function deleteRoom() {
+            if (currentEditingRoomIndex >= 0) {
+                if (confirm('Are you sure you want to delete this room?')) {
+                    roomsConfig.rooms.splice(currentEditingRoomIndex, 1);
+                    renderAllViews();
+                    closeRoomModal();
+                    showMessage('✅ Room deleted! Remember to click "Save All to Cloud"', 'success');
+                }
+            }
+        }
+
+        function closeRoomModal() {
+            document.getElementById('roomModal').classList.remove('show');
+        }
+
+        // ===== YOUTUBE =====
+        function renderYouTubeVideos() {
+            const container = document.getElementById('youtubeContainer');
+            const appsTab = appConfig?.tabs?.find(t => t.id === 'apps');
+            const videos = appsTab?.quickLaunch || [];
+
+            if (videos.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📺</div><p>No YouTube videos configured. Click "Add Video" to get started.</p></div>';
+                return;
+            }
+
+            container.innerHTML = videos.map((video, index) => `
+                <div class="youtube-card">
+                    <div class="youtube-thumbnail">
+                        <img src="https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg" alt="${video.label}">
+                    </div>
+                    <div class="youtube-info">
+                        <div class="youtube-label">${video.label}</div>
+                        <div class="youtube-video-id">${video.videoId}</div>
+                        <div class="youtube-actions">
+                            <button class="btn-primary btn-sm" onclick="editYouTubeVideo(${index})">Edit</button>
+                            <button class="btn-danger btn-sm" onclick="deleteYouTubeVideo(${index})">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addYouTubeVideo() {
+            currentEditingYouTubeIndex = -1;
+            document.getElementById('youtubeModalTitle').textContent = 'Add YouTube Video';
+            document.getElementById('youtubeUrl').value = '';
+            document.getElementById('youtubeLabel').value = '';
+            document.getElementById('youtubeModal').classList.add('show');
+        }
+
+        function editYouTubeVideo(index) {
+            currentEditingYouTubeIndex = index;
+            const appsTab = appConfig.tabs.find(t => t.id === 'apps');
+            const video = appsTab.quickLaunch[index];
+            document.getElementById('youtubeModalTitle').textContent = 'Edit YouTube Video';
+            document.getElementById('youtubeUrl').value = video.videoId;
+            document.getElementById('youtubeLabel').value = video.label;
+            document.getElementById('youtubeModal').classList.add('show');
+        }
+
+        function extractYouTubeId(input) {
+            // If it's already just an ID, return it
+            if (input.length === 11 && !input.includes('/') && !input.includes('?')) {
+                return input;
+            }
+            // Try to extract from URL
+            const patterns = [
+                /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+                /^([a-zA-Z0-9_-]{11})$/
+            ];
+            for (const pattern of patterns) {
+                const match = input.match(pattern);
+                if (match) return match[1];
+            }
+            return null;
+        }
+
+        function saveYouTubeVideo() {
+            const urlInput = document.getElementById('youtubeUrl').value.trim();
+            const label = document.getElementById('youtubeLabel').value.trim();
+
+            if (!urlInput || !label) {
+                showMessage('Video ID/URL and label are required', 'error');
+                return;
+            }
+
+            const videoId = extractYouTubeId(urlInput);
+            if (!videoId) {
+                showMessage('Invalid YouTube URL or video ID', 'error');
+                return;
+            }
+
+            const video = {
+                type: 'youtube',
+                videoId,
+                label
+            };
+
+            const appsTab = appConfig.tabs.find(t => t.id === 'apps');
+            if (!appsTab.quickLaunch) appsTab.quickLaunch = [];
+
+            if (currentEditingYouTubeIndex >= 0) {
+                appsTab.quickLaunch[currentEditingYouTubeIndex] = video;
+            } else {
+                appsTab.quickLaunch.push(video);
+            }
+
+            renderAllViews();
+            closeYouTubeModal();
+            showMessage('✅ Video saved! Remember to click "Save All to Cloud"', 'success');
+        }
+
+        function deleteYouTubeVideo(index) {
+            if (confirm('Are you sure you want to delete this video?')) {
+                const appsTab = appConfig.tabs.find(t => t.id === 'apps');
+                appsTab.quickLaunch.splice(index, 1);
+                renderAllViews();
+                showMessage('✅ Video deleted! Remember to click "Save All to Cloud"', 'success');
+            }
+        }
+
+        function closeYouTubeModal() {
+            document.getElementById('youtubeModal').classList.remove('show');
+        }
+
+        // ===== APPS =====
+        function renderAppButtons() {
+            const container = document.getElementById('appsContainer');
+            const appsTab = appConfig?.tabs?.find(t => t.id === 'apps');
+            const apps = appsTab?.buttons || [];
+
+            if (apps.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎬</div><p>No app buttons configured. Click "Add App" to get started.</p></div>';
+                return;
+            }
+
+            container.innerHTML = apps.map((app, index) => `
+                <div class="app-card">
+                    <div class="app-thumbnail">
+                        ${app.thumbnail ? `<img src="${app.thumbnail}" alt="${app.label || app.appName}">` : `<div>${app.emoji || '📱'}</div>`}
+                    </div>
+                    <div class="app-info">
+                        <div class="app-label">${app.label || app.appName}</div>
+                        <div class="app-id">App ID: ${app.appId}</div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn-primary btn-sm" onclick="editAppButton(${index})">Edit</button>
+                            <button class="btn-danger btn-sm" onclick="deleteAppButton(${index})">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addAppButton() {
+            currentEditingAppIndex = -1;
+            document.getElementById('appModalTitle').textContent = 'Add App Button';
+            document.getElementById('appName').value = '';
+            document.getElementById('appId').value = '';
+            document.getElementById('appEmoji').value = '';
+            document.getElementById('appLabel').value = '';
+            document.getElementById('appThumbnail').value = '';
+            document.getElementById('appModal').classList.add('show');
+        }
+
+        function editAppButton(index) {
+            currentEditingAppIndex = index;
+            const appsTab = appConfig.tabs.find(t => t.id === 'apps');
+            const app = appsTab.buttons[index];
+            document.getElementById('appModalTitle').textContent = 'Edit App Button';
+            document.getElementById('appName').value = app.appName || '';
+            document.getElementById('appId').value = app.appId || '';
+            document.getElementById('appEmoji').value = app.emoji || '';
+            document.getElementById('appLabel').value = app.label || '';
+            document.getElementById('appThumbnail').value = app.thumbnail || '';
+            document.getElementById('appModal').classList.add('show');
+        }
+
+        function saveAppButton() {
+            const appName = document.getElementById('appName').value.trim();
+            const appId = document.getElementById('appId').value.trim();
+            const emoji = document.getElementById('appEmoji').value.trim();
+            const label = document.getElementById('appLabel').value.trim();
+            const thumbnail = document.getElementById('appThumbnail').value.trim();
+
+            if (!appName || !appId) {
+                showMessage('App name and ID are required', 'error');
+                return;
+            }
+
+            const app = {
+                id: `${appName.toLowerCase().replace(/[^a-z0-9]+/g, '')}Button`,
+                emoji: emoji || '📱',
+                label: label || appName,
+                appId,
+                appName
+            };
+
+            if (thumbnail) {
+                app.thumbnail = thumbnail;
+            }
+
+            const appsTab = appConfig.tabs.find(t => t.id === 'apps');
+            if (!appsTab.buttons) appsTab.buttons = [];
+
+            if (currentEditingAppIndex >= 0) {
+                appsTab.buttons[currentEditingAppIndex] = app;
+            } else {
+                appsTab.buttons.push(app);
+            }
+
+            renderAllViews();
+            closeAppModal();
+            showMessage('✅ App saved! Remember to click "Save All to Cloud"', 'success');
+        }
+
+        function deleteAppButton(index) {
+            if (confirm('Are you sure you want to delete this app?')) {
+                const appsTab = appConfig.tabs.find(t => t.id === 'apps');
+                appsTab.buttons.splice(index, 1);
+                renderAllViews();
+                showMessage('✅ App deleted! Remember to click "Save All to Cloud"', 'success');
+            }
+        }
+
+        function closeAppModal() {
+            document.getElementById('appModal').classList.remove('show');
+        }
+
+        // Load passphrase from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlPassphrase = urlParams.get('passphrase');
+        if (urlPassphrase) {
+            document.getElementById('passphrase').value = urlPassphrase;
         }
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            // Ctrl+S or Cmd+S to save
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
-                saveConfig();
+                saveAllConfigs();
             }
-
-            // Ctrl+L or Cmd+L to load
             if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
                 e.preventDefault();
-                loadConfig();
+                loadAllConfigs();
             }
         });
-
-        // Load passphrase from URL parameter if present
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlPassphrase = urlParams.get('passphrase');
-        if (urlPassphrase) {
-            passphraseInput.value = urlPassphrase;
-        }
     </script>
 </body>
 </html>
