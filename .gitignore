@@ -22,3 +22,6 @@ roku-control.keystore
 
 # Local config overrides
 public/config/app-config.custom.json
+
+# Local Netlify folder
+.netlify
