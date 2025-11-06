@@ -355,10 +355,11 @@ function validatePassphrase(passphrase) {
     return { valid: true };
 }
 
-function buildCloudConfigUrl(passphrase) {
+function buildCloudConfigUrl(passphrase, type = 'app-config') {
     if (!passphrase) return null;
     const encoded = encodeURIComponent(passphrase);
-    return `${NETLIFY_CONFIG_API_BASE}?passphrase=${encoded}`;
+    const typeParam = encodeURIComponent(type);
+    return `${NETLIFY_CONFIG_API_BASE}?passphrase=${encoded}&type=${typeParam}`;
 }
 
 function updateToddlerContentSourceInfo() {
@@ -2040,6 +2041,25 @@ let rssiHistory = {};
 
 async function loadRoomConfig() {
     try {
+        const passphrase = getToddlerContentPassphrase().trim();
+
+        // If passphrase is configured, try fetching from cloud (always fresh, no cache)
+        if (passphrase) {
+            const cloudUrl = buildCloudConfigUrl(passphrase, 'rooms');
+            if (cloudUrl) {
+                try {
+                    const response = await fetch(cloudUrl, { cache: 'no-store' });
+                    if (response.ok) {
+                        roomConfig = await response.json();
+                        console.log('📍 Loaded room config from cloud');
+                        return roomConfig;
+                    }
+                } catch (error) {
+                    console.warn('Failed to load room config from cloud, falling back:', error);
+                }
+            }
+        }
+
         // Try to load custom room config from localStorage
         const stored = localStorage.getItem(ROOM_CONFIG_STORAGE_KEY);
         if (stored) {
@@ -2049,7 +2069,7 @@ async function loadRoomConfig() {
         }
 
         // Fall back to default config file
-        const response = await fetch('/config/rooms.json');
+        const response = await fetch('/config/rooms.json', { cache: 'no-store' });
         if (!response.ok) {
             throw new Error(`Failed to load rooms.json: ${response.status}`);
         }

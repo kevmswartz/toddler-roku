@@ -137,7 +137,7 @@ export default async (req, context) => {
           status: 200,
           headers: {
             "Content-Type": "application/json",
-            "Cache-Control": "public, max-age=300", // Cache for 5 minutes
+            "Cache-Control": "no-store, no-cache, must-revalidate", // No caching - always fresh!
             ...CORS_HEADERS
           }
         });
@@ -147,7 +147,7 @@ export default async (req, context) => {
         status: 200,
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "public, max-age=300",
+          "Cache-Control": "no-store, no-cache, must-revalidate", // No caching - always fresh!
           ...CORS_HEADERS
         }
       });
