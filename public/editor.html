@@ -335,8 +335,9 @@
                 loadBtn.disabled = true;
                 loadText.innerHTML = '<span class="loading"></span>Loading...';
 
-                const url = `${API_BASE_URL}?passphrase=${encodeURIComponent(passphrase)}&type=${encodeURIComponent(configType)}`;
-                const response = await fetch(url);
+                // Add timestamp to prevent caching
+                const url = `${API_BASE_URL}?passphrase=${encodeURIComponent(passphrase)}&type=${encodeURIComponent(configType)}&_t=${Date.now()}`;
+                const response = await fetch(url, { cache: 'no-store' });
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -359,9 +360,9 @@
             const configType = configTypeSelect.value;
 
             try {
-                // Fetch without passphrase to get default config
-                const url = `${API_BASE_URL}?type=${encodeURIComponent(configType)}`;
-                const response = await fetch(url);
+                // Fetch without passphrase to get default config (add timestamp to prevent caching)
+                const url = `${API_BASE_URL}?type=${encodeURIComponent(configType)}&_t=${Date.now()}`;
+                const response = await fetch(url, { cache: 'no-store' });
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
