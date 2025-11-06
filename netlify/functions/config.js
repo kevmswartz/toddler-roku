@@ -20,9 +20,25 @@ function hashPassphrase(passphrase) {
 }
 
 /**
- * Get default configuration
+ * Get default configuration based on type
  */
-function getDefaultConfig() {
+function getDefaultConfig(type = 'app-config') {
+  if (type === 'rooms') {
+    return {
+      rooms: [],
+      settings: {
+        autoDetect: false,
+        scanInterval: 10000,
+        rssiSampleSize: 3,
+        detectionMode: "manual",
+        fallbackRoom: null
+      },
+      version: "1.0.0",
+      lastUpdated: new Date().toISOString()
+    };
+  }
+
+  // Default app-config
   return {
     tabs: [
       {
@@ -73,18 +89,29 @@ export default async (req, context) => {
   // Handle GET request - return current config
   if (req.method === "GET") {
     try {
-      // Get passphrase from query parameter
+      // Get passphrase and type from query parameters
       const url = new URL(req.url);
       const passphrase = url.searchParams.get('passphrase');
+      const configType = url.searchParams.get('type') || 'app-config'; // Default to app-config
+
+      // Validate config type
+      if (configType !== 'app-config' && configType !== 'rooms') {
+        return new Response(JSON.stringify({
+          error: `Invalid config type: ${configType}. Must be 'app-config' or 'rooms'`
+        }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
 
       // Determine which config to load
       let blobKey;
       if (passphrase) {
-        // Use passphrase-specific config
-        blobKey = `config-${hashPassphrase(passphrase)}`;
+        // Use passphrase-specific config with type suffix
+        blobKey = `${configType}-${hashPassphrase(passphrase)}`;
       } else {
-        // Use default config
-        blobKey = "app-config";
+        // Use default config (for backwards compatibility, app-config uses old key)
+        blobKey = configType === 'app-config' ? "app-config" : "rooms-default";
       }
 
       // Try to get config from blob storage
@@ -92,7 +119,7 @@ export default async (req, context) => {
 
       if (!config) {
         // Return default config if none exists for this passphrase
-        const defaultConfig = getDefaultConfig();
+        const defaultConfig = getDefaultConfig(configType);
 
         return new Response(JSON.stringify(defaultConfig), {
           status: 200,
@@ -141,21 +168,38 @@ export default async (req, context) => {
       const authHeader = req.headers.get('authorization');
       const passphrase = authHeader.replace(/^Bearer\s+/i, '');
 
-      // Generate blob key from passphrase
-      const blobKey = `config-${hashPassphrase(passphrase)}`;
+      // Get config type from query parameter
+      const url = new URL(req.url);
+      const configType = url.searchParams.get('type') || 'app-config';
+
+      // Validate config type
+      if (configType !== 'app-config' && configType !== 'rooms') {
+        return new Response(JSON.stringify({
+          success: false,
+          error: `Invalid config type: ${configType}. Must be 'app-config' or 'rooms'`
+        }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      // Generate blob key from passphrase with type prefix
+      const blobKey = `${configType}-${hashPassphrase(passphrase)}`;
 
       const newConfig = await req.json();
 
       // Add metadata
       newConfig.lastUpdated = new Date().toISOString();
+      newConfig.configType = configType; // Add type to config for reference
 
       // Save to blob storage using passphrase-specific key
       await store.setJSON(blobKey, newConfig);
 
       return new Response(JSON.stringify({
         success: true,
-        message: "Configuration updated successfully",
+        message: `${configType} configuration updated successfully`,
         config: newConfig,
+        configType: configType,
         passphrase_hash: hashPassphrase(passphrase) // Return hash for debugging
       }), {
         status: 200,
@@ -182,7 +226,7 @@ export default async (req, context) => {
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type"
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
       }
     });
   }
