@@ -598,6 +598,17 @@ function applyToddlerContent(data) {
 }
 
 async function fetchToddlerContentFromUrl(url) {
+    // Use Tauri bridge in native mode to bypass CORS
+    if (isNativeRuntime && tauriInvoke) {
+        try {
+            const raw = await tauriInvoke('roku_get', { url });
+            return JSON.parse(raw);
+        } catch (error) {
+            throw new Error(`Failed to fetch via native bridge: ${error.message || error}`);
+        }
+    }
+
+    // Fallback to browser fetch for web mode
     const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -2097,6 +2108,7 @@ async function scanBluetoothLE(timeoutMs) {
     return new Promise((resolve, reject) => {
         let devices = [];
         let scanError = null;
+        let lastDeviceCount = 0;
 
         // Check if Tauri API is available
         if (!tauriBridge || !tauriBridge.core || !tauriBridge.core.Channel) {
@@ -2107,9 +2119,13 @@ async function scanBluetoothLE(timeoutMs) {
         // Create a channel for receiving device updates
         const onDevices = new tauriBridge.core.Channel();
         onDevices.onmessage = (deviceList) => {
-            console.log('BLE scan channel message received:', deviceList?.length || 0, 'devices');
-            devices = deviceList || [];
-            console.log('Updated devices array, now has:', devices.length, 'devices');
+            const newDevices = deviceList || [];
+            // Only log when device count changes
+            if (newDevices.length !== lastDeviceCount) {
+                console.log(`BLE scan update: ${newDevices.length} devices (was ${lastDeviceCount})`);
+                lastDeviceCount = newDevices.length;
+            }
+            devices = newDevices;
         };
 
         // Set timeout to collect results - wait for full scan duration plus buffer
