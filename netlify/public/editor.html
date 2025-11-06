@@ -219,6 +219,15 @@
         <p class="subtitle">Edit your Toddler Phone Control configuration online</p>
 
         <div class="input-group">
+            <label for="configType">Config Type</label>
+            <select id="configType" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; transition: border-color 0.3s;">
+                <option value="app-config">App Config (Tabs & Buttons)</option>
+                <option value="rooms">Rooms Config (Location Detection)</option>
+            </select>
+            <div class="help-text">Select which configuration you want to edit.</div>
+        </div>
+
+        <div class="input-group">
             <label for="passphrase">Passphrase (5+ words)</label>
             <input
                 type="text"
@@ -232,6 +241,9 @@
         <div class="button-group">
             <button class="btn-primary" onclick="loadConfig()">
                 <span id="loadText">Load Config</span>
+            </button>
+            <button class="btn-secondary" onclick="loadDefaultConfig()">
+                Load Default (Minimal)
             </button>
             <button class="btn-secondary" onclick="validateJSON()">
                 Validate JSON
@@ -268,6 +280,7 @@
         const API_BASE_URL = '/api/config'; // Change this if hosting elsewhere
 
         // Elements
+        const configTypeSelect = document.getElementById('configType');
         const passphraseInput = document.getElementById('passphrase');
         const jsonEditor = document.getElementById('jsonEditor');
         const messageDiv = document.getElementById('message');
@@ -313,6 +326,7 @@
             const passphrase = getPassphrase();
             if (!passphrase) return;
 
+            const configType = configTypeSelect.value;
             const loadBtn = document.querySelector('.btn-primary');
             const loadText = document.getElementById('loadText');
             const originalText = loadText.textContent;
@@ -321,7 +335,7 @@
                 loadBtn.disabled = true;
                 loadText.innerHTML = '<span class="loading"></span>Loading...';
 
-                const url = `${API_BASE_URL}?passphrase=${encodeURIComponent(passphrase)}`;
+                const url = `${API_BASE_URL}?passphrase=${encodeURIComponent(passphrase)}&type=${encodeURIComponent(configType)}`;
                 const response = await fetch(url);
 
                 if (!response.ok) {
@@ -331,7 +345,7 @@
                 const config = await response.json();
                 jsonEditor.value = JSON.stringify(config, null, 2);
                 updateStats();
-                showMessage('✅ Config loaded successfully!', 'success');
+                showMessage(`✅ ${configType} config loaded successfully!`, 'success');
             } catch (error) {
                 showMessage(`❌ Failed to load config: ${error.message}`, 'error');
                 console.error(error);
@@ -341,8 +355,31 @@
             }
         }
 
+        async function loadDefaultConfig() {
+            const configType = configTypeSelect.value;
+
+            try {
+                // Fetch without passphrase to get default config
+                const url = `${API_BASE_URL}?type=${encodeURIComponent(configType)}`;
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const config = await response.json();
+                jsonEditor.value = JSON.stringify(config, null, 2);
+                updateStats();
+                showMessage(`✅ Default ${configType} config loaded!`, 'info');
+            } catch (error) {
+                showMessage(`❌ Failed to load default config: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
         function validateJSON() {
             const text = jsonEditor.value.trim();
+            const configType = configTypeSelect.value;
 
             if (!text) {
                 showMessage('Editor is empty', 'error');
@@ -352,16 +389,25 @@
             try {
                 const parsed = JSON.parse(text);
 
-                // Basic validation
-                if (!parsed.tabs || !Array.isArray(parsed.tabs)) {
-                    throw new Error('Config must have a "tabs" array');
+                // Validate based on config type
+                if (configType === 'app-config') {
+                    if (!parsed.tabs || !Array.isArray(parsed.tabs)) {
+                        throw new Error('App config must have a "tabs" array');
+                    }
+                    if (parsed.tabs.length === 0) {
+                        throw new Error('App config must have at least one tab');
+                    }
+                    showMessage(`✅ JSON is valid! Found ${parsed.tabs.length} tab(s)`, 'success');
+                } else if (configType === 'rooms') {
+                    if (!parsed.rooms || !Array.isArray(parsed.rooms)) {
+                        throw new Error('Rooms config must have a "rooms" array');
+                    }
+                    if (!parsed.settings || typeof parsed.settings !== 'object') {
+                        throw new Error('Rooms config must have a "settings" object');
+                    }
+                    showMessage(`✅ JSON is valid! Found ${parsed.rooms.length} room(s)`, 'success');
                 }
 
-                if (parsed.tabs.length === 0) {
-                    throw new Error('Config must have at least one tab');
-                }
-
-                showMessage(`✅ JSON is valid! Found ${parsed.tabs.length} tab(s)`, 'success');
                 return true;
             } catch (error) {
                 showMessage(`❌ Invalid JSON: ${error.message}`, 'error');
@@ -378,6 +424,7 @@
                 return;
             }
 
+            const configType = configTypeSelect.value;
             const saveBtn = document.querySelector('.btn-success');
             const saveText = document.getElementById('saveText');
             const originalText = saveText.textContent;
@@ -388,7 +435,8 @@
 
                 const config = JSON.parse(jsonEditor.value);
 
-                const response = await fetch(API_BASE_URL, {
+                const url = `${API_BASE_URL}?type=${encodeURIComponent(configType)}`;
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -404,7 +452,7 @@
                 }
 
                 if (result.success) {
-                    showMessage('✅ Config saved to cloud successfully!', 'success');
+                    showMessage(`✅ ${configType} config saved to cloud successfully!`, 'success');
 
                     // Update the editor with the returned config (includes lastUpdated timestamp)
                     if (result.config) {
