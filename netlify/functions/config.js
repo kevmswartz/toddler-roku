@@ -20,6 +20,15 @@ function hashPassphrase(passphrase) {
 }
 
 /**
+ * CORS headers to include in all responses
+ */
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization"
+};
+
+/**
  * Get default configuration based on type
  */
 function getDefaultConfig(type = 'app-config') {
@@ -100,7 +109,10 @@ export default async (req, context) => {
           error: `Invalid config type: ${configType}. Must be 'app-config' or 'rooms'`
         }), {
           status: 400,
-          headers: { "Content-Type": "application/json" }
+          headers: {
+            "Content-Type": "application/json",
+            ...CORS_HEADERS
+          }
         });
       }
 
@@ -125,7 +137,8 @@ export default async (req, context) => {
           status: 200,
           headers: {
             "Content-Type": "application/json",
-            "Cache-Control": "public, max-age=300" // Cache for 5 minutes
+            "Cache-Control": "public, max-age=300", // Cache for 5 minutes
+            ...CORS_HEADERS
           }
         });
       }
@@ -134,13 +147,17 @@ export default async (req, context) => {
         status: 200,
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "public, max-age=300"
+          "Cache-Control": "public, max-age=300",
+          ...CORS_HEADERS
         }
       });
     } catch (error) {
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Content-Type": "application/json",
+          ...CORS_HEADERS
+        }
       });
     }
   }
@@ -158,6 +175,7 @@ export default async (req, context) => {
         status: authResult.status,
         headers: {
           "Content-Type": "application/json",
+          ...CORS_HEADERS,
           ...authResult.headers
         }
       });
@@ -179,7 +197,10 @@ export default async (req, context) => {
           error: `Invalid config type: ${configType}. Must be 'app-config' or 'rooms'`
         }), {
           status: 400,
-          headers: { "Content-Type": "application/json" }
+          headers: {
+            "Content-Type": "application/json",
+            ...CORS_HEADERS
+          }
         });
       }
 
@@ -205,6 +226,7 @@ export default async (req, context) => {
         status: 200,
         headers: {
           "Content-Type": "application/json",
+          ...CORS_HEADERS,
           ...authResult.headers
         }
       });
@@ -214,7 +236,10 @@ export default async (req, context) => {
         error: error.message
       }), {
         status: 500,
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Content-Type": "application/json",
+          ...CORS_HEADERS
+        }
       });
     }
   }
@@ -223,18 +248,17 @@ export default async (req, context) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization"
-      }
+      headers: CORS_HEADERS
     });
   }
 
   // Method not allowed
   return new Response(JSON.stringify({ error: "Method not allowed" }), {
     status: 405,
-    headers: { "Content-Type": "application/json" }
+    headers: {
+      "Content-Type": "application/json",
+      ...CORS_HEADERS
+    }
   });
 };
 

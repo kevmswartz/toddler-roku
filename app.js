@@ -531,6 +531,14 @@ async function saveConfigToCloud() {
 
         // Reload from cloud to verify
         await loadToddlerContent({ forceRefresh: true });
+
+        // Update editor with the freshly loaded config (includes new lastUpdated timestamp)
+        const editorTextarea = document.getElementById('cloudConfigJson');
+        if (editorTextarea && currentLoadedConfig) {
+            editorTextarea.value = JSON.stringify(currentLoadedConfig, null, 2);
+        }
+
+        showStatus('Config saved and refreshed successfully!', 'success');
     } catch (error) {
         console.error('Failed to save config to cloud:', error);
         showStatus(`Failed to save: ${error.message}`, 'error');
@@ -2364,8 +2372,28 @@ async function manuallyLocateRoom() {
 
     try {
         showStatus('📡 Scanning for nearby devices...', 'info');
-        await performRoomDetection();
-        showStatus('✅ Room detection complete', 'success');
+
+        // Scan for devices (works regardless of autoDetect setting)
+        const devices = await scanForRoomDetection();
+        if (!devices) {
+            showStatus('❌ Failed to scan for devices', 'error');
+            return;
+        }
+
+        // Detect room from RSSI
+        const detectedRoomId = detectRoomFromRSSI(devices);
+
+        if (detectedRoomId) {
+            // Find room data to show the name
+            const roomData = roomConfig.rooms.find(r => r.id === detectedRoomId);
+            const roomName = roomData ? `${roomData.emoji || '📍'} ${roomData.name}` : detectedRoomId;
+
+            // Update current room
+            setCurrentRoom(detectedRoomId, 'manual');
+            showStatus(`✅ Found room: ${roomName}`, 'success');
+        } else {
+            showStatus('📍 No matching room found', 'info');
+        }
     } catch (error) {
         console.error('Manual room detection failed:', error);
         showStatus('❌ Room detection failed', 'error');
