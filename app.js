@@ -362,6 +362,46 @@ function buildCloudConfigUrl(passphrase, type = 'app-config') {
     return `${NETLIFY_CONFIG_API_BASE}?passphrase=${encoded}&type=${typeParam}`;
 }
 
+async function saveDeviceListToCloud(devices, type = 'ble') {
+    const passphrase = getToddlerContentPassphrase().trim();
+    if (!passphrase) {
+        console.log('No passphrase set, skipping cloud save for device list');
+        return false;
+    }
+
+    const endpoint = type === 'ble'
+        ? `${NETLIFY_CONFIG_API_BASE}/${type}-devices.json`
+        : `${NETLIFY_CONFIG_API_BASE}/${type}-devices.json`;
+
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${passphrase}`
+            },
+            body: JSON.stringify({
+                devices: devices,
+                timestamp: new Date().toISOString(),
+                deviceCount: devices.length
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            console.error(`Failed to save ${type} devices to cloud:`, error);
+            return false;
+        }
+
+        const result = await response.json();
+        console.log(`✅ Saved ${result.deviceCount} ${type} devices to cloud`);
+        return true;
+    } catch (error) {
+        console.error(`Error saving ${type} devices to cloud:`, error);
+        return false;
+    }
+}
+
 function updateToddlerContentSourceInfo() {
     const info = document.getElementById('toddlerContentCacheInfo');
     const passphraseInput = document.getElementById('toddlerContentPassphrase');
@@ -2520,6 +2560,14 @@ async function scanBluetoothDevices() {
         resultsDiv.classList.remove('hidden');
         status.textContent = `Scan complete! Found ${realDevices.length} device${realDevices.length !== 1 ? 's' : ''}`;
 
+        // Save to cloud if passphrase is set
+        if (realDevices.length > 0) {
+            const saved = await saveDeviceListToCloud(realDevices, 'ble');
+            if (saved) {
+                console.log('💾 BLE scan results saved to cloud');
+            }
+        }
+
     } catch (error) {
         console.error('Bluetooth scan failed:', error);
         status.textContent = `Scan failed: ${error}`;
@@ -3101,6 +3149,87 @@ async function goveeSetSunsetGlow(ipOrOptions, portArg) {
     await goveeSetColor(255, 140, 90, ipOrOptions, portArg);
 }
 
+// Multi-device Govee handlers - control multiple lights at once
+async function goveeMultiPower(turnOn = true, devices = []) {
+    if (!Array.isArray(devices) || devices.length === 0) {
+        console.warn('goveeMultiPower: No devices specified');
+        setGoveeStatus('No devices specified for multi-light control', 'error');
+        return;
+    }
+
+    console.log(`🔄 Sending power ${turnOn ? 'ON' : 'OFF'} to ${devices.length} device(s)`);
+    const promises = devices.map(device => {
+        const [ip, port] = Array.isArray(device) ? device : [device, 4003];
+        return goveePower(turnOn, { ip, port: port || 4003 }).catch(err => {
+            console.error(`Failed to control ${ip}:`, err);
+            return null;
+        });
+    });
+
+    await Promise.all(promises);
+    setGoveeStatus(`Sent power ${turnOn ? 'ON' : 'OFF'} to ${devices.length} device(s)`, 'success');
+}
+
+async function goveeMultiToggle(devices = []) {
+    if (!Array.isArray(devices) || devices.length === 0) {
+        console.warn('goveeMultiToggle: No devices specified');
+        setGoveeStatus('No devices specified for multi-light control', 'error');
+        return;
+    }
+
+    console.log(`🔄 Toggling ${devices.length} device(s)`);
+    const promises = devices.map(device => {
+        const [ip, port] = Array.isArray(device) ? device : [device, 4003];
+        return goveeTogglePower({ ip, port: port || 4003 }).catch(err => {
+            console.error(`Failed to toggle ${ip}:`, err);
+            return null;
+        });
+    });
+
+    await Promise.all(promises);
+    setGoveeStatus(`Toggled ${devices.length} device(s)`, 'success');
+}
+
+async function goveeMultiBrightness(brightness, devices = []) {
+    if (!Array.isArray(devices) || devices.length === 0) {
+        console.warn('goveeMultiBrightness: No devices specified');
+        setGoveeStatus('No devices specified for multi-light control', 'error');
+        return;
+    }
+
+    console.log(`🔄 Setting brightness to ${brightness}% on ${devices.length} device(s)`);
+    const promises = devices.map(device => {
+        const [ip, port] = Array.isArray(device) ? device : [device, 4003];
+        return goveeSetBrightness(brightness, { ip, port: port || 4003 }).catch(err => {
+            console.error(`Failed to set brightness on ${ip}:`, err);
+            return null;
+        });
+    });
+
+    await Promise.all(promises);
+    setGoveeStatus(`Set brightness to ${brightness}% on ${devices.length} device(s)`, 'success');
+}
+
+async function goveeMultiColor(r, g, b, devices = []) {
+    if (!Array.isArray(devices) || devices.length === 0) {
+        console.warn('goveeMultiColor: No devices specified');
+        setGoveeStatus('No devices specified for multi-light control', 'error');
+        return;
+    }
+
+    console.log(`🔄 Setting color RGB(${r}, ${g}, ${b}) on ${devices.length} device(s)`);
+    const promises = devices.map(device => {
+        const [ip, port] = Array.isArray(device) ? device : [device, 4003];
+        return goveeSetColor(r, g, b, { ip, port: port || 4003 }).catch(err => {
+            console.error(`Failed to set color on ${ip}:`, err);
+            return null;
+        });
+    });
+
+    await Promise.all(promises);
+    setGoveeStatus(`Set color RGB(${r}, ${g}, ${b}) on ${devices.length} device(s)`, 'success');
+}
+
 function goveeSaveSettings() {
     const ipInput = document.getElementById('goveeIpInput');
     const portInput = document.getElementById('goveePortInput');
@@ -3202,6 +3331,12 @@ async function goveeDiscoverDevices(timeoutMs = 3000) {
             console.log('═══════════════════════════════════════════════════\n');
 
             setGoveeStatus(`Found ${devices.length} Govee device(s)! Check console for details.`, 'success');
+
+            // Save to cloud if passphrase is set
+            const saved = await saveDeviceListToCloud(devices, 'govee');
+            if (saved) {
+                console.log('💾 Govee discovery results saved to cloud');
+            }
         }
 
         return devices;
