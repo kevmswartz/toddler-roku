@@ -550,7 +550,8 @@
         <div class="message" id="globalMessage"></div>
 
         <nav class="tab-nav">
-            <button class="tab-button active" data-tab="rooms">🏠 Rooms & Devices</button>
+            <button class="tab-button active" data-tab="rooms">🏠 Rooms & BLE Detection</button>
+            <button class="tab-button" data-tab="device-lists">📡 Device Lists</button>
             <button class="tab-button" data-tab="youtube">📺 YouTube Quick Launch</button>
             <button class="tab-button" data-tab="apps">🎬 App Buttons</button>
             <button class="tab-button" data-tab="lights">💡 Light Buttons</button>
@@ -560,12 +561,36 @@
         <!-- Rooms Tab -->
         <div class="tab-content active" id="rooms-tab">
             <div class="config-header">
-                <h2>Room Device Assignments</h2>
+                <h2>Room BLE Detection</h2>
                 <button class="add-button" onclick="addRoom()">
                     ➕ Add Room
                 </button>
             </div>
             <div id="roomsContainer" class="room-grid"></div>
+        </div>
+
+        <!-- Device Lists Tab -->
+        <div class="tab-content" id="device-lists-tab">
+            <div class="config-header">
+                <h2>Saved Device Lists</h2>
+                <p style="color: #666; font-size: 14px; margin-top: 10px;">View your saved Bluetooth and Govee device scans. Use these to configure room BLE beacons.</p>
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <h3 style="margin-bottom: 15px;">📱 Bluetooth LE Devices</h3>
+                <button class="btn-primary" onclick="loadBLEDeviceList()" style="margin-bottom: 15px;">🔄 Load BLE Scan Results</button>
+                <div id="bleDevicesList" style="background: #f5f5f5; padding: 20px; border-radius: 8px; min-height: 100px;">
+                    <p style="color: #999;">Click "Load BLE Scan Results" to view saved Bluetooth device scans from your app.</p>
+                </div>
+            </div>
+
+            <div>
+                <h3 style="margin-bottom: 15px;">💡 Govee Devices</h3>
+                <button class="btn-primary" onclick="loadGoveeDeviceList()" style="margin-bottom: 15px;">🔄 Load Govee Discovery Results</button>
+                <div id="goveeDevicesList" style="background: #f5f5f5; padding: 20px; border-radius: 8px; min-height: 100px;">
+                    <p style="color: #999;">Click "Load Govee Discovery Results" to view discovered Govee devices from your app.</p>
+                </div>
+            </div>
         </div>
 
         <!-- YouTube Tab -->
@@ -633,13 +658,11 @@
                 <label>Room ID (lowercase, no spaces)</label>
                 <input type="text" id="roomId" placeholder="living_room">
             </div>
-            <h4 style="margin-top: 20px; margin-bottom: 10px;">Roku Devices</h4>
-            <div id="roomRokuDevices"></div>
-            <button class="btn-secondary btn-sm" onclick="addRokuDevice()" style="margin-bottom: 20px;">+ Add Roku</button>
 
-            <h4 style="margin-bottom: 10px;">Govee Lights</h4>
-            <div id="roomGoveeDevices"></div>
-            <button class="btn-secondary btn-sm" onclick="addGoveeDevice()">+ Add Govee</button>
+            <h4 style="margin-top: 20px; margin-bottom: 10px;">📡 BLE Beacons for Room Detection</h4>
+            <p style="color: #666; font-size: 12px; margin-bottom: 10px;">Add Bluetooth devices that will be used to detect when you're in this room.</p>
+            <div id="roomBeacons"></div>
+            <button class="btn-secondary btn-sm" onclick="addBeacon()" style="margin-bottom: 20px;">+ Add BLE Beacon</button>
 
             <div class="modal-actions">
                 <button class="btn-success" onclick="saveRoom()">Save Room</button>
@@ -895,29 +918,16 @@
                         </div>
                     </div>
                     <div class="device-section">
-                        <h4>📺 Roku Devices (${room.devices?.roku?.length || 0})</h4>
+                        <h4>📡 BLE Beacons (${room.beacons?.length || 0})</h4>
                         <div class="device-list">
-                            ${room.devices?.roku?.length > 0 ? room.devices.roku.map(device => `
+                            ${room.beacons?.length > 0 ? room.beacons.map(beacon => `
                                 <div class="device-item">
                                     <div class="device-info">
-                                        <span class="device-name">${device.name || 'Unnamed'}</span>
-                                        <span>${device.ip}</span>
+                                        <span class="device-name">${beacon.name || 'Unnamed'}</span>
+                                        <span style="font-size: 11px; color: #666;">${beacon.address} • RSSI: ${beacon.rssiThreshold}dB</span>
                                     </div>
                                 </div>
-                            `).join('') : '<div style="text-align: center; color: #999; padding: 10px;">No Roku devices</div>'}
-                        </div>
-                    </div>
-                    <div class="device-section">
-                        <h4>💡 Govee Lights (${room.devices?.govee?.length || 0})</h4>
-                        <div class="device-list">
-                            ${room.devices?.govee?.length > 0 ? room.devices.govee.map(device => `
-                                <div class="device-item">
-                                    <div class="device-info">
-                                        <span class="device-name">${device.name || 'Unnamed'}</span>
-                                        <span>${device.mac ? device.mac + ' • ' : ''}${device.ip}:${device.port || 4003}</span>
-                                    </div>
-                                </div>
-                            `).join('') : '<div style="text-align: center; color: #999; padding: 10px;">No Govee devices</div>'}
+                            `).join('') : '<div style="text-align: center; color: #999; padding: 10px;">No BLE beacons configured</div>'}
                         </div>
                     </div>
                     <button class="btn-primary btn-sm" style="width: 100%; margin-top: 10px;" onclick="editRoom(${index})">
@@ -933,8 +943,7 @@
             document.getElementById('roomName').value = '';
             document.getElementById('roomEmoji').value = '🏠';
             document.getElementById('roomId').value = '';
-            document.getElementById('roomRokuDevices').innerHTML = '';
-            document.getElementById('roomGoveeDevices').innerHTML = '';
+            document.getElementById('roomBeacons').innerHTML = '';
             document.getElementById('roomModal').classList.add('show');
         }
 
@@ -946,67 +955,41 @@
             document.getElementById('roomEmoji').value = room.emoji || '🏠';
             document.getElementById('roomId').value = room.id;
 
-            // Render device inputs
-            const rokuContainer = document.getElementById('roomRokuDevices');
-            rokuContainer.innerHTML = (room.devices?.roku || []).map((device, i) => `
+            // Render beacon inputs
+            const beaconsContainer = document.getElementById('roomBeacons');
+            beaconsContainer.innerHTML = (room.beacons || []).map((beacon, i) => `
                 <div class="input-group" style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
-                    <input type="text" placeholder="Name" value="${device.name || ''}" data-roku-index="${i}" data-field="name" style="margin-bottom: 8px;">
-                    <input type="text" placeholder="IP Address" value="${device.ip || ''}" data-roku-index="${i}" data-field="ip">
-                    <button class="btn-danger btn-sm" onclick="removeRokuDevice(${i})" style="margin-top: 8px;">Remove</button>
-                </div>
-            `).join('');
-
-            const goveeContainer = document.getElementById('roomGoveeDevices');
-            goveeContainer.innerHTML = (room.devices?.govee || []).map((device, i) => `
-                <div class="input-group" style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
-                    <input type="text" placeholder="Name" value="${device.name || ''}" data-govee-index="${i}" data-field="name" style="margin-bottom: 8px;">
-                    <input type="text" placeholder="MAC Address (e.g., AA:BB:CC:DD:EE:FF)" value="${device.mac || ''}" data-govee-index="${i}" data-field="mac" style="margin-bottom: 8px;">
-                    <input type="text" placeholder="IP Address" value="${device.ip || ''}" data-govee-index="${i}" data-field="ip" style="margin-bottom: 8px;">
-                    <input type="number" placeholder="Port (default: 4003)" value="${device.port || 4003}" data-govee-index="${i}" data-field="port">
-                    <button class="btn-danger btn-sm" onclick="removeGoveeDevice(${i})" style="margin-top: 8px;">Remove</button>
+                    <input type="text" placeholder="Device Name" value="${beacon.name || ''}" data-beacon-index="${i}" data-field="name" style="margin-bottom: 8px;">
+                    <input type="text" placeholder="BLE Address (e.g., AA:BB:CC:DD:EE:FF)" value="${beacon.address || ''}" data-beacon-index="${i}" data-field="address" style="margin-bottom: 8px;">
+                    <input type="text" placeholder="Type (default: ble)" value="${beacon.type || 'ble'}" data-beacon-index="${i}" data-field="type" style="margin-bottom: 8px;">
+                    <input type="number" placeholder="Expected RSSI (e.g., -50)" value="${beacon.expectedRssi || -50}" data-beacon-index="${i}" data-field="expectedRssi" style="margin-bottom: 8px;">
+                    <input type="number" placeholder="RSSI Threshold (e.g., -70)" value="${beacon.rssiThreshold || -70}" data-beacon-index="${i}" data-field="rssiThreshold">
+                    <button class="btn-danger btn-sm" onclick="removeBeacon(${i})" style="margin-top: 8px;">Remove</button>
                 </div>
             `).join('');
 
             document.getElementById('roomModal').classList.add('show');
         }
 
-        function addRokuDevice() {
-            const container = document.getElementById('roomRokuDevices');
+        function addBeacon() {
+            const container = document.getElementById('roomBeacons');
             const index = container.children.length;
             const div = document.createElement('div');
             div.className = 'input-group';
             div.style.cssText = 'background: white; padding: 10px; border-radius: 6px; margin-bottom: 10px;';
             div.innerHTML = `
-                <input type="text" placeholder="Name" data-roku-index="${index}" data-field="name" style="margin-bottom: 8px;">
-                <input type="text" placeholder="IP Address" data-roku-index="${index}" data-field="ip">
-                <button class="btn-danger btn-sm" onclick="removeRokuDevice(${index})" style="margin-top: 8px;">Remove</button>
+                <input type="text" placeholder="Device Name" data-beacon-index="${index}" data-field="name" style="margin-bottom: 8px;">
+                <input type="text" placeholder="BLE Address (e.g., AA:BB:CC:DD:EE:FF)" data-beacon-index="${index}" data-field="address" style="margin-bottom: 8px;">
+                <input type="text" placeholder="Type (default: ble)" value="ble" data-beacon-index="${index}" data-field="type" style="margin-bottom: 8px;">
+                <input type="number" placeholder="Expected RSSI (e.g., -50)" value="-50" data-beacon-index="${index}" data-field="expectedRssi" style="margin-bottom: 8px;">
+                <input type="number" placeholder="RSSI Threshold (e.g., -70)" value="-70" data-beacon-index="${index}" data-field="rssiThreshold">
+                <button class="btn-danger btn-sm" onclick="removeBeacon(${index})" style="margin-top: 8px;">Remove</button>
             `;
             container.appendChild(div);
         }
 
-        function removeRokuDevice(index) {
-            const container = document.getElementById('roomRokuDevices');
-            container.children[index].remove();
-        }
-
-        function addGoveeDevice() {
-            const container = document.getElementById('roomGoveeDevices');
-            const index = container.children.length;
-            const div = document.createElement('div');
-            div.className = 'input-group';
-            div.style.cssText = 'background: white; padding: 10px; border-radius: 6px; margin-bottom: 10px;';
-            div.innerHTML = `
-                <input type="text" placeholder="Name" data-govee-index="${index}" data-field="name" style="margin-bottom: 8px;">
-                <input type="text" placeholder="MAC Address (e.g., AA:BB:CC:DD:EE:FF)" data-govee-index="${index}" data-field="mac" style="margin-bottom: 8px;">
-                <input type="text" placeholder="IP Address" data-govee-index="${index}" data-field="ip" style="margin-bottom: 8px;">
-                <input type="number" placeholder="Port (default: 4003)" value="4003" data-govee-index="${index}" data-field="port">
-                <button class="btn-danger btn-sm" onclick="removeGoveeDevice(${index})" style="margin-top: 8px;">Remove</button>
-            `;
-            container.appendChild(div);
-        }
-
-        function removeGoveeDevice(index) {
-            const container = document.getElementById('roomGoveeDevices');
+        function removeBeacon(index) {
+            const container = document.getElementById('roomBeacons');
             container.children[index].remove();
         }
 
@@ -1020,41 +1003,29 @@
                 return;
             }
 
-            // Collect Roku devices
-            const rokuDevices = Array.from(document.querySelectorAll('[data-roku-index]'))
+            // Collect BLE beacons
+            const beacons = Array.from(document.querySelectorAll('[data-beacon-index]'))
                 .reduce((acc, input) => {
-                    const index = parseInt(input.dataset.rokuIndex);
+                    const index = parseInt(input.dataset.beaconIndex);
                     const field = input.dataset.field;
                     if (!acc[index]) acc[index] = {};
                     acc[index][field] = input.value.trim();
                     return acc;
                 }, [])
-                .filter(device => device.ip);
-
-            // Collect Govee devices
-            const goveeDevices = Array.from(document.querySelectorAll('[data-govee-index]'))
-                .reduce((acc, input) => {
-                    const index = parseInt(input.dataset.goveeIndex);
-                    const field = input.dataset.field;
-                    if (!acc[index]) acc[index] = {};
-                    acc[index][field] = input.value.trim();
-                    return acc;
-                }, [])
-                .filter(device => device.ip)
-                .map(device => ({
-                    ...device,
-                    port: parseInt(device.port) || 4003
+                .filter(beacon => beacon.address)
+                .map(beacon => ({
+                    type: beacon.type || 'ble',
+                    name: beacon.name || 'Unnamed',
+                    address: beacon.address,
+                    expectedRssi: parseInt(beacon.expectedRssi) || -50,
+                    rssiThreshold: parseInt(beacon.rssiThreshold) || -70
                 }));
 
             const room = {
                 id,
                 name,
                 emoji,
-                beacons: currentEditingRoomIndex >= 0 ? roomsConfig.rooms[currentEditingRoomIndex].beacons : [],
-                devices: {
-                    roku: rokuDevices,
-                    govee: goveeDevices
-                }
+                beacons
             };
 
             if (currentEditingRoomIndex >= 0) {
@@ -1474,6 +1445,129 @@
                 loadAllConfigs();
             }
         });
+
+        // ===== DEVICE LISTS =====
+        async function loadBLEDeviceList() {
+            const container = document.getElementById('bleDevicesList');
+            container.innerHTML = '<p style="color: #999;">Loading BLE device list...</p>';
+
+            try {
+                const passphrase = document.getElementById('passphrase').value.trim();
+                if (!passphrase) {
+                    showMessage('Please enter a passphrase first', 'error');
+                    container.innerHTML = '<p style="color: #f44336;">Error: Passphrase required</p>';
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/ble-devices.json?passphrase=${encodeURIComponent(passphrase)}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to load BLE devices: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.devices || data.devices.length === 0) {
+                    container.innerHTML = '<p style="color: #999;">No BLE devices found. Scan from your app first.</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div style="margin-bottom: 10px;">
+                        <strong>Last scan:</strong> ${new Date(data.timestamp).toLocaleString()}<br>
+                        <strong>Total devices:</strong> ${data.devices.length}
+                    </div>
+                    <div style="display: grid; gap: 10px;">
+                        ${data.devices.map(device => `
+                            <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #ddd;">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                    <div>
+                                        <strong>${device.name || 'Unknown Device'}</strong><br>
+                                        <span style="font-size: 12px; color: #666; font-family: monospace;">${device.address}</span>
+                                    </div>
+                                    <span style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                                        ${device.rssi} dBm
+                                    </span>
+                                </div>
+                                <button class="btn-secondary btn-sm" onclick="copyToClipboard('${device.address}')" style="font-size: 11px; padding: 4px 8px;">
+                                    📋 Copy Address
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Failed to load BLE devices:', error);
+                container.innerHTML = `<p style="color: #f44336;">Error: ${error.message}</p>`;
+                showMessage(`Failed to load BLE devices: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadGoveeDeviceList() {
+            const container = document.getElementById('goveeDevicesList');
+            container.innerHTML = '<p style="color: #999;">Loading Govee device list...</p>';
+
+            try {
+                const passphrase = document.getElementById('passphrase').value.trim();
+                if (!passphrase) {
+                    showMessage('Please enter a passphrase first', 'error');
+                    container.innerHTML = '<p style="color: #f44336;">Error: Passphrase required</p>';
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/govee-devices.json?passphrase=${encodeURIComponent(passphrase)}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to load Govee devices: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.devices || data.devices.length === 0) {
+                    container.innerHTML = '<p style="color: #999;">No Govee devices found. Run discovery from your app first.</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div style="margin-bottom: 10px;">
+                        <strong>Last discovery:</strong> ${new Date(data.timestamp).toLocaleString()}<br>
+                        <strong>Total devices:</strong> ${data.devices.length}
+                    </div>
+                    <div style="display: grid; gap: 10px;">
+                        ${data.devices.map(device => `
+                            <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #ddd;">
+                                <div style="margin-bottom: 8px;">
+                                    <strong>💡 ${device.name || 'Govee Light'}</strong><br>
+                                    <span style="font-size: 12px; color: #666;">
+                                        IP: <span style="font-family: monospace;">${device.ip}</span> • Port: ${device.port || 4003}
+                                    </span>
+                                    ${device.mac ? `<br><span style="font-size: 12px; color: #666;">MAC: <span style="font-family: monospace;">${device.mac}</span></span>` : ''}
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="btn-secondary btn-sm" onclick="copyToClipboard('${device.ip}')" style="font-size: 11px; padding: 4px 8px;">
+                                        📋 Copy IP
+                                    </button>
+                                    ${device.mac ? `<button class="btn-secondary btn-sm" onclick="copyToClipboard('${device.mac}')" style="font-size: 11px; padding: 4px 8px;">
+                                        📋 Copy MAC
+                                    </button>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Failed to load Govee devices:', error);
+                container.innerHTML = `<p style="color: #f44336;">Error: ${error.message}</p>`;
+                showMessage(`Failed to load Govee devices: ${error.message}`, 'error');
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showMessage('✅ Copied to clipboard!', 'success');
+            }).catch(err => {
+                showMessage('❌ Failed to copy', 'error');
+                console.error('Failed to copy:', err);
+            });
+        }
     </script>
 </body>
 </html>

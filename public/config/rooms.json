@@ -13,11 +13,7 @@
           "expectedRssi": -50,
           "rssiThreshold": -70
         }
-      ],
-      "devices": {
-        "roku": [],
-        "govee": []
-      }
+      ]
     },
     {
       "id": "bedroom",
@@ -31,21 +27,13 @@
           "expectedRssi": -45,
           "rssiThreshold": -70
         }
-      ],
-      "devices": {
-        "roku": [],
-        "govee": []
-      }
+      ]
     },
     {
       "id": "kitchen",
       "name": "Kitchen",
       "emoji": "🍳",
-      "beacons": [],
-      "devices": {
-        "roku": [],
-        "govee": []
-      }
+      "beacons": []
     }
   ],
   "settings": {
@@ -59,7 +47,6 @@
     "beacons: BLE devices used for room detection (can be Govee lights, Tile trackers, etc.)",
     "expectedRssi: Typical RSSI when standing in the room (use calibration to set this)",
     "rssiThreshold: Minimum RSSI to consider this room as a match",
-    "devices: Roku/Govee devices that belong in this room",
     "detectionMode: 'strongest_signal' | 'threshold' | 'manual'",
     "scanInterval: How often to scan for room detection (ms)",
     "rssiSampleSize: Number of samples to average for stability"
