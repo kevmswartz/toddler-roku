@@ -198,16 +198,18 @@ All advanced settings are behind the ⚙️ gear button + 2-second hold + PIN.
 
 ### Managing Content
 
-#### Option 1: Interactive CLI
-```bash
-npm run content
-```
+#### Option 1: Netlify Admin UI (Recommended)
+Use the web-based admin interface to manage all content:
+- Add/edit buttons with visual forms
+- Upload images directly
+- Configure settings remotely
+- See changes instantly in the app
 
-Follow prompts to add/edit kid buttons in `default.json`.
+See `netlify/README.md` for setup and usage.
 
 #### Option 2: Manual Editing
 
-Edit `public/config/toddler/default.json`:
+Edit `public/config/toddler/default.json` locally:
 
 ```json
 {
@@ -276,26 +278,31 @@ const PIN_CODE = '1234'; // Change to your desired PIN
 
 Rebuild after changing: `npm run build`
 
-### Remote Content URL (Optional)
+### Remote Content Management via Netlify
 
-Update content without rebuilding the app by hosting config remotely:
+Update content, images, and settings without rebuilding the app:
 
-#### Option 1: Netlify (Recommended)
+**Setup:**
 1. Deploy this repo to Netlify (already configured via `netlify.toml`)
-2. In app settings, set: `https://toddler-phone-control.netlify.app/api/config`
-3. Update config via API (see `netlify/README.md`)
-4. App automatically fetches fresh content
+2. Set your 5-word passphrase as environment variable `CONFIG_PASSPHRASE`
+3. Upload your config via the Netlify admin UI or API
+4. In app settings, set remote URL: `https://toddler-phone-control.netlify.app/api/config`
 
-#### Option 2: Direct CDN/Static Host
-1. Upload your `default.json` to any CDN or static host
-2. In app settings, set the URL to your JSON file
-3. App always fetches fresh content
-4. Falls back to bundled default if remote fails
+**Features:**
+- 🎨 Upload images directly to Netlify Blobs
+- 📝 Edit buttons and content via web UI
+- 🔢 Set PIN remotely
+- 📺 Configure Roku/Govee settings
+- 💾 Changes sync automatically to all devices
 
 **Benefits:**
-- Update content anytime without rebuilding
-- Still works offline (bundled fallback)
+- Update content anytime without rebuilding app
+- Manage images in the cloud (smaller app size)
+- Works offline with bundled fallback
 - Perfect for families with changing needs
+- Free on Netlify's generous free tier
+
+See `netlify/README.md` for complete setup guide.
 
 ### Govee Lights Setup
 
@@ -452,8 +459,9 @@ Other commands:
 ## 📚 Additional Documentation
 
 - **`CLAUDE.md`** - Comprehensive developer guide with architecture details
-- **`netlify/README.md`** - Netlify API deployment and configuration hosting
-- **Package Docs** - See `public/config/button-types.json` for handler reference
+- **`CODEBASE_AUDIT.md`** - Health analysis and refactoring roadmap
+- **`netlify/README.md`** - Netlify deployment, admin UI, and API docs
+- **`public/config/button-types.json`** - Handler function reference
 
 ---
 
