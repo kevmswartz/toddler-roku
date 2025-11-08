@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toddler Phone Control - Admin</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 min-h-screen">
+
+    <div x-data="adminApp()" x-cloak class="min-h-screen">
+
+        <!-- Login View -->
+        <div x-show="!authenticated" class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 w-full max-w-md border border-white/20">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-white mb-2">🎮 Admin Panel</h1>
+                    <p class="text-indigo-200">Toddler Phone Control</p>
+                </div>
+
+                <form @submit.prevent="login" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-indigo-200 mb-2">
+                            Enter 5-Word Passphrase
+                        </label>
+                        <input
+                            type="password"
+                            x-model="passphrase"
+                            placeholder="blue mountain coffee morning sunshine"
+                            class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                            required
+                        >
+                    </div>
+
+                    <div x-show="loginError" class="bg-red-500/20 border border-red-400/40 text-red-100 px-4 py-3 rounded-lg text-sm">
+                        <span x-text="loginError"></span>
+                    </div>
+
+                    <button
+                        type="submit"
+                        :disabled="loading"
+                        class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <span x-show="!loading">Login</span>
+                        <span x-show="loading">Authenticating...</span>
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center text-indigo-200 text-sm">
+                    <p>Default: <code class="bg-white/10 px-2 py-1 rounded">blue mountain coffee morning sunshine</code></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Admin View -->
+        <div x-show="authenticated" class="min-h-screen">
+            <!-- Header -->
+            <header class="bg-white/10 backdrop-blur-lg border-b border-white/20">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-2xl font-bold text-white">🎮 Toddler Phone Control Admin</h1>
+                            <p class="text-indigo-200 text-sm">Manage your configuration</p>
+                        </div>
+                        <button
+                            @click="logout"
+                            class="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-100 rounded-lg transition-colors border border-red-400/40"
+                        >
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Navigation Tabs -->
+            <div class="bg-white/5 border-b border-white/20">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <nav class="flex space-x-8">
+                        <button
+                            @click="activeTab = 'buttons'"
+                            :class="activeTab === 'buttons' ? 'border-indigo-400 text-white' : 'border-transparent text-indigo-200 hover:text-white'"
+                            class="py-4 px-1 border-b-2 font-medium text-sm transition-colors"
+                        >
+                            📱 Buttons
+                        </button>
+                        <button
+                            @click="activeTab = 'quicklaunch'"
+                            :class="activeTab === 'quicklaunch' ? 'border-indigo-400 text-white' : 'border-transparent text-indigo-200 hover:text-white'"
+                            class="py-4 px-1 border-b-2 font-medium text-sm transition-colors"
+                        >
+                            🚀 Quick Launch
+                        </button>
+                        <button
+                            @click="activeTab = 'images'"
+                            :class="activeTab === 'images' ? 'border-indigo-400 text-white' : 'border-transparent text-indigo-200 hover:text-white'"
+                            class="py-4 px-1 border-b-2 font-medium text-sm transition-colors"
+                        >
+                            🖼️ Images
+                        </button>
+                        <button
+                            @click="activeTab = 'settings'"
+                            :class="activeTab === 'settings' ? 'border-indigo-400 text-white' : 'border-transparent text-indigo-200 hover:text-white'"
+                            class="py-4 px-1 border-b-2 font-medium text-sm transition-colors"
+                        >
+                            ⚙️ Settings
+                        </button>
+                        <button
+                            @click="activeTab = 'json'"
+                            :class="activeTab === 'json' ? 'border-indigo-400 text-white' : 'border-transparent text-indigo-200 hover:text-white'"
+                            class="py-4 px-1 border-b-2 font-medium text-sm transition-colors"
+                        >
+                            📝 Raw JSON
+                        </button>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+                <!-- Status Messages -->
+                <div x-show="statusMessage" class="mb-6">
+                    <div
+                        :class="{
+                            'bg-green-500/20 border-green-400/40 text-green-100': statusType === 'success',
+                            'bg-red-500/20 border-red-400/40 text-red-100': statusType === 'error',
+                            'bg-blue-500/20 border-blue-400/40 text-blue-100': statusType === 'info'
+                        }"
+                        class="px-4 py-3 rounded-lg border"
+                    >
+                        <span x-text="statusMessage"></span>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div x-show="loading" class="text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+                    <p class="text-white mt-4">Loading configuration...</p>
+                </div>
+
+                <!-- Buttons Tab -->
+                <div x-show="activeTab === 'buttons' && !loading">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-white">Special Buttons</h2>
+                        <button
+                            @click="addButton"
+                            class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors"
+                        >
+                            ➕ Add Button
+                        </button>
+                    </div>
+
+                    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        <template x-for="(button, index) in config.specialButtons" :key="index">
+                            <div class="bg-white/10 backdrop-blur-lg rounded-lg p-4 border border-white/20">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="text-3xl" x-text="button.emoji"></div>
+                                    <div class="flex gap-2">
+                                        <button
+                                            @click="editButton(index)"
+                                            class="text-indigo-300 hover:text-indigo-100"
+                                        >
+                                            ✏️
+                                        </button>
+                                        <button
+                                            @click="deleteButton(index)"
+                                            class="text-red-300 hover:text-red-100"
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </div>
+                                <h3 class="font-semibold text-white mb-1" x-text="button.label"></h3>
+                                <p class="text-sm text-indigo-200 mb-2">
+                                    <span class="font-mono text-xs" x-text="button.id"></span>
+                                </p>
+                                <div class="flex flex-wrap gap-1">
+                                    <span class="text-xs px-2 py-1 bg-purple-500/30 text-purple-100 rounded" x-text="button.category"></span>
+                                    <span x-show="button.zone" class="text-xs px-2 py-1 bg-blue-500/30 text-blue-100 rounded" x-text="button.zone"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div x-show="!config.specialButtons || config.specialButtons.length === 0" class="text-center py-12 text-indigo-200">
+                        No buttons configured yet. Click "Add Button" to create one.
+                    </div>
+                </div>
+
+                <!-- Quick Launch Tab -->
+                <div x-show="activeTab === 'quicklaunch' && !loading">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-white">Quick Launch Items</h2>
+                        <button
+                            @click="addQuickLaunch"
+                            class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors"
+                        >
+                            ➕ Add Item
+                        </button>
+                    </div>
+
+                    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        <template x-for="(item, index) in config.quickLaunch" :key="index">
+                            <div class="bg-white/10 backdrop-blur-lg rounded-lg p-4 border border-white/20">
+                                <div class="flex items-start justify-between mb-3">
+                                    <img
+                                        x-show="item.thumbnail"
+                                        :src="item.thumbnail"
+                                        :alt="item.label"
+                                        class="w-16 h-16 rounded object-cover"
+                                    >
+                                    <div class="flex gap-2">
+                                        <button
+                                            @click="editQuickLaunch(index)"
+                                            class="text-indigo-300 hover:text-indigo-100"
+                                        >
+                                            ✏️
+                                        </button>
+                                        <button
+                                            @click="deleteQuickLaunch(index)"
+                                            class="text-red-300 hover:text-red-100"
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </div>
+                                <h3 class="font-semibold text-white mb-1" x-text="item.label"></h3>
+                                <p class="text-sm text-indigo-200">
+                                    <span class="font-mono text-xs" x-text="item.id"></span>
+                                </p>
+                                <span class="text-xs px-2 py-1 bg-green-500/30 text-green-100 rounded" x-text="item.type"></span>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div x-show="!config.quickLaunch || config.quickLaunch.length === 0" class="text-center py-12 text-indigo-200">
+                        No quick launch items yet. Click "Add Item" to create one.
+                    </div>
+                </div>
+
+                <!-- Images Tab -->
+                <div x-show="activeTab === 'images' && !loading">
+                    <h2 class="text-xl font-bold text-white mb-6">Image Upload</h2>
+
+                    <div class="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                        <p class="text-indigo-200 mb-4">Upload images to Netlify Blobs and get URLs to use in your configuration.</p>
+
+                        <div class="border-2 border-dashed border-white/30 rounded-lg p-8 text-center">
+                            <input
+                                type="file"
+                                @change="handleImageUpload"
+                                accept="image/*"
+                                class="hidden"
+                                id="imageInput"
+                            >
+                            <label for="imageInput" class="cursor-pointer">
+                                <div class="text-4xl mb-2">📁</div>
+                                <p class="text-white font-medium mb-1">Click to upload image</p>
+                                <p class="text-indigo-200 text-sm">PNG, JPG, WEBP up to 10MB</p>
+                            </label>
+                        </div>
+
+                        <div x-show="uploadedImages.length > 0" class="mt-6">
+                            <h3 class="text-white font-semibold mb-3">Uploaded Images</h3>
+                            <div class="grid gap-3 md:grid-cols-2">
+                                <template x-for="img in uploadedImages" :key="img.url">
+                                    <div class="bg-white/5 rounded-lg p-3 flex items-center gap-3">
+                                        <img :src="img.url" class="w-12 h-12 rounded object-cover">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-white text-sm font-medium truncate" x-text="img.name"></p>
+                                            <input
+                                                :value="img.url"
+                                                readonly
+                                                class="w-full text-xs bg-white/10 text-indigo-200 px-2 py-1 rounded mt-1 font-mono"
+                                                @click="$event.target.select()"
+                                            >
+                                        </div>
+                                        <button
+                                            @click="copyToClipboard(img.url)"
+                                            class="text-indigo-300 hover:text-indigo-100 text-sm"
+                                        >
+                                            📋
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div x-show="activeTab === 'settings' && !loading">
+                    <h2 class="text-xl font-bold text-white mb-6">App Settings</h2>
+
+                    <div class="grid gap-6">
+                        <!-- PIN Setting -->
+                        <div class="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                            <h3 class="text-white font-semibold mb-4">🔒 PIN Code</h3>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-indigo-200 mb-2">PIN (4 digits)</label>
+                                    <input
+                                        type="text"
+                                        x-model="config.settings.pin"
+                                        maxlength="4"
+                                        pattern="[0-9]{4}"
+                                        placeholder="1234"
+                                        class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                    >
+                                    <p class="text-xs text-indigo-300 mt-1">Default: 1234</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Default Roku IP -->
+                        <div class="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                            <h3 class="text-white font-semibold mb-4">📺 Default Roku IP</h3>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-indigo-200 mb-2">IP Address</label>
+                                    <input
+                                        type="text"
+                                        x-model="config.settings.rokuIp"
+                                        placeholder="192.168.1.100"
+                                        class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                    >
+                                    <p class="text-xs text-indigo-300 mt-1">Optional: Pre-fill Roku IP for users</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Govee Settings -->
+                        <div class="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                            <h3 class="text-white font-semibold mb-4">💡 Default Govee Settings</h3>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-indigo-200 mb-2">IP Address</label>
+                                    <input
+                                        type="text"
+                                        x-model="config.settings.goveeIp"
+                                        placeholder="192.168.1.101"
+                                        class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                    >
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-indigo-200 mb-2">Port</label>
+                                    <input
+                                        type="number"
+                                        x-model="config.settings.goveePort"
+                                        placeholder="4003"
+                                        class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Raw JSON Tab -->
+                <div x-show="activeTab === 'json' && !loading">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-white">Raw JSON Configuration</h2>
+                        <button
+                            @click="formatJson"
+                            class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors text-sm"
+                        >
+                            ✨ Format
+                        </button>
+                    </div>
+
+                    <div class="bg-white/10 backdrop-blur-lg rounded-lg p-6 border border-white/20">
+                        <textarea
+                            x-model="jsonText"
+                            rows="20"
+                            class="w-full bg-black/30 text-green-300 font-mono text-sm p-4 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                            spellcheck="false"
+                        ></textarea>
+                        <div class="mt-4 flex gap-3">
+                            <button
+                                @click="applyJsonChanges"
+                                class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors"
+                            >
+                                Apply Changes
+                            </button>
+                            <button
+                                @click="reloadConfig"
+                                class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                            >
+                                Discard & Reload
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Button (Fixed Bottom) -->
+                <div x-show="!loading" class="fixed bottom-0 left-0 right-0 bg-white/10 backdrop-blur-lg border-t border-white/20 py-4">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-end gap-3">
+                        <button
+                            @click="reloadConfig"
+                            class="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors font-medium"
+                        >
+                            🔄 Reload
+                        </button>
+                        <button
+                            @click="saveConfig"
+                            :disabled="saving"
+                            class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <span x-show="!saving">💾 Save Configuration</span>
+                            <span x-show="saving">Saving...</span>
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+    </div>
+
+    <script>
+        function adminApp() {
+            return {
+                // Auth state
+                authenticated: false,
+                passphrase: '',
+                loginError: '',
+
+                // UI state
+                activeTab: 'buttons',
+                loading: false,
+                saving: false,
+                statusMessage: '',
+                statusType: 'info',
+
+                // Config data
+                config: {
+                    specialButtons: [],
+                    quickLaunch: [],
+                    settings: {
+                        pin: '1234',
+                        rokuIp: '',
+                        goveeIp: '',
+                        goveePort: 4003
+                    }
+                },
+                jsonText: '',
+
+                // Image upload
+                uploadedImages: [],
+
+                // API base URL
+                apiBase: 'https://toddler-phone-control.netlify.app/api',
+
+                init() {
+                    // Check if already authenticated (sessionStorage)
+                    const savedPassphrase = sessionStorage.getItem('admin_passphrase');
+                    if (savedPassphrase) {
+                        this.passphrase = savedPassphrase;
+                        this.loadConfig();
+                    }
+                },
+
+                async login() {
+                    this.loading = true;
+                    this.loginError = '';
+
+                    try {
+                        // Test authentication by trying to fetch config
+                        const response = await fetch(`${this.apiBase}/config`, {
+                            headers: {
+                                'Authorization': `Bearer ${this.passphrase}`
+                            }
+                        });
+
+                        if (response.ok) {
+                            this.authenticated = true;
+                            sessionStorage.setItem('admin_passphrase', this.passphrase);
+                            await this.loadConfig();
+                        } else if (response.status === 401 || response.status === 403) {
+                            this.loginError = 'Invalid passphrase. Please try again.';
+                        } else {
+                            this.loginError = 'Unable to connect to server.';
+                        }
+                    } catch (error) {
+                        this.loginError = `Error: ${error.message}`;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                logout() {
+                    this.authenticated = false;
+                    this.passphrase = '';
+                    sessionStorage.removeItem('admin_passphrase');
+                    this.config = { specialButtons: [], quickLaunch: [], settings: {} };
+                },
+
+                async loadConfig() {
+                    this.loading = true;
+                    this.statusMessage = '';
+
+                    try {
+                        const response = await fetch(`${this.apiBase}/config`);
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.config = {
+                                specialButtons: data.specialButtons || [],
+                                quickLaunch: data.quickLaunch || [],
+                                settings: data.settings || {
+                                    pin: '1234',
+                                    rokuIp: '',
+                                    goveeIp: '',
+                                    goveePort: 4003
+                                }
+                            };
+                            this.syncJsonText();
+                            this.authenticated = true;
+
+                            // Load uploaded images
+                            await this.loadUploadedImages();
+                        } else {
+                            this.showStatus('Failed to load configuration', 'error');
+                        }
+                    } catch (error) {
+                        this.showStatus(`Error loading config: ${error.message}`, 'error');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async saveConfig() {
+                    if (!confirm('Save configuration to cloud? This will update all connected devices.')) {
+                        return;
+                    }
+
+                    this.saving = true;
+                    this.statusMessage = '';
+
+                    try {
+                        const response = await fetch(`${this.apiBase}/config`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${this.passphrase}`
+                            },
+                            body: JSON.stringify(this.config)
+                        });
+
+                        if (response.ok) {
+                            this.showStatus('✅ Configuration saved successfully!', 'success');
+                            this.syncJsonText();
+                        } else {
+                            const error = await response.json();
+                            this.showStatus(`Failed to save: ${error.message || 'Unknown error'}`, 'error');
+                        }
+                    } catch (error) {
+                        this.showStatus(`Error saving config: ${error.message}`, 'error');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+
+                reloadConfig() {
+                    if (confirm('Reload configuration? Unsaved changes will be lost.')) {
+                        this.loadConfig();
+                    }
+                },
+
+                // Button Management
+                addButton() {
+                    const newButton = {
+                        id: `button_${Date.now()}`,
+                        emoji: '🎮',
+                        label: 'New Button',
+                        handler: 'sendKey',
+                        args: ['Home'],
+                        category: 'kidMode-remote',
+                        zone: 'remote'
+                    };
+
+                    const label = prompt('Button Label:', 'New Button');
+                    if (!label) return;
+
+                    newButton.label = label;
+                    newButton.id = label.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
+
+                    this.config.specialButtons.push(newButton);
+                    this.syncJsonText();
+                    this.showStatus('Button added. Remember to save!', 'info');
+                },
+
+                editButton(index) {
+                    // For now, show a simplified edit
+                    const button = this.config.specialButtons[index];
+                    const newLabel = prompt('Edit Button Label:', button.label);
+                    if (newLabel !== null) {
+                        button.label = newLabel;
+                        this.syncJsonText();
+                    }
+                },
+
+                deleteButton(index) {
+                    if (confirm('Delete this button?')) {
+                        this.config.specialButtons.splice(index, 1);
+                        this.syncJsonText();
+                        this.showStatus('Button deleted. Remember to save!', 'info');
+                    }
+                },
+
+                // Quick Launch Management
+                addQuickLaunch() {
+                    const newItem = {
+                        id: `item_${Date.now()}`,
+                        label: 'New Item',
+                        type: 'youtube',
+                        videoId: '',
+                        thumbnail: ''
+                    };
+
+                    const label = prompt('Item Label:', 'New Item');
+                    if (!label) return;
+
+                    newItem.label = label;
+                    newItem.id = label.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
+
+                    this.config.quickLaunch.push(newItem);
+                    this.syncJsonText();
+                    this.showStatus('Item added. Remember to save!', 'info');
+                },
+
+                editQuickLaunch(index) {
+                    const item = this.config.quickLaunch[index];
+                    const newLabel = prompt('Edit Item Label:', item.label);
+                    if (newLabel !== null) {
+                        item.label = newLabel;
+                        this.syncJsonText();
+                    }
+                },
+
+                deleteQuickLaunch(index) {
+                    if (confirm('Delete this item?')) {
+                        this.config.quickLaunch.splice(index, 1);
+                        this.syncJsonText();
+                        this.showStatus('Item deleted. Remember to save!', 'info');
+                    }
+                },
+
+                // Image Upload to Netlify Blobs
+                async handleImageUpload(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    this.loading = true;
+                    this.showStatus('Uploading image...', 'info');
+
+                    try {
+                        const formData = new FormData();
+                        formData.append('image', file);
+
+                        const response = await fetch(`${this.apiBase}/upload-image`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${this.passphrase}`
+                            },
+                            body: formData
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.uploadedImages.push({
+                                name: data.name,
+                                url: data.url,
+                                key: data.key,
+                                size: data.size
+                            });
+                            this.showStatus(`✅ ${data.name} uploaded successfully!`, 'success');
+                        } else {
+                            const error = await response.json();
+                            this.showStatus(`Upload failed: ${error.error}`, 'error');
+                        }
+                    } catch (error) {
+                        this.showStatus(`Upload error: ${error.message}`, 'error');
+                    } finally {
+                        this.loading = false;
+                        event.target.value = '';
+                    }
+                },
+
+                async loadUploadedImages() {
+                    try {
+                        const response = await fetch(`${this.apiBase}/images`);
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.uploadedImages = data.images || [];
+                        }
+                    } catch (error) {
+                        console.error('Error loading images:', error);
+                    }
+                },
+
+                copyToClipboard(text) {
+                    navigator.clipboard.writeText(text);
+                    this.showStatus('URL copied to clipboard!', 'success');
+                },
+
+                // JSON Management
+                syncJsonText() {
+                    this.jsonText = JSON.stringify(this.config, null, 2);
+                },
+
+                formatJson() {
+                    try {
+                        const parsed = JSON.parse(this.jsonText);
+                        this.jsonText = JSON.stringify(parsed, null, 2);
+                        this.showStatus('JSON formatted!', 'success');
+                    } catch (error) {
+                        this.showStatus(`Invalid JSON: ${error.message}`, 'error');
+                    }
+                },
+
+                applyJsonChanges() {
+                    try {
+                        const parsed = JSON.parse(this.jsonText);
+                        this.config = parsed;
+                        this.showStatus('JSON changes applied! Remember to save.', 'success');
+                    } catch (error) {
+                        this.showStatus(`Invalid JSON: ${error.message}`, 'error');
+                    }
+                },
+
+                // Utilities
+                showStatus(message, type = 'info') {
+                    this.statusMessage = message;
+                    this.statusType = type;
+                    setTimeout(() => {
+                        this.statusMessage = '';
+                    }, 5000);
+                }
+            };
+        }
+    </script>
+</body>
+</html>

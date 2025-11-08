@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Toddler Phone Control is a family-friendly Roku remote built with Tauri 2. It provides a curated kid-mode interface for toddlers/preschoolers while keeping advanced settings behind a PIN (default: `1234`). The app ships as desktop executables (Windows, macOS) and Android APK, designed to run on cheap phones, tablets, or PCs without cloud dependencies.
 
+**Content Management:** Uses Netlify for remote configuration, image hosting, and settings sync. See `netlify/README.md` for admin UI and API documentation.
+
+**Codebase Health:** The main `app.js` file is currently 5,751 lines. See `CODEBASE_AUDIT.md` for analysis and refactoring roadmap. New features should be added carefully, and the Netlify admin UI is being built as a separate, clean codebase.
+
 ## Architecture
 
 ### Hybrid Frontend/Backend Structure
@@ -104,14 +108,21 @@ The custom build script (`scripts/build.js`):
 
 **Important**: The Tauri config points `frontendDist` to `../dist`, so `npm run build` must run before Tauri commands.
 
-### Content Management CLI
+### Content Management
 
-```bash
-# Interactive CLI to manage content configuration
-npm run content
-```
+Content is managed through Netlify:
 
-This launches `scripts/toddler-content-cli.js` for adding/editing kid buttons in `public/config/toddler/default.json` without manual JSON editing.
+**For production updates:**
+- Use Netlify admin UI (web interface)
+- Upload images to Netlify Blobs
+- Edit config via API or admin UI
+- Changes sync automatically to all devices
+- See `netlify/README.md` for details
+
+**For local development:**
+- Edit `public/config/toddler/default.json` directly
+- Rebuild with `npm run build`
+- Test locally before deploying
 
 ### Tauri Commands
 
