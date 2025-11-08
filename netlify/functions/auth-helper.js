@@ -164,6 +164,24 @@ export async function authenticateRequest(req) {
 }
 
 /**
+ * Verify authentication and return formatted result
+ * Wrapper around authenticateRequest for consistent API
+ */
+export async function verifyAuth(req, context) {
+  const authResult = await authenticateRequest(req);
+
+  return {
+    authorized: authResult.success,
+    message: authResult.error || 'Authenticated',
+    status: authResult.status || 200,
+    headers: {
+      'Content-Type': 'application/json',
+      ...authResult.headers
+    }
+  };
+}
+
+/**
  * Generate a random 5-word passphrase
  */
 export function generatePassphrase() {
