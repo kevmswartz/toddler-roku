@@ -6,23 +6,89 @@ This directory contains the Netlify configuration for hosting the Toddler Phone 
 
 The Netlify deployment provides:
 
-1. **Static Homepage** - A landing page that links to the GitHub repository
-2. **API Endpoints** - Serverless functions to manage configuration via Netlify Blobs
-3. **Blob Storage** - Cloud storage for JSON configuration files that can be updated without rebuilding the app
+1. **Admin UI** - Web-based admin panel at `/admin` for managing all configuration
+2. **Static Homepage** - A landing page that links to the GitHub repository
+3. **API Endpoints** - Serverless functions to manage configuration via Netlify Blobs
+4. **Blob Storage** - Cloud storage for JSON configs and uploaded images
+5. **Image Upload** - Direct image upload to Netlify Blobs with automatic URL generation
+
+## Quick Start
+
+1. **Deploy to Netlify** (auto-detects `netlify.toml`)
+2. **Set Environment Variable**: `CONFIG_PASSPHRASE` (default: `blue mountain coffee morning sunshine`)
+3. **Access Admin UI**: Visit `https://your-site.netlify.app/admin`
+4. **Login** with your passphrase
+5. **Manage** buttons, images, and settings visually
 
 ## Structure
 
 ```
 netlify/
-├── public/              # Static files served at root
-│   └── index.html      # Homepage
-├── functions/           # Netlify serverless functions
-│   ├── config.js       # GET/POST app configuration
-│   ├── config-list.js  # List all stored configs
-│   ├── config-import.js # Import config to blob storage
-│   └── package.json    # Function dependencies
-└── README.md           # This file
+├── public/
+│   ├── index.html          # Landing page
+│   ├── test-auth.html      # Passphrase tester
+│   └── admin/
+│       └── index.html      # Admin UI (Alpine.js + Tailwind)
+├── functions/
+│   ├── config.js           # GET/POST app configuration
+│   ├── config-list.js      # List all stored configs
+│   ├── config-import.js    # Import config to blob storage
+│   ├── image-upload.js     # Upload images to Netlify Blobs
+│   ├── image-list.js       # List uploaded images
+│   ├── auth-helper.js      # Authentication utility
+│   └── package.json        # Function dependencies
+└── README.md               # This file
 ```
+
+---
+
+## Admin UI
+
+### Features
+
+The admin UI at `/admin` provides a complete visual interface for managing your app:
+
+**📱 Buttons Tab**
+- Add/edit/delete special buttons
+- Visual card display with emoji, label, and metadata
+- Quick edit and delete actions
+
+**🚀 Quick Launch Tab**
+- Manage quick launch items (YouTube videos, etc.)
+- Thumbnail preview
+- Easy editing interface
+
+**🖼️ Images Tab**
+- Drag-and-drop image upload
+- Automatic upload to Netlify Blobs
+- Copy-to-clipboard for URLs
+- Preview of all uploaded images
+
+**⚙️ Settings Tab**
+- Set PIN code remotely
+- Configure default Roku IP
+- Configure default Govee settings
+
+**📝 Raw JSON Tab**
+- Advanced: Direct JSON editing
+- Format and validate JSON
+- Apply changes or discard
+
+### Using the Admin UI
+
+1. Visit `https://your-site.netlify.app/admin`
+2. Login with your 5-word passphrase
+3. Make changes in any tab
+4. Click "💾 Save Configuration" (bottom right)
+5. Changes sync to all connected devices automatically
+
+**Tech Stack:**
+- Alpine.js for reactivity
+- Tailwind CSS for styling
+- Modular, clean codebase
+- No build step required
+
+---
 
 ## API Endpoints
 
@@ -102,6 +168,53 @@ Imports a configuration with a specific key. **Requires passphrase authenticatio
   "data": {
     "tabs": [...]
   }
+}
+```
+
+### POST /api/upload-image
+Upload an image to Netlify Blobs. **Requires passphrase authentication.**
+
+**Headers:**
+- `Authorization: Bearer your-five-word-passphrase`
+- `Content-Type: multipart/form-data`
+
+**Request Body:**
+- Form field `image` with image file
+
+**Response:**
+```json
+{
+  "success": true,
+  "url": "https://your-site.netlify.app/.netlify/blobs/serve/.../image.webp",
+  "key": "images/1699999999-image-name.webp",
+  "name": "image.webp",
+  "size": 123456,
+  "type": "image/webp"
+}
+```
+
+**Supported formats:** JPG, PNG, WEBP, GIF (max 10MB)
+
+### GET /api/images
+List all uploaded images from Netlify Blobs.
+
+**Response:**
+```json
+{
+  "success": true,
+  "count": 5,
+  "images": [
+    {
+      "key": "images/1699999999-image-name.webp",
+      "url": "https://your-site.netlify.app/.netlify/blobs/serve/.../image.webp",
+      "size": 123456,
+      "metadata": {
+        "contentType": "image/webp",
+        "originalName": "image.webp",
+        "uploadedAt": "2024-11-08T00:00:00.000Z"
+      }
+    }
+  ]
 }
 ```
 
