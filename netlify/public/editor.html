@@ -748,6 +748,16 @@
                 <h2 id="lightModalTitle">Add Light Button</h2>
                 <button class="modal-close" onclick="closeLightModal()">×</button>
             </div>
+
+            <!-- Device Info Retrieval Section -->
+            <div style="background: #f0f9ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                    <input type="text" id="lightDeviceQuery" placeholder="192.168.1.100 (LAN) or Device ID (Cloud)" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;">
+                    <button class="btn-primary btn-sm" onclick="queryLightDevice()" style="white-space: nowrap;">🔍 Get Info</button>
+                </div>
+                <div id="lightDeviceInfo" style="font-size: 12px; color: #666; display: none;"></div>
+            </div>
+
             <div class="input-group">
                 <label>Label</label>
                 <input type="text" id="lightLabel" placeholder="e.g., Bedroom Ceiling">
@@ -757,28 +767,21 @@
                 <input type="text" id="lightEmoji" placeholder="💡" maxlength="2">
             </div>
             <div class="input-group">
-                <label>Handler</label>
+                <label>Action</label>
                 <select id="lightHandler" onchange="lightHandlerChanged()">
                     <option value="goveeTogglePower">Toggle Power</option>
-                    <option value="goveePower">Turn On/Off</option>
                     <option value="goveeSetBrightness">Set Brightness</option>
                     <option value="goveeSetColor">Set Color</option>
-                    <option value="lightRoutine">Multi-Step Routine</option>
+                    <option value="lightRoutine">Advanced Routine</option>
                 </select>
-                <div class="help-text">Select the function to execute when this button is clicked</div>
             </div>
 
             <!-- Simple Light Controls -->
             <div id="lightSimpleControls">
                 <div class="input-group">
-                    <label>IP Address</label>
-                    <input type="text" id="lightIp" placeholder="e.g., 192.168.1.100">
-                    <div class="help-text">IP address of the Govee light device</div>
-                </div>
-                <div class="input-group">
-                    <label>Port (optional)</label>
-                    <input type="number" id="lightPort" placeholder="4003">
-                    <div class="help-text">Default: 4003</div>
+                    <label>Device</label>
+                    <input type="text" id="lightIp" placeholder="192.168.1.100 (LAN) or Device ID (Cloud)">
+                    <div class="help-text">Enter IP address for LAN control or Device ID for cloud control</div>
                 </div>
             </div>
 
@@ -790,6 +793,7 @@
                     <button type="button" class="btn-secondary btn-sm" onclick="addLightRoutineStep()" style="margin-top: 10px;">+ Add Step</button>
                 </div>
             </div>
+
             <div class="input-group">
                 <label>Show in Rooms (optional)</label>
                 <div id="lightRoomsSelector" style="margin-top: 8px;"></div>
@@ -1396,10 +1400,9 @@
                 currentLightRoutineSteps = JSON.parse(JSON.stringify(light.routine)); // Deep copy
             } else {
                 currentLightRoutineSteps = [];
-                // Extract IP and port from args for simple handlers
+                // Extract device from args for simple handlers
                 const args = light.args || [];
                 document.getElementById('lightIp').value = args[0] || '';
-                document.getElementById('lightPort').value = args[1] || 4003;
             }
 
             renderRoomCheckboxes(light.rooms || []);
@@ -1452,16 +1455,17 @@
                 }
                 light.routine = currentLightRoutineSteps;
             } else {
-                // Simple light control - get IP and port
-                const ip = document.getElementById('lightIp').value.trim();
-                const port = parseInt(document.getElementById('lightPort').value) || 4003;
+                // Simple light control - get device ID or IP
+                const device = document.getElementById('lightIp').value.trim();
 
-                if (!ip) {
-                    showMessage('IP address is required', 'error');
+                if (!device) {
+                    showMessage('Device IP or ID is required', 'error');
                     return;
                 }
 
-                light.args = [ip, port];
+                // Check if it looks like an IP address, if so add default port
+                const isIp = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(device);
+                light.args = isIp ? [device, 4003] : [device];
             }
 
             // Get selected rooms
@@ -1559,35 +1563,29 @@
 
                     <div style="display: grid; gap: 10px;">
                         <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Step Type</label>
+                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Action</label>
                             <select data-step-index="${index}" data-field="type" onchange="updateLightRoutineStep(${index}, 'type', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-                                <option value="power" ${step.type === 'power' ? 'selected' : ''}>Power On/Off/Toggle</option>
-                                <option value="brightness" ${step.type === 'brightness' ? 'selected' : ''}>Set Brightness</option>
-                                <option value="color" ${step.type === 'color' ? 'selected' : ''}>Set Color (RGB)</option>
-                                <option value="colorTemp" ${step.type === 'colorTemp' ? 'selected' : ''}>Set Color Temperature</option>
-                                <option value="scene" ${step.type === 'scene' ? 'selected' : ''}>Set Scene</option>
-                                <option value="wait" ${step.type === 'wait' ? 'selected' : ''}>Wait/Delay</option>
+                                <option value="power" ${step.type === 'power' ? 'selected' : ''}>Power</option>
+                                <option value="brightness" ${step.type === 'brightness' ? 'selected' : ''}>Brightness</option>
+                                <option value="color" ${step.type === 'color' ? 'selected' : ''}>Color</option>
+                                <option value="scene" ${step.type === 'scene' ? 'selected' : ''}>Scene</option>
+                                <option value="wait" ${step.type === 'wait' ? 'selected' : ''}>Wait</option>
                             </select>
                         </div>
 
                         ${step.type !== 'wait' ? `
                         <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Device IP or Cloud ID</label>
-                            <input type="text" placeholder="192.168.1.100 or device ID" value="${step.device || ''}" onchange="updateLightRoutineStep(${index}, 'device', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-                        </div>
-
-                        <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">MAC Address (optional, for LAN)</label>
-                            <input type="text" placeholder="AA:BB:CC:DD:EE:FF" value="${step.mac || ''}" onchange="updateLightRoutineStep(${index}, 'mac', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Device</label>
+                            <input type="text" placeholder="192.168.1.100 or Device ID" value="${step.device || ''}" onchange="updateLightRoutineStep(${index}, 'device', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
                         </div>
                         ` : ''}
 
                         ${step.type === 'power' ? `
                         <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Power State</label>
+                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">State</label>
                             <select onchange="updateLightRoutineStep(${index}, 'value', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-                                <option value="on" ${step.value === 'on' ? 'selected' : ''}>Turn On</option>
-                                <option value="off" ${step.value === 'off' ? 'selected' : ''}>Turn Off</option>
+                                <option value="on" ${step.value === 'on' ? 'selected' : ''}>On</option>
+                                <option value="off" ${step.value === 'off' ? 'selected' : ''}>Off</option>
                                 <option value="toggle" ${step.value === 'toggle' ? 'selected' : ''}>Toggle</option>
                             </select>
                         </div>
@@ -1602,28 +1600,21 @@
 
                         ${step.type === 'color' ? `
                         <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">RGB Color (comma-separated: R,G,B)</label>
+                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">RGB (R,G,B)</label>
                             <input type="text" placeholder="255,0,0" value="${step.value || '255,0,0'}" onchange="updateLightRoutineStep(${index}, 'value', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-                        </div>
-                        ` : ''}
-
-                        ${step.type === 'colorTemp' ? `
-                        <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Color Temperature (Kelvin, 2000-9000)</label>
-                            <input type="number" min="2000" max="9000" value="${step.value || 4000}" onchange="updateLightRoutineStep(${index}, 'value', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
                         </div>
                         ` : ''}
 
                         ${step.type === 'scene' ? `
                         <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Scene ID</label>
+                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Scene ID <span style="font-weight: normal; color: #888;">(use Get Info above)</span></label>
                             <input type="text" placeholder="1" value="${step.value || ''}" onchange="updateLightRoutineStep(${index}, 'value', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
                         </div>
                         ` : ''}
 
                         ${step.type === 'wait' ? `
                         <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Wait Duration (milliseconds)</label>
+                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Wait (ms)</label>
                             <input type="number" min="100" value="${step.value || 1000}" onchange="updateLightRoutineStep(${index}, 'value', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
                         </div>
                         ` : ''}
@@ -1941,6 +1932,135 @@
                 console.error('Failed to fetch/upload Govee devices:', error);
                 container.innerHTML = `<p style="color: #f44336;">Error: ${error.message}</p>`;
                 showMessage(`❌ Failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Query device info for light button configuration
+        async function queryLightDevice() {
+            const deviceInput = document.getElementById('lightDeviceQuery').value.trim();
+            const infoContainer = document.getElementById('lightDeviceInfo');
+            const apiKey = document.getElementById('goveeApiKeyEditor').value.trim();
+
+            if (!deviceInput) {
+                showMessage('Please enter a device IP or ID', 'error');
+                return;
+            }
+
+            // Check if it's an IP address
+            const isIp = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(deviceInput);
+
+            if (isIp) {
+                // LAN device - show note that this requires the app
+                infoContainer.style.display = 'block';
+                infoContainer.innerHTML = `
+                    <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 10px; border-radius: 6px;">
+                        <strong>⚠️ LAN Device Detection</strong><br>
+                        <span style="font-size: 11px;">
+                            To get info from LAN devices (IP addresses), use the device discovery in the main app.
+                            The app can query devices at <code style="background: #f0f0f0; padding: 2px 4px; border-radius: 3px;">${deviceInput}:4003</code> directly.
+                        </span>
+                    </div>
+                `;
+                // Auto-fill the device field
+                document.getElementById('lightIp').value = deviceInput;
+                return;
+            }
+
+            // Cloud device - need API key
+            if (!apiKey) {
+                showMessage('Please enter your Govee API key in the Device Lists tab first', 'error');
+                infoContainer.style.display = 'block';
+                infoContainer.innerHTML = `
+                    <div style="background: #fee; border: 1px solid #f44; padding: 10px; border-radius: 6px;">
+                        <strong>❌ API Key Required</strong><br>
+                        <span style="font-size: 11px;">
+                            Go to the "Device Lists" tab and enter your Govee API key to query cloud devices.
+                        </span>
+                    </div>
+                `;
+                return;
+            }
+
+            infoContainer.style.display = 'block';
+            infoContainer.innerHTML = '<p style="color: #999;">🔄 Fetching device info...</p>';
+
+            try {
+                // First, get device list to find the model
+                const devicesResponse = await fetch('https://developer-api.govee.com/v1/devices', {
+                    method: 'GET',
+                    headers: {
+                        'Govee-API-Key': apiKey
+                    }
+                });
+
+                if (!devicesResponse.ok) {
+                    throw new Error(`Failed to fetch devices: ${devicesResponse.status}`);
+                }
+
+                const devicesData = await devicesResponse.json();
+                const device = devicesData.data?.devices?.find(d => d.device === deviceInput);
+
+                if (!device) {
+                    throw new Error(`Device ${deviceInput} not found in your Govee account`);
+                }
+
+                // Now get device state
+                const stateResponse = await fetch(
+                    `https://developer-api.govee.com/v1/devices/state?device=${encodeURIComponent(deviceInput)}&model=${encodeURIComponent(device.model)}`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'Govee-API-Key': apiKey
+                        }
+                    }
+                );
+
+                if (!stateResponse.ok) {
+                    throw new Error(`Failed to fetch state: ${stateResponse.status}`);
+                }
+
+                const stateData = await stateResponse.json();
+                const properties = stateData.data?.properties || [];
+
+                // Parse the state
+                const powerState = properties.find(p => p.online !== undefined);
+                const onlineStatus = powerState?.online;
+                const powerOn = properties.find(p => p.powerState)?.powerState === 'on';
+                const brightness = properties.find(p => p.brightness !== undefined)?.brightness;
+                const color = properties.find(p => p.color)?.color;
+
+                // Display device info
+                infoContainer.innerHTML = `
+                    <div style="background: #d4edda; border: 1px solid #c3e6cb; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+                        <strong>✅ Device Found</strong><br>
+                        <div style="font-size: 11px; margin-top: 6px; line-height: 1.6;">
+                            <strong>Name:</strong> ${device.deviceName}<br>
+                            <strong>Model:</strong> <code style="background: #f0f0f0; padding: 2px 4px; border-radius: 3px;">${device.model}</code><br>
+                            <strong>Device ID:</strong> <code style="background: #f0f0f0; padding: 2px 4px; border-radius: 3px;">${device.device}</code>
+                            <button onclick="copyToClipboard('${device.device}')" style="margin-left: 8px; padding: 2px 6px; font-size: 10px; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">Copy</button>
+                            <br>
+                            <strong>Status:</strong> ${onlineStatus ? '🟢 Online' : '🔴 Offline'}<br>
+                            ${powerOn !== undefined ? `<strong>Power:</strong> ${powerOn ? '💡 On' : '⚫ Off'}<br>` : ''}
+                            ${brightness !== undefined ? `<strong>Brightness:</strong> ${brightness}%<br>` : ''}
+                            ${color ? `<strong>Color:</strong> RGB(${color.r}, ${color.g}, ${color.b})<br>` : ''}
+                            <strong>Capabilities:</strong> ${(device.supportCmds || []).map(cmd => `<code style="font-size: 10px; background: #e9ecef; padding: 1px 3px; border-radius: 2px;">${cmd}</code>`).join(' ')}
+                        </div>
+                    </div>
+                `;
+
+                // Auto-fill the device field
+                document.getElementById('lightIp').value = deviceInput;
+                showMessage('✅ Device info retrieved!', 'success');
+
+            } catch (error) {
+                console.error('Failed to query device:', error);
+                infoContainer.innerHTML = `
+                    <div style="background: #fee; border: 1px solid #f44; padding: 10px; border-radius: 6px;">
+                        <strong>❌ Error</strong><br>
+                        <span style="font-size: 11px;">${error.message}</span>
+                    </div>
+                `;
+                showMessage(`❌ ${error.message}`, 'error');
             }
         }
     </script>
