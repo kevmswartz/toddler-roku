@@ -732,6 +732,9 @@
                             <option value="colorTem">Color Temperature (Kelvin)</option>
                             <option value="colorTemPercentage">Color Temperature (%)</option>
                             <option value="segment">Segment Control (multi-color)</option>
+                            <option value="scene">Scene / Dynamic Scene</option>
+                            <option value="musicMode">Music Mode</option>
+                            <option value="work_mode">Work Mode</option>
                         </select>
                     </label>
                 </div>
@@ -846,6 +849,53 @@
                                 placeholder='[[255,0,0],[0,255,0],[0,0,255]]'
                                 class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-xs font-mono text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"></textarea>
                         </label>
+                    </div>
+
+                    <!-- Scene / Dynamic Scene params -->
+                    <div id="goveeTestParamsScene" class="hidden space-y-3">
+                        <label class="flex flex-col gap-2">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Scene ID or Value</span>
+                            <input
+                                id="goveeTestSceneValue"
+                                type="text"
+                                placeholder="Enter scene ID (e.g., 1, 2, 3) or scene code"
+                                class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm text-white placeholder:text-indigo-200/50 focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
+                            />
+                        </label>
+                        <p class="text-xs text-indigo-100/70">Scene IDs vary by device. Check your device's supportCmds for available scenes.</p>
+                    </div>
+
+                    <!-- Music Mode params -->
+                    <div id="goveeTestParamsMusicMode" class="hidden space-y-3">
+                        <label class="flex flex-col gap-2">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Music Mode</span>
+                            <select
+                                id="goveeTestMusicModeValue"
+                                class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm text-white focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50">
+                                <option value="0">Off</option>
+                                <option value="1">Mode 1 - Energic</option>
+                                <option value="2">Mode 2 - Rhythm</option>
+                                <option value="3">Mode 3 - Spectrum</option>
+                                <option value="4">Mode 4 - Rolling</option>
+                            </select>
+                        </label>
+                        <p class="text-xs text-indigo-100/70">Available modes depend on your device model.</p>
+                    </div>
+
+                    <!-- Work Mode params -->
+                    <div id="goveeTestParamsWorkMode" class="hidden space-y-3">
+                        <label class="flex flex-col gap-2">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Work Mode</span>
+                            <select
+                                id="goveeTestWorkModeValue"
+                                class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm text-white focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50">
+                                <option value="0">Manual Mode</option>
+                                <option value="1">Scene Mode</option>
+                                <option value="2">Music Mode</option>
+                                <option value="3">Video Mode</option>
+                            </select>
+                        </label>
+                        <p class="text-xs text-indigo-100/70">Work modes vary by device. Check your device documentation.</p>
                     </div>
                 </div>
 
