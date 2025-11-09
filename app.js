@@ -38,18 +38,37 @@ const GOVEE_STATUS_VARIANTS = {
 };
 const GOVEE_CAPABILITY_LABELS = {
     'devices.capabilities.on_off': 'Power (on/off)',
+    'devices.capabilities.toggle': 'Toggle',
     'devices.capabilities.brightness': 'Brightness control',
     'devices.capabilities.color': 'RGB color control',
+    'devices.capabilities.color_setting': 'Color settings',
     'devices.capabilities.color_temperature': 'Color temperature',
     'devices.capabilities.color_temperature_v2': 'Color temperature',
+    'devices.capabilities.temperature_setting': 'Temperature settings',
     'devices.capabilities.mode': 'Scene modes',
+    'devices.capabilities.work_mode': 'Work mode',
     'devices.capabilities.effect': 'Lighting effects',
     'devices.capabilities.music': 'Music sync',
+    'devices.capabilities.music_setting': 'Music settings',
+    'devices.capabilities.dynamic_scene': 'Dynamic scenes',
+    'devices.capabilities.segment_color_setting': 'Segment colors',
+    'devices.capabilities.range': 'Range control',
     turn: 'Power (on/off)',
+    toggle: 'Toggle',
     brightness: 'Brightness',
     color: 'RGB color',
     colorTem: 'Color temperature',
-    color_temp: 'Color temperature'
+    color_temp: 'Color temperature',
+    color_setting: 'Color settings',
+    temperature_setting: 'Temperature settings',
+    work_mode: 'Work mode',
+    music_setting: 'Music settings',
+    musicMode: 'Music mode',
+    dynamic_scene: 'Dynamic scene',
+    scene: 'Scene',
+    segment: 'Segment control',
+    segment_color_setting: 'Segment colors',
+    range: 'Range'
 };
 const tauriBridge = typeof window !== 'undefined' ? window.__TAURI__ : undefined;
 const tauriInvoke = (() => {
@@ -3230,6 +3249,110 @@ async function goveeMultiColor(r, g, b, devices = []) {
     setGoveeStatus(`Set color RGB(${r}, ${g}, ${b}) on ${devices.length} device(s)`, 'success');
 }
 
+async function lightRoutine(routine) {
+    if (!Array.isArray(routine) || routine.length === 0) {
+        console.warn('lightRoutine: No steps specified');
+        setGoveeStatus('No steps specified in light routine', 'error');
+        return;
+    }
+
+    console.log(`🎬 Executing light routine with ${routine.length} step(s)`);
+    setGoveeStatus(`Running routine: ${routine.length} step(s)...`, 'info');
+
+    for (let i = 0; i < routine.length; i++) {
+        const step = routine[i];
+        console.log(`Step ${i + 1}/${routine.length}:`, step);
+
+        try {
+            switch (step.type) {
+                case 'power': {
+                    const ip = step.device;
+                    const port = step.port || 4003;
+                    if (step.value === 'toggle') {
+                        await goveeTogglePower({ ip, port });
+                    } else {
+                        const turnOn = step.value === 'on';
+                        await goveePower(turnOn, { ip, port });
+                    }
+                    break;
+                }
+
+                case 'brightness': {
+                    const ip = step.device;
+                    const port = step.port || 4003;
+                    const brightness = parseInt(step.value, 10);
+                    await goveeApplyBrightness(brightness, { ip, port });
+                    break;
+                }
+
+                case 'color': {
+                    const ip = step.device;
+                    const port = step.port || 4003;
+                    const rgb = step.value.split(',').map(v => parseInt(v.trim(), 10));
+                    if (rgb.length === 3) {
+                        await goveeSetColor(rgb[0], rgb[1], rgb[2], { ip, port });
+                    }
+                    break;
+                }
+
+                case 'colorTemp': {
+                    const ip = step.device;
+                    const port = step.port || 4003;
+                    const kelvin = parseInt(step.value, 10);
+                    // Use govee cloud command if available, otherwise skip
+                    if (tauriInvoke && step.mac) {
+                        const apiKey = getStoredGoveeApiKey();
+                        if (apiKey) {
+                            await tauriInvoke('govee_cloud_control', {
+                                apiKey: apiKey,
+                                device: step.mac,
+                                model: step.model || '',
+                                cmd: { name: 'colorTem', value: kelvin }
+                            });
+                        }
+                    }
+                    break;
+                }
+
+                case 'scene': {
+                    const ip = step.device;
+                    // Scene control via cloud API
+                    if (tauriInvoke && step.mac) {
+                        const apiKey = getStoredGoveeApiKey();
+                        if (apiKey) {
+                            const sceneValue = isNaN(parseInt(step.value)) ? step.value : parseInt(step.value);
+                            await tauriInvoke('govee_cloud_control', {
+                                apiKey: apiKey,
+                                device: step.mac,
+                                model: step.model || '',
+                                cmd: { name: 'scene', value: sceneValue }
+                            });
+                        }
+                    }
+                    break;
+                }
+
+                case 'wait': {
+                    const duration = parseInt(step.value, 10);
+                    console.log(`⏱️ Waiting ${duration}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, duration));
+                    break;
+                }
+
+                default:
+                    console.warn(`Unknown step type: ${step.type}`);
+            }
+        } catch (error) {
+            console.error(`Error in step ${i + 1}:`, error);
+            setGoveeStatus(`Error in step ${i + 1}: ${error.message}`, 'error');
+            // Continue with next steps even if one fails
+        }
+    }
+
+    console.log('✅ Light routine completed');
+    setGoveeStatus('Routine completed!', 'success');
+}
+
 function goveeSaveSettings() {
     const ipInput = document.getElementById('goveeIpInput');
     const portInput = document.getElementById('goveePortInput');
@@ -3874,6 +3997,9 @@ function goveeTestCommandTypeChanged() {
     document.getElementById('goveeTestParamsColorTem').classList.add('hidden');
     document.getElementById('goveeTestParamsColorTemPct').classList.add('hidden');
     document.getElementById('goveeTestParamsSegment').classList.add('hidden');
+    document.getElementById('goveeTestParamsScene').classList.add('hidden');
+    document.getElementById('goveeTestParamsMusicMode').classList.add('hidden');
+    document.getElementById('goveeTestParamsWorkMode').classList.add('hidden');
 
     if (!commandType) {
         paramsContainer.classList.add('hidden');
@@ -3895,6 +4021,12 @@ function goveeTestCommandTypeChanged() {
         document.getElementById('goveeTestParamsColorTemPct').classList.remove('hidden');
     } else if (commandType === 'segment') {
         document.getElementById('goveeTestParamsSegment').classList.remove('hidden');
+    } else if (commandType === 'scene') {
+        document.getElementById('goveeTestParamsScene').classList.remove('hidden');
+    } else if (commandType === 'musicMode') {
+        document.getElementById('goveeTestParamsMusicMode').classList.remove('hidden');
+    } else if (commandType === 'work_mode') {
+        document.getElementById('goveeTestParamsWorkMode').classList.remove('hidden');
     }
 }
 
@@ -3958,6 +4090,21 @@ async function goveeTestSendCommand() {
             showStatus('Invalid segment data JSON.', 'error');
             return;
         }
+    } else if (commandType === 'scene') {
+        const sceneValue = document.getElementById('goveeTestSceneValue').value.trim();
+        if (!sceneValue) {
+            showStatus('Please enter a scene ID or value.', 'error');
+            return;
+        }
+        // Try to parse as number, otherwise use as string
+        const parsed = parseInt(sceneValue, 10);
+        cmd.value = isNaN(parsed) ? sceneValue : parsed;
+    } else if (commandType === 'musicMode') {
+        const musicModeValue = parseInt(document.getElementById('goveeTestMusicModeValue').value, 10);
+        cmd.value = musicModeValue;
+    } else if (commandType === 'work_mode') {
+        const workModeValue = parseInt(document.getElementById('goveeTestWorkModeValue').value, 10);
+        cmd.value = workModeValue;
     }
 
     // Store the command for later use
