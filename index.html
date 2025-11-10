@@ -173,8 +173,12 @@
             box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
         }
         /* Hide scrollbars for carousel sections */
-        #kidQuickSection .overflow-auto::-webkit-scrollbar {
+        #kidQuickSection .overflow-x-auto::-webkit-scrollbar {
             display: none;
+        }
+        /* Snap scrolling for carousel items */
+        #toddlerQuickColumn > button {
+            scroll-snap-align: start;
         }
     </style>
 </head>
@@ -971,8 +975,8 @@
         </section>
 
         <section id="kidQuickSection" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8 overflow-hidden">
-            <div class="overflow-auto h-[calc(100vh-12rem)] -mx-6 px-6 pb-4" style="scrollbar-width: none; -ms-overflow-style: none;">
-                <div id="toddlerQuickColumn" class="grid grid-cols-5 gap-3 auto-rows-[minmax(8rem,1fr)]"></div>
+            <div class="overflow-x-auto overflow-y-hidden -mx-6 px-6 pb-4 snap-x snap-mandatory" style="scrollbar-width: none; -ms-overflow-style: none;">
+                <div id="toddlerQuickColumn" class="grid grid-flow-col gap-3 auto-cols-[calc(100%-3rem)] md:auto-cols-[calc(33.33%-1rem)]" style="grid-template-rows: repeat(3, minmax(8rem, 1fr));"></div>
             </div>
         </section>
 
