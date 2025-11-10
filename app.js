@@ -243,11 +243,11 @@ function getTabsForRendering() {
 async function getTabsForRenderingFiltered() {
     let tabs = getTabsForRendering();
 
-    // Filter out tabs that require WiFi when not on WiFi
-    const onWifi = await isOnWifi();
-    if (!onWifi) {
-        tabs = tabs.filter(tab => tab.id !== 'apps');
-    }
+    // WiFi filtering disabled - always show all tabs
+    // const onWifi = await isOnWifi();
+    // if (!onWifi) {
+    //     tabs = tabs.filter(tab => tab.id !== 'apps');
+    // }
 
     return tabs;
 }
