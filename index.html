@@ -172,6 +172,14 @@
             background: rgba(255, 255, 255, 0.25);
             box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
         }
+        /* Hide scrollbars for carousel sections */
+        #kidQuickSection .overflow-x-auto::-webkit-scrollbar {
+            display: none;
+        }
+        /* Snap scrolling for carousel items */
+        #toddlerQuickColumn > button {
+            scroll-snap-align: start;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-700 text-white">
@@ -966,8 +974,10 @@
             <p id="goveeStatus" class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-indigo-100">Enter the LAN IP to get started.</p>
         </section>
 
-        <section id="kidQuickSection" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
-            <div id="toddlerQuickColumn" class="grid gap-3 grid-cols-2 min-[480px]:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"></div>
+        <section id="kidQuickSection" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8 overflow-hidden">
+            <div class="overflow-x-auto overflow-y-hidden -mx-6 px-6 pb-4 snap-x snap-mandatory" style="scrollbar-width: none; -ms-overflow-style: none;">
+                <div id="toddlerQuickColumn" class="grid grid-flow-col gap-3 auto-cols-[calc(100%-3rem)] md:auto-cols-[calc(33.33%-1rem)]" style="grid-template-rows: repeat(3, minmax(8rem, 1fr));"></div>
+            </div>
         </section>
 
         <section id="toddlerControls" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
