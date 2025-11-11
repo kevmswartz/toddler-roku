@@ -779,9 +779,16 @@
             <!-- Simple Light Controls -->
             <div id="lightSimpleControls">
                 <div class="input-group">
-                    <label>Device</label>
+                    <label>Select Saved Device (or enter manually below)</label>
+                    <select id="lightDeviceSelector" onchange="selectLightDevice()">
+                        <option value="">-- Select a device --</option>
+                    </select>
+                    <div class="help-text">Choose from your saved Govee devices, or enter manually below</div>
+                </div>
+                <div class="input-group">
+                    <label>Device (IP or Device ID)</label>
                     <input type="text" id="lightIp" placeholder="192.168.1.100 (LAN) or Device ID (Cloud)">
-                    <div class="help-text">Enter IP address for LAN control or Device ID for cloud control</div>
+                    <div class="help-text">IP address for LAN control or Device ID for cloud control</div>
                 </div>
             </div>
 
@@ -1378,10 +1385,11 @@
             document.getElementById('lightEmoji').value = '💡';
             document.getElementById('lightHandler').value = 'goveeTogglePower';
             document.getElementById('lightIp').value = '';
-            document.getElementById('lightPort').value = '4003';
+            document.getElementById('lightDeviceSelector').value = '';
             renderRoomCheckboxes();
             lightHandlerChanged();
             renderLightRoutineSteps();
+            populateLightDeviceDropdown(); // Load saved devices
             document.getElementById('lightModal').classList.add('show');
         }
 
@@ -1408,6 +1416,7 @@
             renderRoomCheckboxes(light.rooms || []);
             lightHandlerChanged();
             renderLightRoutineSteps();
+            populateLightDeviceDropdown(); // Load saved devices
             document.getElementById('lightModal').classList.add('show');
         }
 
@@ -2061,6 +2070,74 @@
                     </div>
                 `;
                 showMessage(`❌ ${error.message}`, 'error');
+            }
+        }
+
+        // Populate device dropdown with saved Govee devices
+        async function populateLightDeviceDropdown() {
+            const selector = document.getElementById('lightDeviceSelector');
+            if (!selector) return;
+
+            // Clear existing options except the first one
+            selector.innerHTML = '<option value="">-- Select a device --</option>';
+
+            try {
+                const passphrase = getPassphrase();
+                if (!passphrase) {
+                    selector.innerHTML += '<option value="" disabled>⚠️ Enter passphrase above to load devices</option>';
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/govee-devices.json?passphrase=${encodeURIComponent(passphrase)}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to load devices: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const devices = data.devices || [];
+
+                if (devices.length === 0) {
+                    selector.innerHTML += '<option value="" disabled>📡 No devices saved yet - use Device Lists tab</option>';
+                    return;
+                }
+
+                // Add each device as an option
+                devices.forEach(device => {
+                    const option = document.createElement('option');
+                    option.value = device.device; // Device ID
+                    option.textContent = `${device.deviceName || 'Unnamed'} (${device.model || 'Unknown model'})`;
+                    option.dataset.deviceName = device.deviceName;
+                    option.dataset.model = device.model;
+                    selector.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error('Failed to load saved devices:', error);
+                selector.innerHTML += '<option value="" disabled>❌ Failed to load devices</option>';
+            }
+        }
+
+        // Handle device selection from dropdown
+        function selectLightDevice() {
+            const selector = document.getElementById('lightDeviceSelector');
+            const deviceInput = document.getElementById('lightIp');
+            const labelInput = document.getElementById('lightLabel');
+
+            if (!selector || !deviceInput) return;
+
+            const selectedOption = selector.options[selector.selectedIndex];
+            const deviceId = selectedOption.value;
+
+            if (deviceId) {
+                // Auto-fill device field
+                deviceInput.value = deviceId;
+
+                // Auto-fill label if empty
+                if (!labelInput.value && selectedOption.dataset.deviceName) {
+                    labelInput.value = selectedOption.dataset.deviceName;
+                }
+
+                showMessage(`✅ Selected: ${selectedOption.textContent}`, 'success');
             }
         }
     </script>
