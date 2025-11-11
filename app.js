@@ -241,15 +241,8 @@ function getTabsForRendering() {
 }
 
 async function getTabsForRenderingFiltered() {
-    let tabs = getTabsForRendering();
-
     // WiFi filtering disabled - always show all tabs
-    // const onWifi = await isOnWifi();
-    // if (!onWifi) {
-    //     tabs = tabs.filter(tab => tab.id !== 'apps');
-    // }
-
-    return tabs;
+    return getTabsForRendering();
 }
 
 function getActiveTabId() {
@@ -449,10 +442,6 @@ function updateToddlerContentSourceInfo() {
     }
 }
 
-// Legacy function name - kept for compatibility after refactor
-function updateToddlerContentCacheMeta() {
-    updateToddlerContentSourceInfo();
-}
 
 function setToddlerContentSource(source) {
     toddlerContentSource = source || { type: 'unknown' };
@@ -1008,7 +997,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadTabsConfig();
     initTabControls();
     initMagicControls();
-    updateToddlerContentCacheMeta();
+    updateToddlerContentSourceInfo();
     updateCloudEditorVisibility();
     void loadButtonTypeCatalog();
     initGoveeControls();
@@ -5819,7 +5808,7 @@ function showSettings() {
         section.classList.remove('hidden');
     });
     renderQuickLaunchSettings(toddlerQuickLaunchItems);
-    updateToddlerContentCacheMeta();
+    updateToddlerContentSourceInfo();
     updateGoveeUI();
     updateYoutubeModeUI();
     renderTabConfig();
