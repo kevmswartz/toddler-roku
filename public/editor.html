@@ -776,15 +776,6 @@
                 </select>
             </div>
 
-            <!-- Simple Light Controls -->
-            <div id="lightSimpleControls">
-                <div class="input-group">
-                    <label>Device</label>
-                    <input type="text" id="lightIp" placeholder="192.168.1.100 (LAN) or Device ID (Cloud)">
-                    <div class="help-text">Enter IP address for LAN control or Device ID for cloud control</div>
-                </div>
-            </div>
-
             <!-- Light Routine Controls -->
             <div id="lightRoutineControls" class="hidden">
                 <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
@@ -1377,8 +1368,6 @@
             document.getElementById('lightLabel').value = '';
             document.getElementById('lightEmoji').value = '💡';
             document.getElementById('lightHandler').value = 'goveeTogglePower';
-            document.getElementById('lightIp').value = '';
-            document.getElementById('lightPort').value = '4003';
             renderRoomCheckboxes();
             lightHandlerChanged();
             renderLightRoutineSteps();
@@ -1395,20 +1384,40 @@
             document.getElementById('lightEmoji').value = light.emoji || '💡';
             document.getElementById('lightHandler').value = light.handler || 'goveeTogglePower';
 
-            // Load routine steps if it's a routine
-            if (light.handler === 'lightRoutine' && light.routine) {
+            // Load routine steps only if it's a lightRoutine handler
+            if (light.handler === 'lightRoutine' && light.routine && Array.isArray(light.routine)) {
                 currentLightRoutineSteps = JSON.parse(JSON.stringify(light.routine)); // Deep copy
+            } else if (light.handler && light.args) {
+                // Convert old simple format to routine steps for display purposes
+                currentLightRoutineSteps = convertOldFormatToRoutine(light.handler, light.args);
             } else {
                 currentLightRoutineSteps = [];
-                // Extract device from args for simple handlers
-                const args = light.args || [];
-                document.getElementById('lightIp').value = args[0] || '';
             }
 
             renderRoomCheckboxes(light.rooms || []);
             lightHandlerChanged();
             renderLightRoutineSteps();
             document.getElementById('lightModal').classList.add('show');
+        }
+
+        // Helper function to convert old light button format to routine steps
+        function convertOldFormatToRoutine(handler, args) {
+            const device = args[0] || '';
+            const steps = [];
+
+            if (handler === 'goveeTogglePower') {
+                steps.push({ type: 'power', device: device, value: 'toggle' });
+            } else if (handler === 'goveeSetBrightness') {
+                const brightness = args[1] || 50;
+                steps.push({ type: 'brightness', device: device, value: brightness });
+            } else if (handler === 'goveeSetColor') {
+                const r = args[1] || 255;
+                const g = args[2] || 0;
+                const b = args[3] || 0;
+                steps.push({ type: 'color', device: device, value: `${r},${g},${b}` });
+            }
+
+            return steps;
         }
 
         function renderRoomCheckboxes(selectedRooms = []) {
@@ -1455,17 +1464,31 @@
                 }
                 light.routine = currentLightRoutineSteps;
             } else {
-                // Simple light control - get device ID or IP
-                const device = document.getElementById('lightIp').value.trim();
-
-                if (!device) {
-                    showMessage('Device IP or ID is required', 'error');
+                // Simple light control - get device from first step
+                if (currentLightRoutineSteps.length === 0) {
+                    showMessage('Please add at least one step with the device configured', 'error');
                     return;
                 }
 
-                // Check if it looks like an IP address, if so add default port
+                const firstStep = currentLightRoutineSteps[0];
+                const device = firstStep.device;
+
+                if (!device) {
+                    showMessage('Device is required in the step', 'error');
+                    return;
+                }
+
+                // Convert step back to args format
                 const isIp = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(device);
-                light.args = isIp ? [device, 4003] : [device];
+                if (handler === 'goveeTogglePower') {
+                    light.args = isIp ? [device, 4003] : [device];
+                } else if (handler === 'goveeSetBrightness') {
+                    const brightness = parseInt(firstStep.value) || 50;
+                    light.args = isIp ? [device, 4003, brightness] : [device, brightness];
+                } else if (handler === 'goveeSetColor') {
+                    const [r, g, b] = (firstStep.value || '255,0,0').split(',').map(v => parseInt(v.trim()) || 0);
+                    light.args = isIp ? [device, 4003, r, g, b] : [device, r, g, b];
+                }
             }
 
             // Get selected rooms
@@ -1519,15 +1542,41 @@
 
         function lightHandlerChanged() {
             const handler = document.getElementById('lightHandler').value;
-            const simpleControls = document.getElementById('lightSimpleControls');
             const routineControls = document.getElementById('lightRoutineControls');
 
             if (handler === 'lightRoutine') {
-                simpleControls.classList.add('hidden');
+                // Advanced routine - show controls, allow multiple steps
                 routineControls.classList.remove('hidden');
             } else {
-                simpleControls.classList.remove('hidden');
-                routineControls.classList.add('hidden');
+                // Simple handler - show controls but ensure we have one step
+                routineControls.classList.remove('hidden');
+
+                // Auto-create a step if none exists or if switching from another handler
+                if (currentLightRoutineSteps.length === 0) {
+                    // Create default step based on handler
+                    if (handler === 'goveeTogglePower') {
+                        currentLightRoutineSteps = [{ type: 'power', device: '', value: 'toggle' }];
+                    } else if (handler === 'goveeSetBrightness') {
+                        currentLightRoutineSteps = [{ type: 'brightness', device: '', value: 50 }];
+                    } else if (handler === 'goveeSetColor') {
+                        currentLightRoutineSteps = [{ type: 'color', device: '', value: '255,0,0' }];
+                    }
+                } else if (currentLightRoutineSteps.length === 1) {
+                    // Update existing step type to match handler
+                    const step = currentLightRoutineSteps[0];
+                    if (handler === 'goveeTogglePower') {
+                        step.type = 'power';
+                        step.value = step.value || 'toggle';
+                    } else if (handler === 'goveeSetBrightness') {
+                        step.type = 'brightness';
+                        step.value = step.value || 50;
+                    } else if (handler === 'goveeSetColor') {
+                        step.type = 'color';
+                        step.value = step.value || '255,0,0';
+                    }
+                }
+
+                renderLightRoutineSteps();
             }
         }
 
@@ -1770,7 +1819,7 @@
                             return `
                             <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #ddd;">
                                 <div style="margin-bottom: 8px;">
-                                    <strong>💡 ${device.name || device.deviceName || 'Govee Light'}</strong><br>
+                                    <strong>💡 ${device.deviceName || device.device_name || device.name || device.nickName || 'Govee Light'}</strong><br>
                                     ${isLanDevice ? `
                                         <span style="font-size: 12px; color: #666;">
                                             IP: <span style="font-family: monospace;">${device.ip}</span> • Port: ${device.port || 4003}
@@ -2063,6 +2112,7 @@
                 showMessage(`❌ ${error.message}`, 'error');
             }
         }
+
     </script>
 </body>
 </html>
