@@ -8,7 +8,8 @@
  */
 class StateManager {
     constructor() {
-        this._state = {
+        // Store initial state template for reset functionality
+        this._initialState = {
             // Roku state
             roku: {
                 ip: null,
@@ -69,6 +70,14 @@ class StateManager {
                 speaking: false
             }
         };
+
+        // Deep clone initial state to working state
+        this._state = JSON.parse(JSON.stringify(this._initialState));
+
+        // Restore non-JSON-serializable objects (Maps)
+        this._state.roku.installedAppMap = new Map();
+        this._state.govee.powerStates = new Map();
+        this._state.rooms.rssiHistory = new Map();
 
         this._subscribers = new Map();
         this._history = [];
@@ -178,7 +187,15 @@ class StateManager {
      */
     reset() {
         const oldState = this._state;
-        this._state = this.constructor.prototype._state;
+
+        // Deep clone initial state to reset working state
+        this._state = JSON.parse(JSON.stringify(this._initialState));
+
+        // Restore non-JSON-serializable objects (Maps)
+        this._state.roku.installedAppMap = new Map();
+        this._state.govee.powerStates = new Map();
+        this._state.rooms.rssiHistory = new Map();
+
         this._notify('*', this._state, oldState);
     }
 

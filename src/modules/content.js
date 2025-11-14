@@ -203,13 +203,13 @@ class ContentManager {
 
     /**
      * Load content from cloud, local custom, or bundled default
+     * Always fetches fresh content (no caching)
      * @param {Object} options - Load options
-     * @param {boolean} options.forceRefresh - Force refresh from source
      * @param {string} options.customPath - Custom config path
      * @param {string} options.bundledPath - Bundled config path
      * @returns {Promise<Object>} Loaded configuration
      */
-    async loadContent({ forceRefresh = false, customPath, bundledPath } = {}) {
+    async loadContent({ customPath, bundledPath } = {}) {
         const passphrase = this.getPassphrase().trim();
 
         // Try cloud first if passphrase is configured

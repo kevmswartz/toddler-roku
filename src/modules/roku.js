@@ -6,25 +6,13 @@
 import storage from '../utils/storage.js';
 import state from '../utils/state.js';
 import { handleError, withTimeout, ErrorType, AppError } from '../utils/errors.js';
+import { COMMON_ROKU_APPS } from '../constants/roku-apps.js';
 
 // Storage keys
 const STORAGE_KEY = 'roku_ip';
 
-// Common Roku app IDs (fallback when /query/apps is blocked)
-const COMMON_APPS = [
-    { id: '12', name: 'Netflix' },
-    { id: '13', name: 'Amazon Prime Video' },
-    { id: '2213', name: 'Hulu' },
-    { id: '837', name: 'YouTube' },
-    { id: '41468', name: 'Disney+' },
-    { id: '593099', name: 'Apple TV+' },
-    { id: '61322', name: 'HBO Max' },
-    { id: '74519', name: 'Peacock TV' },
-    { id: '151908', name: 'Plex' },
-    { id: '2285', name: 'Spotify' },
-    { id: '19977', name: 'Pandora' },
-    { id: '50539', name: 'The Roku Channel' },
-];
+// Use shared app catalog
+const COMMON_APPS = COMMON_ROKU_APPS;
 
 /**
  * Roku transport layer - handles HTTP communication with Roku devices
