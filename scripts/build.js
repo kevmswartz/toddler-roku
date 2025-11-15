@@ -9,8 +9,8 @@ const args = process.argv.slice(2);
 const watchMode = args.includes('--watch');
 
 const staticFiles = [
-  'index.html'
-  // Note: app.js is now bundled from src/index.js via esbuild
+  'index.html',
+  'app.js'
   // button-types.json and toddler-content.json are in public/config/
   // and are copied via copyDirectory('public', distDir) below
 ];
@@ -114,7 +114,7 @@ function buildTailwind() {
 
 async function buildJavaScript() {
   const entryPoint = path.join(projectRoot, 'src', 'index.js');
-  const outfile = path.join(distDir, 'app.js');
+  const outfile = path.join(distDir, 'modules.js');
 
   if (!fs.existsSync(entryPoint)) {
     throw new Error('Entry point not found: src/index.js');
