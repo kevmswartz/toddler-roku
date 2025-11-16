@@ -799,6 +799,7 @@
 
         // Device Registry Functions
         const DEVICE_REGISTRY_KEY = 'device_registry';
+        const CACHED_GOVEE_DEVICES_KEY = 'editor_cached_govee_devices';
 
         function getDeviceRegistry() {
             try {
@@ -811,6 +812,18 @@
         }
 
         function getAllGoveeDevices() {
+            // Try to get cached Govee devices from the editor (loaded from cloud)
+            try {
+                const cached = localStorage.getItem(CACHED_GOVEE_DEVICES_KEY);
+                if (cached) {
+                    const data = JSON.parse(cached);
+                    return data.devices || [];
+                }
+            } catch (error) {
+                console.error('Failed to parse cached Govee devices:', error);
+            }
+
+            // Fallback to old registry format
             const registry = getDeviceRegistry();
             return Object.values(registry.govee || {});
         }
@@ -821,16 +834,19 @@
 
             // Add discovered devices
             devices.forEach(device => {
-                const deviceValue = device.ip || device.device_id || device.mac;
-                const deviceLabel = device.name
-                    ? `${device.name} (${deviceValue})`
-                    : deviceValue;
+                // Handle both cloud API format (device ID) and LAN format (IP)
+                const deviceValue = device.device || device.ip || device.device_id || device.mac;
+                const deviceName = device.deviceName || device.name || 'Unnamed Device';
+                const deviceLabel = `${deviceName} (${deviceValue})`;
                 const selected = deviceValue === selectedDevice ? 'selected' : '';
-                options += `<option value="${deviceValue}" ${selected}>${deviceLabel}</option>`;
+
+                if (deviceValue) {
+                    options += `<option value="${deviceValue}" ${selected}>${deviceLabel}</option>`;
+                }
             });
 
-            // Add manual entry option
-            if (selectedDevice && !devices.find(d => (d.ip || d.device_id || d.mac) === selectedDevice)) {
+            // Add manual entry option for custom/unlisted devices
+            if (selectedDevice && !devices.find(d => (d.device || d.ip || d.device_id || d.mac) === selectedDevice)) {
                 options += `<option value="${selectedDevice}" selected>${selectedDevice} (Manual)</option>`;
             }
             options += '<option value="__MANUAL__">Enter manually...</option>';
@@ -1789,6 +1805,9 @@
                     return;
                 }
 
+                // Cache devices to localStorage for dropdown population
+                localStorage.setItem(CACHED_GOVEE_DEVICES_KEY, JSON.stringify(data));
+
                 container.innerHTML = `
                     <div style="margin-bottom: 10px;">
                         <strong>Last discovery:</strong> ${new Date(data.timestamp).toLocaleString()}<br>
@@ -1956,6 +1975,9 @@
                     const uploadError = await uploadResponse.json().catch(() => ({}));
                     throw new Error(uploadError.error || 'Failed to upload to Netlify');
                 }
+
+                // Cache devices to localStorage for dropdown population
+                localStorage.setItem(CACHED_GOVEE_DEVICES_KEY, JSON.stringify(deviceList));
 
                 showMessage(`✅ Successfully fetched ${deviceList.devices.length} devices and uploaded to cloud!`, 'success');
 
