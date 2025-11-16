@@ -766,18 +766,9 @@
                 <label>Emoji</label>
                 <input type="text" id="lightEmoji" placeholder="💡" maxlength="2">
             </div>
-            <div class="input-group">
-                <label>Action</label>
-                <select id="lightHandler" onchange="lightHandlerChanged()">
-                    <option value="goveeTogglePower">Toggle Power</option>
-                    <option value="goveeSetBrightness">Set Brightness</option>
-                    <option value="goveeSetColor">Set Color</option>
-                    <option value="lightRoutine">Advanced Routine</option>
-                </select>
-            </div>
 
             <!-- Light Routine Controls -->
-            <div id="lightRoutineControls" class="hidden">
+            <div id="lightRoutineControls">
                 <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                     <h4 style="margin-bottom: 10px; font-size: 14px;">Routine Steps</h4>
                     <div id="lightRoutineSteps"></div>
@@ -805,6 +796,47 @@
         let currentEditingYouTubeIndex = -1;
         let currentEditingAppIndex = -1;
         let currentEditingLightIndex = -1;
+
+        // Device Registry Functions
+        const DEVICE_REGISTRY_KEY = 'device_registry';
+
+        function getDeviceRegistry() {
+            try {
+                const data = localStorage.getItem(DEVICE_REGISTRY_KEY);
+                return data ? JSON.parse(data) : { roku: {}, govee: {} };
+            } catch (error) {
+                console.error('Failed to parse device registry:', error);
+                return { roku: {}, govee: {} };
+            }
+        }
+
+        function getAllGoveeDevices() {
+            const registry = getDeviceRegistry();
+            return Object.values(registry.govee || {});
+        }
+
+        function buildDeviceDropdownOptions(selectedDevice) {
+            const devices = getAllGoveeDevices();
+            let options = '<option value="">Select a device...</option>';
+
+            // Add discovered devices
+            devices.forEach(device => {
+                const deviceValue = device.ip || device.device_id || device.mac;
+                const deviceLabel = device.name
+                    ? `${device.name} (${deviceValue})`
+                    : deviceValue;
+                const selected = deviceValue === selectedDevice ? 'selected' : '';
+                options += `<option value="${deviceValue}" ${selected}>${deviceLabel}</option>`;
+            });
+
+            // Add manual entry option
+            if (selectedDevice && !devices.find(d => (d.ip || d.device_id || d.mac) === selectedDevice)) {
+                options += `<option value="${selectedDevice}" selected>${selectedDevice} (Manual)</option>`;
+            }
+            options += '<option value="__MANUAL__">Enter manually...</option>';
+
+            return options;
+        }
 
         // Tab switching
         document.querySelectorAll('.tab-button').forEach(button => {
@@ -1367,7 +1399,6 @@
             document.getElementById('lightModalTitle').textContent = 'Add Light Button';
             document.getElementById('lightLabel').value = '';
             document.getElementById('lightEmoji').value = '💡';
-            document.getElementById('lightHandler').value = 'goveeTogglePower';
             renderRoomCheckboxes();
             lightHandlerChanged();
             renderLightRoutineSteps();
@@ -1382,9 +1413,8 @@
             document.getElementById('lightModalTitle').textContent = 'Edit Light Button';
             document.getElementById('lightLabel').value = light.label || '';
             document.getElementById('lightEmoji').value = light.emoji || '💡';
-            document.getElementById('lightHandler').value = light.handler || 'goveeTogglePower';
 
-            // Load routine steps only if it's a lightRoutine handler
+            // Load routine steps - support both new lightRoutine format and old simple format
             if (light.handler === 'lightRoutine' && light.routine && Array.isArray(light.routine)) {
                 currentLightRoutineSteps = JSON.parse(JSON.stringify(light.routine)); // Deep copy
             } else if (light.handler && light.args) {
@@ -1442,10 +1472,14 @@
         function saveLightButton() {
             const label = document.getElementById('lightLabel').value.trim();
             const emoji = document.getElementById('lightEmoji').value.trim();
-            const handler = document.getElementById('lightHandler').value;
 
             if (!label) {
                 showMessage('Label is required', 'error');
+                return;
+            }
+
+            if (currentLightRoutineSteps.length === 0) {
+                showMessage('Please add at least one step to the routine', 'error');
                 return;
             }
 
@@ -1453,43 +1487,9 @@
                 id: `${label.toLowerCase().replace(/[^a-z0-9]+/g, '')}Button`,
                 emoji: emoji || '💡',
                 label: label,
-                handler: handler
+                handler: 'lightRoutine',
+                routine: currentLightRoutineSteps
             };
-
-            // Handle routine vs simple light controls
-            if (handler === 'lightRoutine') {
-                if (currentLightRoutineSteps.length === 0) {
-                    showMessage('Please add at least one step to the routine', 'error');
-                    return;
-                }
-                light.routine = currentLightRoutineSteps;
-            } else {
-                // Simple light control - get device from first step
-                if (currentLightRoutineSteps.length === 0) {
-                    showMessage('Please add at least one step with the device configured', 'error');
-                    return;
-                }
-
-                const firstStep = currentLightRoutineSteps[0];
-                const device = firstStep.device;
-
-                if (!device) {
-                    showMessage('Device is required in the step', 'error');
-                    return;
-                }
-
-                // Convert step back to args format
-                const isIp = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(device);
-                if (handler === 'goveeTogglePower') {
-                    light.args = isIp ? [device, 4003] : [device];
-                } else if (handler === 'goveeSetBrightness') {
-                    const brightness = parseInt(firstStep.value) || 50;
-                    light.args = isIp ? [device, 4003, brightness] : [device, brightness];
-                } else if (handler === 'goveeSetColor') {
-                    const [r, g, b] = (firstStep.value || '255,0,0').split(',').map(v => parseInt(v.trim()) || 0);
-                    light.args = isIp ? [device, 4003, r, g, b] : [device, r, g, b];
-                }
-            }
 
             // Get selected rooms
             const checkboxes = document.querySelectorAll('#lightRoomsSelector input[type="checkbox"]:checked');
@@ -1541,43 +1541,9 @@
         let currentLightRoutineSteps = [];
 
         function lightHandlerChanged() {
-            const handler = document.getElementById('lightHandler').value;
             const routineControls = document.getElementById('lightRoutineControls');
-
-            if (handler === 'lightRoutine') {
-                // Advanced routine - show controls, allow multiple steps
-                routineControls.classList.remove('hidden');
-            } else {
-                // Simple handler - show controls but ensure we have one step
-                routineControls.classList.remove('hidden');
-
-                // Auto-create a step if none exists or if switching from another handler
-                if (currentLightRoutineSteps.length === 0) {
-                    // Create default step based on handler
-                    if (handler === 'goveeTogglePower') {
-                        currentLightRoutineSteps = [{ type: 'power', device: '', value: 'toggle' }];
-                    } else if (handler === 'goveeSetBrightness') {
-                        currentLightRoutineSteps = [{ type: 'brightness', device: '', value: 50 }];
-                    } else if (handler === 'goveeSetColor') {
-                        currentLightRoutineSteps = [{ type: 'color', device: '', value: '255,0,0' }];
-                    }
-                } else if (currentLightRoutineSteps.length === 1) {
-                    // Update existing step type to match handler
-                    const step = currentLightRoutineSteps[0];
-                    if (handler === 'goveeTogglePower') {
-                        step.type = 'power';
-                        step.value = step.value || 'toggle';
-                    } else if (handler === 'goveeSetBrightness') {
-                        step.type = 'brightness';
-                        step.value = step.value || 50;
-                    } else if (handler === 'goveeSetColor') {
-                        step.type = 'color';
-                        step.value = step.value || '255,0,0';
-                    }
-                }
-
-                renderLightRoutineSteps();
-            }
+            // Always show routine controls - everything uses steps now
+            routineControls.classList.remove('hidden');
         }
 
         function addLightRoutineStep() {
@@ -1625,7 +1591,9 @@
                         ${step.type !== 'wait' ? `
                         <div>
                             <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Device</label>
-                            <input type="text" placeholder="192.168.1.100 or Device ID" value="${step.device || ''}" onchange="updateLightRoutineStep(${index}, 'device', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                            <select onchange="handleDeviceSelection(${index}, this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                                ${buildDeviceDropdownOptions(step.device || '')}
+                            </select>
                         </div>
                         ` : ''}
 
@@ -1679,6 +1647,23 @@
                 if (field === 'type') {
                     renderLightRoutineSteps();
                 }
+            }
+        }
+
+        function handleDeviceSelection(index, value) {
+            if (value === '__MANUAL__') {
+                // Prompt for manual entry
+                const manualDevice = prompt('Enter device IP address or ID:');
+                if (manualDevice) {
+                    updateLightRoutineStep(index, 'device', manualDevice);
+                    renderLightRoutineSteps();
+                } else {
+                    // User cancelled - revert to previous value or empty
+                    renderLightRoutineSteps();
+                }
+            } else {
+                // Regular device selection
+                updateLightRoutineStep(index, 'device', value);
             }
         }
 
