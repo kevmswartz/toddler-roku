@@ -171,6 +171,76 @@ toddler-phone-control/
 
 ---
 
+## ⚠️ Code Quality & Technical Debt
+
+**Current Codebase Health: 4/10** (functional but requires immediate attention)
+
+### Critical Issues Requiring Action
+
+1. **🔴 CRITICAL: Modular Refactoring Not Integrated**
+   - A complete, tested refactoring exists in `src/` (3,680 lines) but is **not being used**
+   - The old monolithic `app.js` (5,887 lines) is still running
+   - **Result:** Two codebases to maintain, wasted effort, contributor confusion
+   - **Fix:** Integrate modular code immediately (12-16 hours estimated)
+
+2. **🔴 CRITICAL: Hardcoded PIN Security**
+   - PIN `1234` is hardcoded in client-side JavaScript
+   - **Not actual security** - easily bypassed via DevTools
+   - **Honest disclosure:** This is "toddler protection, not teenage protection"
+   - Consider this client-side protection only, use device-level controls for real security
+
+3. **🔴 CRITICAL: Certificate Validation Disabled**
+   - Rust HTTP client uses `danger_accept_invalid_certs(true)`
+   - Vulnerable to MITM attacks on local network
+   - **Fix:** Remove or make conditional (likely unnecessary for HTTP-only Roku)
+
+4. **🟠 HIGH: No CI/CD Pipeline**
+   - Zero automated testing, no build verification
+   - Manual testing only - regressions go unnoticed
+   - **Fix:** Add GitHub Actions workflow (4 hours)
+
+5. **🟠 HIGH: Minimal Test Coverage**
+   - Only 3 test files (covering the unused modular code)
+   - 0% coverage for the active `app.js` (5,887 lines)
+   - **Fix:** Integrate modules first (gets 80% coverage), then add integration tests
+
+### Positive Aspects
+
+- ✅ **Excellent refactoring work completed** - Clean modules with tests exist
+- ✅ **Outstanding documentation** - CODEBASE_AUDIT.md, REFACTORING_SUMMARY.md, CLAUDE.md
+- ✅ **Sound architecture** - Tauri backend is lean and well-designed
+- ✅ **Works reliably** - Families successfully using in production
+
+### For New Contributors
+
+**Important gotchas:**
+
+1. **Two codebases exist:** `app.js` (active) and `src/` (inactive but better)
+2. **No hot reload:** Must run `npm run build` before Tauri commands
+3. **No TypeScript:** Vanilla JavaScript throughout
+4. **Large files:** `app.js` is 5,887 lines, `index.html` is 1,320 lines
+5. **Browser vs. Native:** Some features only work in Tauri (Roku/Govee bridges)
+
+**Recommended reading order:**
+1. This README (overview)
+2. `claude-review.md` (comprehensive code review)
+3. `CLAUDE.md` (developer guide)
+4. `CODEBASE_AUDIT.md` (technical debt analysis)
+
+### Quick Wins for Contributors
+
+High-impact improvements that are relatively quick:
+
+- [ ] Integrate modular code from `src/` into `app.js` (12-16 hours)
+- [ ] Add CI/CD pipeline (4 hours)
+- [ ] Add ESLint + Prettier (2 hours)
+- [ ] Fix certificate validation (30 minutes)
+- [ ] Add global error handler (30 minutes)
+
+**Full review:** See `claude-review.md` for detailed findings, severity ratings, and step-by-step remediation plans.
+
+---
+
 ## 🎮 Usage
 
 ### Four Fixed Tabs
