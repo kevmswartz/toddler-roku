@@ -1386,11 +1386,21 @@ function invokeToddlerHandler(config) {
         return;
     }
 
-    const args = Array.isArray(config.args)
+    let args = Array.isArray(config.args)
         ? config.args
         : config.args !== undefined
             ? [config.args]
             : [];
+
+    // Allow new lightRoutine configs to pass their steps without duplicating data in args
+    if (
+        handlerName === 'lightRoutine' &&
+        Array.isArray(config.routine) &&
+        config.routine.length > 0 &&
+        args.length === 0
+    ) {
+        args = [config.routine];
+    }
 
     try {
         handler(...args);
@@ -1931,6 +1941,27 @@ function setStoredGoveePowerState(target, state) {
     localStorage.setItem(key, state ? 'on' : 'off');
 }
 
+function getGoveeIdentifierPowerStateKey(identifier) {
+    const normalized = normalizeDeviceIdentifier(identifier);
+    if (!normalized) return null;
+    return `${GOVEE_POWER_STATE_PREFIX}cloud_${normalized}`;
+}
+
+function getStoredGoveeIdentifierPowerState(identifier) {
+    const key = getGoveeIdentifierPowerStateKey(identifier);
+    if (!key) return null;
+    const raw = localStorage.getItem(key);
+    if (raw === 'on') return true;
+    if (raw === 'off') return false;
+    return null;
+}
+
+function setStoredGoveeIdentifierPowerState(identifier, state) {
+    const key = getGoveeIdentifierPowerStateKey(identifier);
+    if (!key) return;
+    localStorage.setItem(key, state ? 'on' : 'off');
+}
+
 // Device Registry System
 const DEVICE_REGISTRY_KEY = 'device_registry';
 
@@ -2008,6 +2039,191 @@ function getAllDevices() {
         roku: Object.values(registry.roku || {}),
         govee: Object.values(registry.govee || {})
     };
+}
+
+function normalizeDeviceIdentifier(value) {
+    if (typeof value !== 'string') return '';
+    let normalized = value.trim();
+    if (!normalized) return '';
+    normalized = normalized.replace(/^govee:/i, '');
+    normalized = normalized.replace(/^https?:\/\//i, '');
+    normalized = normalized.replace(/-+/g, ':');
+    if (normalized.endsWith('/')) {
+        normalized = normalized.slice(0, -1);
+    }
+    return normalized.toLowerCase();
+}
+
+function isLikelyIpAddress(value) {
+    if (typeof value !== 'string') return false;
+    const trimmed = value.trim();
+    if (!trimmed) return false;
+    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(trimmed)) return true;
+    if (/^\d{1,3}(\.\d{1,3}){3}:\d{1,5}$/.test(trimmed)) return true;
+    if (/^\[(?:[0-9a-fA-F:]+)\](?::\d{1,5})?$/.test(trimmed)) return true;
+    if (trimmed.includes('::') && /^[0-9a-fA-F:]+$/.test(trimmed)) return true;
+    return false;
+}
+
+function findRegisteredGoveeDeviceByIdentifier(identifier) {
+    const normalized = normalizeDeviceIdentifier(identifier);
+    if (!normalized) return null;
+    const registry = getDeviceRegistry();
+    const entries = Object.values(registry.govee || {});
+    for (const device of entries) {
+        const candidates = [
+            device.mac,
+            device.device_id,
+            device.ip,
+            device.name
+        ];
+        if (candidates.some(candidate => normalizeDeviceIdentifier(candidate) === normalized)) {
+            return device;
+        }
+    }
+    return null;
+}
+
+function resolveGoveeOverridesFromDeviceIdentifier(identifier, fallbackPort = GOVEE_DEFAULT_PORT) {
+    if (typeof identifier !== 'string') return null;
+    const trimmed = identifier.trim();
+    if (!trimmed) return null;
+    const cleaned = trimmed.replace(/^govee:/i, '');
+
+    if (isLikelyIpAddress(cleaned)) {
+        return { ip: cleaned, port: fallbackPort || GOVEE_DEFAULT_PORT };
+    }
+
+    const registered = findRegisteredGoveeDeviceByIdentifier(cleaned);
+    if (registered?.ip) {
+        return { ip: registered.ip, port: fallbackPort || GOVEE_DEFAULT_PORT };
+    }
+
+    return null;
+}
+
+function resolveGoveeOverridesForStep(step) {
+    if (!step) return null;
+    const fallbackPort = Number(step.port) || GOVEE_DEFAULT_PORT;
+    const candidates = [];
+
+    const pushCandidate = value => {
+        if (typeof value === 'string' && value.trim()) {
+            candidates.push(value);
+        }
+    };
+
+    pushCandidate(step.device);
+    pushCandidate(step.mac);
+    pushCandidate(step.ip);
+
+    if (Array.isArray(step.devices)) {
+        step.devices.forEach(deviceValue => {
+            if (typeof deviceValue === 'string') {
+                pushCandidate(deviceValue);
+            } else if (deviceValue && typeof deviceValue === 'object') {
+                pushCandidate(deviceValue.device);
+                pushCandidate(deviceValue.ip);
+            }
+        });
+    }
+
+    for (const candidate of candidates) {
+        const overrides = resolveGoveeOverridesFromDeviceIdentifier(candidate, fallbackPort);
+        if (overrides) {
+            return overrides;
+        }
+    }
+
+    return null;
+}
+
+function findGoveeCloudDeviceByIdentifier(identifier) {
+    const normalized = normalizeDeviceIdentifier(identifier);
+    if (!normalized) return null;
+    const list = Array.isArray(goveeCloudDevices) ? goveeCloudDevices : [];
+    for (const device of list) {
+        const deviceId = device?.device || device?.mac || device?.device_id;
+        if (normalizeDeviceIdentifier(deviceId) === normalized) {
+            return device;
+        }
+        const altId = device?.deviceName || device?.device_name || device?.name || device?.nickName;
+        if (normalizeDeviceIdentifier(altId) === normalized) {
+            return device;
+        }
+    }
+    return null;
+}
+
+function resolveGoveeCloudTarget(step) {
+    if (!step) return null;
+    const identifier = step.mac || step.device;
+    if (!identifier) return null;
+
+    const normalized = normalizeDeviceIdentifier(identifier);
+    if (!normalized) return null;
+
+    const cloudDevice = findGoveeCloudDeviceByIdentifier(identifier);
+    if (cloudDevice) {
+        return {
+            device: cloudDevice.device || identifier,
+            model: cloudDevice.model || step.model || ''
+        };
+    }
+
+    const registryMatch = findRegisteredGoveeDeviceByIdentifier(identifier);
+    if (registryMatch) {
+        return {
+            device: identifier,
+            model: registryMatch.model || step.model || ''
+        };
+    }
+
+    return {
+        device: identifier,
+        model: step.model || ''
+    };
+}
+
+async function sendGoveeCloudRoutineCommand(step, cmd) {
+    if (!tauriInvoke) {
+        setGoveeStatus('Cloud control requires running inside the Tauri app.', 'error');
+        return false;
+    }
+
+    const apiKey = getStoredGoveeApiKey();
+    if (!apiKey) {
+        setGoveeStatus('Save your Govee API key to control lights via the cloud.', 'error');
+        return false;
+    }
+
+    const target = resolveGoveeCloudTarget(step);
+    if (!target || !target.device) {
+        setGoveeStatus('That light is not linked to your Govee account yet. Refresh the cloud device list.', 'error');
+        return false;
+    }
+
+    try {
+        await tauriInvoke('govee_cloud_control', {
+            apiKey,
+            device: target.device,
+            model: target.model || '',
+            cmd
+        });
+        if (cmd?.name === 'turn' && target.device) {
+            const rawValue = typeof cmd.value === 'string' ? cmd.value.toLowerCase() : cmd.value;
+            if (rawValue === 'on' || rawValue === 1 || rawValue === true) {
+                setStoredGoveeIdentifierPowerState(target.device, true);
+            } else if (rawValue === 'off' || rawValue === 0 || rawValue === false) {
+                setStoredGoveeIdentifierPowerState(target.device, false);
+            }
+        }
+        return true;
+    } catch (error) {
+        console.error('Govee cloud command failed:', error);
+        setGoveeStatus(`Cloud command failed: ${error.message || error}`, 'error');
+        return false;
+    }
 }
 
 async function discoverAndRegisterAllDevices() {
@@ -3255,68 +3471,105 @@ async function lightRoutine(routine) {
         try {
             switch (step.type) {
                 case 'power': {
-                    const ip = step.device;
-                    const port = step.port || 4003;
-                    if (step.value === 'toggle') {
-                        await goveeTogglePower({ ip, port });
-                    } else {
-                        const turnOn = step.value === 'on';
-                        await goveePower(turnOn, { ip, port });
+                    const overrides = resolveGoveeOverridesForStep(step);
+                    if (overrides) {
+                        if (step.value === 'toggle') {
+                            await goveeTogglePower(overrides);
+                        } else {
+                            const turnOn = normalizeGoveePowerValue(step.value);
+                            await goveePower(turnOn, overrides);
+                        }
+                        break;
+                    }
+
+                    console.warn('lightRoutine power step missing resolvable LAN device:', step);
+                    const identifier = step.mac || step.device;
+                    let desired = step.value === 'toggle'
+                        ? 'toggle'
+                        : normalizeGoveePowerValue(step.value) ? 'on' : 'off';
+
+                    if (desired === 'toggle') {
+                        const stored = getStoredGoveeIdentifierPowerState(identifier);
+                        if (stored === null) {
+                            desired = 'on';
+                        } else {
+                            desired = stored ? 'off' : 'on';
+                        }
+                    }
+
+                    const sent = await sendGoveeCloudRoutineCommand(step, { name: 'turn', value: desired });
+                    if (!sent) {
+                        continue;
                     }
                     break;
                 }
 
                 case 'brightness': {
-                    const ip = step.device;
-                    const port = step.port || 4003;
+                    const overrides = resolveGoveeOverridesForStep(step);
                     const brightness = parseInt(step.value, 10);
-                    await goveeApplyBrightness(brightness, { ip, port });
+
+                    if (overrides) {
+                        await goveeApplyBrightness(brightness, overrides);
+                        break;
+                    }
+
+                    console.warn('lightRoutine brightness step missing resolvable LAN device:', step);
+                    const brightnessSent = await sendGoveeCloudRoutineCommand(step, {
+                        name: 'brightness',
+                        value: brightness
+                    });
+                    if (!brightnessSent) {
+                        continue;
+                    }
                     break;
                 }
 
                 case 'color': {
-                    const ip = step.device;
-                    const port = step.port || 4003;
+                    const overrides = resolveGoveeOverridesForStep(step);
                     const rgb = step.value.split(',').map(v => parseInt(v.trim(), 10));
-                    if (rgb.length === 3) {
-                        await goveeSetColor(rgb[0], rgb[1], rgb[2], { ip, port });
+                    if (rgb.length !== 3 || rgb.some(val => Number.isNaN(val))) {
+                        console.warn('Invalid RGB value in lightRoutine step:', step.value);
+                        continue;
+                    }
+
+                    if (overrides) {
+                        await goveeSetColor(rgb[0], rgb[1], rgb[2], overrides);
+                        break;
+                    }
+
+                    console.warn('lightRoutine color step missing resolvable LAN device:', step);
+                    const colorSent = await sendGoveeCloudRoutineCommand(step, {
+                        name: 'color',
+                        value: { r: rgb[0], g: rgb[1], b: rgb[2] }
+                    });
+                    if (!colorSent) {
+                        continue;
                     }
                     break;
                 }
 
                 case 'colorTemp': {
-                    const ip = step.device;
-                    const port = step.port || 4003;
                     const kelvin = parseInt(step.value, 10);
-                    // Use govee cloud command if available, otherwise skip
-                    if (tauriInvoke && step.mac) {
-                        const apiKey = getStoredGoveeApiKey();
-                        if (apiKey) {
-                            await tauriInvoke('govee_cloud_control', {
-                                apiKey: apiKey,
-                                device: step.mac,
-                                model: step.model || '',
-                                cmd: { name: 'colorTem', value: kelvin }
-                            });
-                        }
+                    const sent = await sendGoveeCloudRoutineCommand(step, {
+                        name: 'colorTem',
+                        value: kelvin
+                    });
+                    if (!sent) {
+                        continue;
                     }
                     break;
                 }
 
                 case 'scene': {
-                    const ip = step.device;
-                    // Scene control via cloud API
-                    if (tauriInvoke && step.mac) {
-                        const apiKey = getStoredGoveeApiKey();
-                        if (apiKey) {
-                            const sceneValue = isNaN(parseInt(step.value)) ? step.value : parseInt(step.value);
-                            await tauriInvoke('govee_cloud_control', {
-                                apiKey: apiKey,
-                                device: step.mac,
-                                model: step.model || '',
-                                cmd: { name: 'scene', value: sceneValue }
-                            });
-                        }
+                    const sceneValue = isNaN(parseInt(step.value, 10))
+                        ? step.value
+                        : parseInt(step.value, 10);
+                    const sent = await sendGoveeCloudRoutineCommand(step, {
+                        name: 'scene',
+                        value: sceneValue
+                    });
+                    if (!sent) {
+                        continue;
                     }
                     break;
                 }
