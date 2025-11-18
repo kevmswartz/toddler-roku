@@ -1,4 +1,8 @@
 {
+  "settings": {
+    "goveeApiKey": "",
+    "parentalPin": "1234"
+  },
   "tabs": [
     {
       "id": "remote",

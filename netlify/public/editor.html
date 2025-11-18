@@ -551,6 +551,7 @@
 
         <nav class="tab-nav">
             <button class="tab-button active" data-tab="rooms">🏠 Rooms & BLE Detection</button>
+            <button class="tab-button" data-tab="app-settings">⚙️ App Settings</button>
             <button class="tab-button" data-tab="device-lists">📡 Device Lists</button>
             <button class="tab-button" data-tab="youtube">📺 YouTube Quick Launch</button>
             <button class="tab-button" data-tab="apps">🎬 App Buttons</button>
@@ -567,6 +568,44 @@
                 </button>
             </div>
             <div id="roomsContainer" class="room-grid"></div>
+        </div>
+
+        <!-- App Settings Tab -->
+        <div class="tab-content" id="app-settings-tab">
+            <div class="config-header">
+                <h2>App Settings</h2>
+                <p style="color: #666; font-size: 14px; margin-top: 10px;">Manage secure values that the toddler app reads directly from your Netlify config.</p>
+            </div>
+
+            <div class="input-group">
+                <label for="goveeApiKeyEditor">Govee API Key</label>
+                <input
+                    type="text"
+                    id="goveeApiKeyEditor"
+                    placeholder="Enter your Govee API key to sync with the app">
+                <div class="help-text">
+                    Stored with your app config so the desktop/mobile app can access the cloud API automatically.
+                    The key is also kept in your browser for the editor tools.
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="parentalPinEditor">Parental PIN (4 digits)</label>
+                <input
+                    type="text"
+                    id="parentalPinEditor"
+                    maxlength="4"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="1234">
+                <div class="help-text">
+                    Leave blank to fall back to the default (1234). Numbers only—this controls the in-app settings lock.
+                </div>
+            </div>
+
+            <div id="appSettingsStatus" class="rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-900" style="background: #f5f5f5;">
+                App settings will appear here after loading your config.
+            </div>
         </div>
 
         <!-- Device Lists Tab -->
@@ -586,12 +625,9 @@
 
             <div>
                 <h3 style="margin-bottom: 15px;">💡 Govee Devices</h3>
-
-                <div class="input-group" style="margin-bottom: 15px;">
-                    <label for="goveeApiKeyEditor">Govee API Key (Optional - for cloud fetch)</label>
-                    <input type="text" id="goveeApiKeyEditor" placeholder="Enter your Govee API key to fetch devices from cloud">
-                    <div class="help-text">Get your API key from <a href="https://developer.govee.com/us/developer" target="_blank" style="color: #667eea;">developer.govee.com</a>. This will be saved locally.</div>
-                </div>
+                <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                    Configure your API key under <strong>App Settings</strong>, then return here to load device lists or upload scans.
+                </p>
 
                 <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
                     <button class="btn-success" onclick="fetchAndUploadGoveeDevices()">🌐 Fetch & Upload from Govee Cloud</button>
@@ -599,7 +635,7 @@
                 </div>
 
                 <div id="goveeDevicesList" style="background: #f5f5f5; padding: 20px; border-radius: 8px; min-height: 100px;">
-                    <p style="color: #999;">Enter your Govee API key above and click "Fetch & Upload from Govee Cloud" to discover and save your devices.</p>
+                    <p style="color: #999;">Add your Govee API key in the App Settings tab and click "Fetch & Upload from Govee Cloud" to discover and save your devices.</p>
                 </div>
             </div>
         </div>
@@ -959,11 +995,96 @@
             }
         }
 
+        function ensureAppConfigStructure() {
+            if (!appConfig || typeof appConfig !== 'object') {
+                appConfig = { tabs: [] };
+            }
+            if (!Array.isArray(appConfig.tabs)) {
+                appConfig.tabs = [];
+            }
+            if (!appConfig.settings || typeof appConfig.settings !== 'object') {
+                appConfig.settings = {};
+            }
+            if (typeof appConfig.settings.goveeApiKey !== 'string') {
+                appConfig.settings.goveeApiKey = '';
+            }
+            if (typeof appConfig.settings.parentalPin !== 'string') {
+                appConfig.settings.parentalPin = '';
+            }
+        }
+
+        function getAppSettings() {
+            ensureAppConfigStructure();
+            return appConfig.settings;
+        }
+
+        function syncAppConfigJson() {
+            const textarea = document.getElementById('appConfigJson');
+            if (textarea && appConfig) {
+                textarea.value = JSON.stringify(appConfig, null, 2);
+            }
+        }
+
+        function updateAppSettingsStatus() {
+            const statusEl = document.getElementById('appSettingsStatus');
+            if (!statusEl) return;
+
+            const settings = getAppSettings();
+            const hasKey = Boolean(settings.goveeApiKey?.trim());
+            const pin = (settings.parentalPin || '').trim();
+            const maskedPin = pin ? '•'.repeat(pin.length) : 'Default';
+
+            const lines = [];
+            lines.push(hasKey ? 'Govee API key will sync to the app.' : 'No Govee API key saved yet.');
+            lines.push(pin ? `Parental PIN set to ${maskedPin}.` : 'Parental PIN will fall back to 1234.');
+            lines.push('Click "Save All Configs" to push updates.');
+            statusEl.textContent = lines.join(' ');
+        }
+
+        function renderAppSettings() {
+            ensureAppConfigStructure();
+            const settings = appConfig.settings;
+            const apiInput = document.getElementById('goveeApiKeyEditor');
+            const pinInput = document.getElementById('parentalPinEditor');
+
+            if (apiInput && apiInput !== document.activeElement) {
+                apiInput.value = settings.goveeApiKey || '';
+            }
+            if (pinInput && pinInput !== document.activeElement) {
+                pinInput.value = settings.parentalPin || '';
+            }
+
+            updateAppSettingsStatus();
+        }
+
+        function updateAppSettingsFromInputs() {
+            if (!appConfig) return;
+            const settings = getAppSettings();
+            const apiInput = document.getElementById('goveeApiKeyEditor');
+            const pinInput = document.getElementById('parentalPinEditor');
+
+            if (apiInput) {
+                settings.goveeApiKey = apiInput.value.trim();
+            }
+            if (pinInput) {
+                let digits = pinInput.value.replace(/\D/g, '').slice(0, 4);
+                if (pinInput.value !== digits) {
+                    pinInput.value = digits;
+                }
+                settings.parentalPin = digits;
+            }
+
+            syncAppConfigJson();
+            updateAppSettingsStatus();
+        }
+
         function renderAllViews() {
+            ensureAppConfigStructure();
             renderRooms();
             renderYouTubeVideos();
             renderAppButtons();
             renderLightButtons();
+            renderAppSettings();
             document.getElementById('appConfigJson').value = JSON.stringify(appConfig, null, 2);
             document.getElementById('roomsConfigJson').value = JSON.stringify(roomsConfig, null, 2);
         }
@@ -1898,12 +2019,21 @@
             }
         }
 
-        // Auto-save API key on input
+        // Auto-save inputs on change
         document.addEventListener('DOMContentLoaded', () => {
             loadGoveeApiKey();
             const apiKeyInput = document.getElementById('goveeApiKeyEditor');
             if (apiKeyInput) {
-                apiKeyInput.addEventListener('input', saveGoveeApiKey);
+                apiKeyInput.addEventListener('input', () => {
+                    saveGoveeApiKey();
+                    updateAppSettingsFromInputs();
+                });
+            }
+            const pinInput = document.getElementById('parentalPinEditor');
+            if (pinInput) {
+                pinInput.addEventListener('input', () => {
+                    updateAppSettingsFromInputs();
+                });
             }
         });
 

@@ -1,6 +1,6 @@
 // Roku Control App
 const STORAGE_KEY = 'roku_ip';
-const PIN_CODE = '1234'; // Change this to your desired PIN
+const DEFAULT_PIN_CODE = '1234';
 const HOLD_DURATION = 2000; // 2 seconds to hold
 const PROGRESS_CIRCUMFERENCE = 163;
 const STATUS_VARIANTS = {
@@ -31,6 +31,7 @@ const GOVEE_MIN_BRIGHTNESS = 1;
 const GOVEE_POWER_STATE_PREFIX = 'govee_power_state_';
 const GOVEE_API_KEY_STORAGE_KEY = 'govee_api_key';
 const YOUTUBE_PLAYBACK_MODE_KEY = 'youtube_playback_mode'; // 'roku' or 'app'
+const PARENTAL_PIN_STORAGE_KEY = 'parental_pin';
 const GOVEE_STATUS_VARIANTS = {
     info: 'bg-white/10 text-indigo-100',
     success: 'bg-emerald-500/20 text-emerald-50 border border-emerald-200/40',
@@ -153,11 +154,45 @@ let tabsConfig = null;
 let goveeCloudDevices = [];
 let goveeCloudDevicesLoaded = false;
 let goveeCloudDevicesLoading = false;
+let remotePinCode = DEFAULT_PIN_CODE;
 
 if (typeof window !== 'undefined') {
     window.getButtonHandlerCatalog = () => buttonTypeCatalog;
 }
 
+function sanitizePinValue(value) {
+    if (typeof value !== 'string') return '';
+    const digits = value.replace(/\D/g, '').slice(0, 4);
+    return digits.length === 4 ? digits : '';
+}
+
+function getLocalParentalPin() {
+    const raw = localStorage.getItem(PARENTAL_PIN_STORAGE_KEY);
+    if (raw && /^\d{4}$/.test(raw)) {
+        return raw;
+    }
+    return null;
+}
+
+function setLocalParentalPin(pin) {
+    const sanitized = sanitizePinValue(pin);
+    if (sanitized) {
+        localStorage.setItem(PARENTAL_PIN_STORAGE_KEY, sanitized);
+    } else {
+        localStorage.removeItem(PARENTAL_PIN_STORAGE_KEY);
+    }
+    updateParentalControlsUI();
+}
+
+function setRemotePinCode(pinValue) {
+    const sanitized = sanitizePinValue(typeof pinValue === 'number' ? String(pinValue) : (pinValue || ''));
+    remotePinCode = sanitized || DEFAULT_PIN_CODE;
+    updateParentalControlsUI();
+}
+
+function getActivePinCode() {
+    return getLocalParentalPin() || remotePinCode || DEFAULT_PIN_CODE;
+}
 // Settings lock state
 let holdTimer = null;
 let holdProgress = 0;
@@ -625,6 +660,28 @@ function applyToddlerContent(data) {
     // Store the raw config for editing
     currentLoadedConfig = data;
 
+    const settingsData = data?.settings || {};
+    if (Object.prototype.hasOwnProperty.call(settingsData, 'goveeApiKey')) {
+        const normalizedKey = (settingsData.goveeApiKey || '').trim();
+        const currentKey = getStoredGoveeApiKey().trim();
+        if (normalizedKey !== currentKey) {
+            setStoredGoveeApiKey(normalizedKey);
+            goveeCloudDevices = [];
+            goveeCloudDevicesLoaded = false;
+            if (normalizedKey) {
+                goveeLoadCloudDevices({ auto: true });
+            } else {
+                renderGoveeCloudDevices();
+            }
+        }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(settingsData, 'parentalPin')) {
+        setRemotePinCode(settingsData.parentalPin);
+    } else {
+        setRemotePinCode(null);
+    }
+
     // Extract tabs and buttons from the unified config structure
     const tabs = Array.isArray(data?.tabs) ? data.tabs : [];
 
@@ -992,6 +1049,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (isNativeRuntime) {
         console.log('Running inside Tauri shell');
     }
+
+    updateParentalControlsUI();
 
     // Load tabs config before initializing tab controls
     await loadTabsConfig();
@@ -1909,6 +1968,7 @@ function setStoredGoveeApiKey(value) {
     } else {
         localStorage.removeItem(GOVEE_API_KEY_STORAGE_KEY);
     }
+    updateGoveeCloudUI();
 }
 
 function getStoredGoveeBrightness() {
@@ -5888,6 +5948,52 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function maskPin(pin) {
+    if (!pin) return '';
+    return '•'.repeat(pin.length);
+}
+
+function updateParentalControlsUI() {
+    const input = document.getElementById('parentalPinInput');
+    const statusEl = document.getElementById('parentalPinStatus');
+    const localPin = getLocalParentalPin();
+
+    if (input && input !== document.activeElement) {
+        input.value = localPin || '';
+    }
+
+    if (statusEl) {
+        if (localPin) {
+            statusEl.textContent = `Using device-specific PIN (${maskPin(localPin)}) on this device.`;
+        } else if (remotePinCode && remotePinCode !== DEFAULT_PIN_CODE) {
+            statusEl.textContent = 'Using PIN from cloud config.';
+        } else {
+            statusEl.textContent = 'Using default PIN (1234).';
+        }
+    }
+}
+
+function saveParentalPinOverride() {
+    const input = document.getElementById('parentalPinInput');
+    if (!input) return;
+    const digits = sanitizePinValue(input.value);
+    if (digits.length !== 4) {
+        showStatus('PIN must be exactly 4 digits.', 'error');
+        return;
+    }
+    setLocalParentalPin(digits);
+    showStatus('PIN updated for this device.', 'success');
+}
+
+function clearParentalPinOverride() {
+    setLocalParentalPin('');
+    const input = document.getElementById('parentalPinInput');
+    if (input && input !== document.activeElement) {
+        input.value = '';
+    }
+    showStatus('PIN reset to the cloud/default value.', 'info');
+}
+
 // Settings Lock Functions
 function handleSettingsClick(event) {
     const pinModal = document.getElementById('pinModal');
@@ -5989,7 +6095,7 @@ function updatePinDisplay() {
 }
 
 function checkPin() {
-    if (currentPin === PIN_CODE) {
+    if (currentPin === getActivePinCode()) {
         settingsUnlocked = true;
         closePinModal();
         showSettings();
@@ -6063,6 +6169,7 @@ function showSettings() {
     renderQuickLaunchSettings(toddlerQuickLaunchItems);
     updateToddlerContentSourceInfo();
     updateGoveeUI();
+    updateParentalControlsUI();
     updateYoutubeModeUI();
     renderTabConfig();
     showStatus('Settings unlocked! Advanced controls are now visible.', 'success');
