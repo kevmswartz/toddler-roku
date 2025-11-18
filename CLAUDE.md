@@ -8,7 +8,7 @@ Toddler Phone Control is a family-friendly Roku remote built with Tauri 2. It pr
 
 **Content Management:** Uses Netlify for remote configuration, image hosting, and settings sync. See `netlify/README.md` for admin UI and API documentation.
 
-**Codebase Health:** The main `app.js` file is currently 5,751 lines. See `CODEBASE_AUDIT.md` for analysis and refactoring roadmap. New features should be added carefully, and the Netlify admin UI is being built as a separate, clean codebase.
+**Codebase Health:** The main `app.js` file is currently ~6,200 lines (monolithic architecture). See `claude-review.md` for comprehensive analysis. New features should be added carefully, and the Netlify admin UI is being built as a separate, clean codebase.
 
 ## Architecture
 
@@ -339,20 +339,20 @@ When working with this repository, follow these conventions:
 - JSDoc comments for public APIs (required for new modules)
 
 **State Management:**
-- Use `src/utils/state.js` for reactive state (once integrated)
-- localStorage for persistence via `src/utils/storage.js` abstraction
-- Global variables discouraged (legacy only in `app.js`)
+- All state is managed directly in `app.js` (monolithic approach)
+- localStorage used directly for persistence (see State Management section)
+- Global variables used throughout `app.js` for application state
 
 **Error Handling:**
-- Use `src/utils/errors.js` standardized error utilities
-- Try/catch with user-friendly messages via `showToast()` or `showStatus()`
+- Try/catch blocks with user-friendly error messages via `showToast()` or `showStatus()`
+- All error handling is implemented inline in `app.js`
 - Never silent failures - log to console minimum
 
 **Testing:**
-- Unit tests in `src/modules/*.test.js` using Vitest
-- Run tests: `npm test` or `npm run test:ui`
-- Test coverage target: 60%+ for new modules
-- Integration tests: TBD (see `claude-review.md` recommendations)
+- Currently minimal testing infrastructure
+- Vitest configured but no active tests
+- Test coverage: ~0% (testing framework available but not utilized)
+- Future: Add unit tests for critical functions in `app.js`
 
 **Git Workflow:**
 - Branch naming: `claude/description-sessionId` for AI work, `feature/name` for features
@@ -393,7 +393,7 @@ When working with this repository, follow these conventions:
 
 **Best Practices for AI-Assisted Development:**
 
-1. **Provide context:** Reference `CLAUDE.md`, `claude-review.md`, and `CODEBASE_AUDIT.md`
+1. **Provide context:** Reference `CLAUDE.md` and `claude-review.md` for current state
 2. **Be specific:** "Update Roku API to handle timeout errors" vs "make it better"
 3. **Request tests:** Always ask for unit tests with new features
 4. **Verify assumptions:** AI may not know about Tauri limitations or project constraints
@@ -422,24 +422,24 @@ When working with this repository, follow these conventions:
 
 **Current State (as of November 2025):**
 - Overall health: **4/10**
-- Lines of code: ~11,171 JS, ~200 Rust
-- Test coverage: ~15% (3 test files, new modules only)
-- Modularization: Partial (refactored code exists but unused)
+- Lines of code: ~6,200 JS (app.js monolithic), ~200 Rust
+- Test coverage: ~0% (no active tests)
+- Modularization: Monolithic (entire frontend in single app.js file)
 - Documentation: Excellent (comprehensive docs exist)
 - CI/CD: None (critical gap)
 
 **Target State:**
 - Overall health: **8/10**
 - Test coverage: 60%+
-- Modularization: Complete (app.js uses src/ modules)
+- Modularization: Refactor app.js into logical modules
 - CI/CD: GitHub Actions (tests, linting, builds)
 - Security: PIN configurable, certificates validated
 
 **Tracking Progress:**
 
 Update these metrics after major changes:
-- Run `wc -l app.js src/**/*.js` for line counts
-- Run `npm run test -- --coverage` for test coverage
+- Run `wc -l app.js` for line counts
+- Run `npm run test -- --coverage` for test coverage (when tests exist)
 - Update `claude-review.md` with new findings
 - Document changes in commit messages
 
@@ -461,10 +461,9 @@ Update these metrics after major changes:
 **For Contributors:**
 - Start with `README.md` for overview
 - Read this file for technical details
-- Review `claude-review.md` for current state
-- Check `CODEBASE_AUDIT.md` for technical debt context
+- Review `claude-review.md` for current state and known issues
 
 ---
 
-**Last Updated:** November 16, 2025
+**Last Updated:** November 18, 2025 (Cleanup: removed unused src/ directory, updated documentation to reflect monolithic architecture)
 **Next Scheduled Review:** February 2026 (Quarterly)

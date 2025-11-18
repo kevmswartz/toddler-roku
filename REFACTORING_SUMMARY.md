@@ -1,8 +1,15 @@
 # Refactoring Summary
 
+> **⚠️ ARCHIVE NOTICE (November 18, 2025):**
+> This document describes modular refactoring work that was completed on November 11, 2025 but was **never integrated into the main application**. The `src/` directory and all refactored modules were removed on November 18, 2025 to clean up unused code. The application continues to use the monolithic `app.js` architecture.
+>
+> This document is preserved for historical reference and as a potential roadmap for future refactoring efforts.
+
+---
+
 **Date:** November 11, 2025
 **Scope:** Complete modularization of 5,898-line monolithic `app.js`
-**Status:** ✅ Core modules implemented, ready for gradual adoption
+**Status:** ❌ Modules created but never integrated, removed November 18, 2025
 
 ---
 
