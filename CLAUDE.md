@@ -8,7 +8,7 @@ Toddler Phone Control is a family-friendly Roku remote built with Tauri 2. It pr
 
 **Content Management:** Uses Netlify for remote configuration, image hosting, and settings sync. See `netlify/README.md` for admin UI and API documentation.
 
-**Codebase Health:** The main `app.js` file is currently ~6,200 lines (monolithic architecture). See `claude-review.md` for comprehensive analysis. New features should be added carefully, and the Netlify admin UI is being built as a separate, clean codebase.
+**Codebase Health:** The main `app.js` file is currently ~6,247 lines (monolithic architecture). See `claude-review.md` for comprehensive analysis. New features should be added carefully, and the Netlify admin UI is being built as a separate, clean codebase.
 
 ## Architecture
 
@@ -25,7 +25,7 @@ This is a **Tauri 2 hybrid app** with clear separation between web UI and native
 **Backend (Rust layer)** in `src-tauri/`:
 - Tauri commands expose native capabilities via `tauri::command` macros
 - Bridge modules in `src-tauri/src/bridges/` handle network protocols that browsers can't (UDP for Govee, HTTP without CORS for Roku)
-- Commands: `roku_get`, `roku_post`, `govee_send`, `govee_discover`, `roomsense_scan`
+- Commands: `roku_get`, `roku_post`, `roku_discover`, `govee_send`, `govee_discover`, `govee_status`, `govee_cloud_devices`, `govee_cloud_control`, `govee_cloud_state`, `roomsense_scan`, `is_wifi_connected`
 
 ### Key Bridge Pattern
 
@@ -42,29 +42,55 @@ const tauriInvoke = (() => {
 ```
 
 When running in native mode, network calls bypass browser CORS restrictions through Rust bridges:
-- **Roku HTTP**: `bridges/roku.rs` uses `reqwest::blocking::Client` with 6s timeout
-- **Govee UDP**: `bridges/govee.rs` sends JSON commands to LAN devices on port 4003
+- **Roku HTTP**: `bridges/roku.rs` uses `reqwest` for HTTP requests and SSDP discovery
+- **Govee UDP**: `bridges/govee.rs` sends JSON commands to LAN devices on port 4003, plus cloud API support
 - **Roomsense**: `bridges/roomsense.rs` (future LAN device discovery)
+- **Network Utils**: `bridges/network.rs` provides WiFi connectivity detection for LAN protocol validation
 
 ### Content Management System
 
-Curated kid buttons come from `public/config/toddler/default.json` (bundled default) or a remote URL stored in localStorage. The content schema defines:
-- `specialButtons[]`: Each button has an `id`, `emoji`, `label`, `handler`, and `category`
-- Categories: `kidMode-remote`, `kidMode-content`, `kidMode-system`
-- Zones: `remote` (always visible), `quick` (toddler-focused content)
+**All content is cloud-based** via Netlify. Configuration files define the app's interface, buttons, and behavior.
 
-The `public/config/button-types.json` file documents all handler functions and their purpose (e.g., `sendKey`, `launchApp`, `runMacro`).
+**Configuration Files**:
+- `public/config/app-config.json` - Main app configuration (bundled default)
+- `public/config/app-config.custom.json` - Local overrides (optional, git-ignored)
+- `public/config/button-types.json` - Handler function documentation
+- `public/config/rooms.json` - Room definitions for multi-room Roku control
 
-**Content Loading (Simplified)**:
-1. If remote URL configured → fetch fresh from URL (no caching!)
-2. If remote fails or no URL → load from `custom.json` (if exists)
-3. Otherwise → load from bundled `default.json` (always available)
+**App Config Schema** (`app-config.json`):
+```json
+{
+  "settings": {
+    "goveeApiKey": "",
+    "parentalPin": "1234"
+  },
+  "tabs": [
+    {
+      "id": "remote",
+      "label": "Remote",
+      "icon": "🎮",
+      "buttons": [...]
+    }
+  ]
+}
+```
+
+Each button in `tabs[].buttons[]` has:
+- `id`: Unique identifier
+- `emoji`: Visual icon
+- `handler`: Function name from `handlers` object in `app.js`
+- `args`: Optional array of arguments to pass to handler
+
+**Content Loading Priority**:
+1. If cloud passphrase configured → fetch from Netlify API (always fresh)
+2. If cloud fails or no passphrase → load from `app-config.custom.json` (if exists)
+3. Otherwise → load from bundled `app-config.json` (always available)
 4. Shows error only if all sources fail
 
 **Benefits:**
-- Always fresh content from remote URLs
-- No stale cache issues
-- Easy local testing (clear remote URL)
+- Centralized content management via Netlify admin UI
+- Always fresh content from cloud (no caching)
+- Local overrides for development/testing
 - Works offline with bundled defaults
 
 ### State Management
@@ -72,8 +98,9 @@ The `public/config/button-types.json` file documents all handler functions and t
 All state lives in localStorage with typed keys:
 - `roku_ip`: Roku device IP address
 - `roku_macros`: JSON array of saved macro sequences
-- `toddler_content_url`: Optional remote content source URL (always fetches fresh)
+- `toddler_content_passphrase`: Cloud config passphrase for Netlify API access
 - `govee_ip`, `govee_port`, `govee_brightness`: Govee light settings
+- `govee_api_key`: Govee cloud API key
 - `govee_power_state_{ip}`: Per-device power state tracking
 
 ## Common Development Commands
@@ -120,9 +147,9 @@ Content is managed through Netlify:
 - See `netlify/README.md` for details
 
 **For local development:**
-- Edit `public/config/toddler/default.json` directly
-- Rebuild with `npm run build`
-- Test locally before deploying
+- Edit `public/config/app-config.json` directly (or create `app-config.custom.json` for local overrides)
+- Rebuild with `npm run build` to copy config to `dist/`
+- Test locally before deploying to cloud
 
 ### Tauri Commands
 
@@ -141,7 +168,11 @@ npx tauri android build
 - `src-tauri/src/main.rs`: Entry point, calls `roku_control_app::run()`
 - `src-tauri/src/lib.rs`: Tauri app setup, command registration, state management
 - `src-tauri/src/error.rs`: Centralized error types (`BridgeError`)
-- `src-tauri/src/bridges/mod.rs`: Module exports for `roku`, `govee`, `roomsense`
+- `src-tauri/src/bridges/mod.rs`: Module exports for `roku`, `govee`, `roomsense`, `network`
+- `src-tauri/src/bridges/roku.rs`: Roku device discovery (SSDP) and HTTP control
+- `src-tauri/src/bridges/govee.rs`: Govee LAN UDP + cloud API control
+- `src-tauri/src/bridges/roomsense.rs`: Future room sensing capabilities
+- `src-tauri/src/bridges/network.rs`: WiFi connectivity detection
 
 ### Adding New Tauri Commands
 
@@ -178,13 +209,13 @@ Tauri automatically rebuilds Rust when you run `npm run tauri:dev` if source fil
 
 ### Single-File Application
 
-The entire frontend logic lives in `app.js` (~1000+ lines). Key patterns:
+The entire frontend logic lives in `app.js` (~6,247 lines). Key patterns:
 
 **Handler Registration**:
 All button handlers are registered in a `handlers` object at the bottom of `app.js`. To add a new button type:
 1. Add handler function to the `handlers` object
 2. Update `public/config/button-types.json` to document the handler
-3. Add buttons to `public/config/toddler/default.json` with the handler name
+3. Add buttons to `public/config/app-config.json` (or push to cloud via Netlify admin UI)
 
 **Macro System**:
 Macros are stored as JSON arrays in localStorage (`roku_macros`). Each macro has:
@@ -465,5 +496,5 @@ Update these metrics after major changes:
 
 ---
 
-**Last Updated:** November 18, 2025 (Cleanup: removed unused src/ directory, updated documentation to reflect monolithic architecture)
+**Last Updated:** November 19, 2025 (Fixed broken build script, corrected all config paths to reflect cloud-based architecture, updated Rust command documentation)
 **Next Scheduled Review:** February 2026 (Quarterly)
