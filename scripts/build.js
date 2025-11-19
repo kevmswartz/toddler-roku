@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const esbuild = require('esbuild');
 
 const projectRoot = path.resolve(__dirname, '..');
 const distDir = path.join(projectRoot, 'dist');
@@ -11,8 +10,8 @@ const watchMode = args.includes('--watch');
 const staticFiles = [
   'index.html',
   'app.js'
-  // button-types.json and toddler-content.json are in public/config/
-  // and are copied via copyDirectory('public', distDir) below
+  // Config files (app-config.json, button-types.json, rooms.json) are in public/config/
+  // and are copied via copyDirectoryContents('public', distDir) below
 ];
 
 const vendorFiles = [
@@ -112,36 +111,9 @@ function buildTailwind() {
   }
 }
 
-async function buildJavaScript() {
-  const entryPoint = path.join(projectRoot, 'src', 'index.js');
-  const outfile = path.join(distDir, 'modules.js');
-
-  if (!fs.existsSync(entryPoint)) {
-    throw new Error('Entry point not found: src/index.js');
-  }
-
-  try {
-    await esbuild.build({
-      entryPoints: [entryPoint],
-      bundle: true,
-      outfile: outfile,
-      format: 'iife',
-      platform: 'browser',
-      target: ['es2020'],
-      minify: !watchMode,
-      sourcemap: watchMode,
-      logLevel: 'info',
-    });
-    console.log(`Bundled JavaScript: ${path.relative(projectRoot, outfile)}`);
-  } catch (error) {
-    throw new Error(`JavaScript bundling failed: ${error.message}`);
-  }
-}
-
-async function build() {
+function build() {
   cleanDist();
   buildTailwind();
-  await buildJavaScript();
   staticFiles.forEach(file => copyFile(file, distDir));
 
   // Copy vendor files
@@ -171,7 +143,7 @@ let pendingBuild = false;
 let pendingReason = null;
 let debounceTimer = null;
 
-async function triggerBuild(reason = 'file change') {
+function triggerBuild(reason = 'file change') {
   if (buildInProgress) {
     pendingBuild = true;
     pendingReason = reason;
@@ -184,7 +156,7 @@ async function triggerBuild(reason = 'file change') {
   console.log(`Starting build (${label})...`);
 
   try {
-    await build();
+    build();
     const duration = Date.now() - start;
     console.log(`Build finished (${label}) in ${duration}ms`);
   } catch (error) {
@@ -195,7 +167,7 @@ async function triggerBuild(reason = 'file change') {
       const queuedReason = pendingReason;
       pendingBuild = false;
       pendingReason = null;
-      await triggerBuild(queuedReason);
+      triggerBuild(queuedReason);
     }
   }
 }
@@ -283,7 +255,6 @@ function setupWatchers() {
   staticFiles.forEach(file => watchFile(path.join(projectRoot, file)));
 
   const directoryWatchTargets = [
-    path.join(projectRoot, 'src'),      // Watch src/ for modular code changes
     path.join(projectRoot, 'styles'),
     path.join(projectRoot, 'public')
   ];
