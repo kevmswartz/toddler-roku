@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Lights Control</title>
+    <link rel="stylesheet" href="tailwind.css">
+    <style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button {
+            touch-action: manipulation;
+        }
+
+        .min-h-screen {
+            min-height: 100vh;
+            min-height: 100svh;
+        }
+
+        @supports (min-height: 100dvh) {
+            .min-h-screen {
+                min-height: 100dvh;
+            }
+        }
+
+        body.fireworks-open,
+        body.timer-open,
+        body.youtube-player-open {
+            overflow: hidden;
+        }
+
+        .showcase-highlight {
+            outline: 4px solid rgba(255, 255, 255, 0.7);
+            outline-offset: 4px;
+            transition: outline-offset 0.2s ease, outline-color 0.2s ease;
+        }
+
+        .timer-overlay {
+            backdrop-filter: blur(16px);
+            background: rgba(15, 23, 42, 0.72);
+        }
+
+        .fireworks-overlay {
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+            background: rgba(15, 23, 42, 0.8);
+            padding: clamp(1.5rem, 4vw, 3rem);
+        }
+
+        .fireworks-stage {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.12), rgba(15, 23, 42, 0.65));
+        }
+
+        .fireworks-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 640px;
+            margin: auto;
+            padding: 2.5rem 1.5rem 3rem;
+            text-align: center;
+        }
+
+        .firework-particle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 9999px;
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.5);
+            animation: fireworkTravel 1000ms ease-out forwards;
+        }
+
+        @keyframes fireworkTravel {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+
+            80% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(calc(var(--x) - 50%), calc(var(--y) - 50%)) scale(0.1);
+            }
+        }
+
+        .tab-hidden {
+            display: none !important;
+        }
+
+        #bottomTabNav {
+            box-shadow: 0 -12px 32px rgba(15, 23, 42, 0.35);
+            bottom: 0;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        #bottomTabNav button[data-tab-active="true"] {
+            background: rgba(255, 255, 255, 0.18);
+            color: #fff;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes pulse-grow {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes bounce-float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        @keyframes rotate-pulse {
+
+            0%,
+            100% {
+                transform: rotate(0deg) scale(1);
+            }
+
+            25% {
+                transform: rotate(90deg) scale(1.1);
+            }
+
+            50% {
+                transform: rotate(180deg) scale(1);
+            }
+
+            75% {
+                transform: rotate(270deg) scale(1.1);
+            }
+        }
+
+        @keyframes wiggle {
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            25% {
+                transform: rotate(-15deg);
+            }
+
+            75% {
+                transform: rotate(15deg);
+            }
+        }
+
+        @keyframes rainbow-glow {
+            0% {
+                filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.6));
+            }
+
+            33% {
+                filter: drop-shadow(0 0 20px rgba(0, 255, 0, 0.6));
+            }
+
+            66% {
+                filter: drop-shadow(0 0 20px rgba(0, 0, 255, 0.6));
+            }
+
+            100% {
+                filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.6));
+            }
+        }
+
+        .timer-emoji-btn[data-selected="true"] {
+            background: rgba(255, 255, 255, 0.35);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
+        }
+
+        .youtube-mode-btn[data-selected="true"] {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Hide scrollbars for carousel sections */
+        #kidQuickSection .overflow-x-auto::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Snap scrolling for carousel items */
+        #toddlerQuickColumn>button {
+            scroll-snap-align: start;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-700 text-white">
+    <!-- Settings Lock Button -->
+    <button id="settingsLock"
+        class="fixed left-5 top-5 z-30 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-2xl shadow-lg backdrop-blur transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 select-none"
+        style="user-select: none; -webkit-user-select: none; -moz-user-select: none;" onmousedown="startSettingsHold()"
+        onmouseup="stopSettingsHold()" onmouseleave="stopSettingsHold()" ontouchstart="startSettingsHold()"
+        ontouchend="stopSettingsHold()" onclick="handleSettingsClick(event)">
+        <svg class="absolute inset-0 h-full w-full -rotate-90 pointer-events-none" aria-hidden="true">
+            <circle id="progressCircle" cx="32" cy="32" r="26" stroke="#c4b5fd" stroke-width="4" stroke-dasharray="163"
+                stroke-dashoffset="163" fill="none"></circle>
+        </svg>
+        <span class="relative pointer-events-none">⚙️</span>
+    </button>
+
+    <button
+        class="fixed right-5 top-5 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-xl shadow-lg backdrop-blur transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
+        onclick="toggleTheme()" aria-label="Toggle theme">
+        🌓
+    </button>
+
+    <!-- PIN Modal -->
+    <div id="pinModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur">
+        <div class="w-[90%] max-w-xs rounded-3xl bg-white p-6 text-center text-slate-900 shadow-2xl">
+            <h2 class="text-xl font-semibold text-indigo-600">Enter Grown-up PIN</h2>
+            <p class="mt-1 text-sm text-slate-500">Hold the gear button, then type the code.</p>
+            <div id="pinDisplay"
+                class="mx-auto mt-4 flex h-12 w-full max-w-[220px] items-center justify-center gap-3 rounded-full bg-indigo-50 text-2xl font-semibold tracking-[0.65em] text-indigo-600">
+                ••••</div>
+            <div class="mt-6 grid grid-cols-3 gap-3">
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('1')">1</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('2')">2</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('3')">3</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('4')">4</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('5')">5</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('6')">6</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('7')">7</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('8')">8</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('9')">9</button>
+                <button
+                    class="col-span-3 rounded-2xl bg-indigo-200 py-3 text-sm font-semibold uppercase tracking-wide text-indigo-700 transition hover:bg-indigo-300 active:scale-95"
+                    onclick="clearPin()">Clear</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('0')">0</button>
+                <button
+                    class="rounded-2xl bg-slate-200 py-4 text-base font-semibold text-slate-700 shadow-inner transition hover:bg-slate-300 active:scale-95"
+                    onclick="closePinModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <main class="mx-auto flex min-h-screen w-full flex-col gap-6 px-4 pb-32 pt-20 sm:gap-8 md:px-8 md:pt-24 lg:px-12">
+        <div id="statusMessage" class="status-message hidden"></div>
+        <div id="advancedSettingsBanner" data-settings
+            class="hidden flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-white/15 px-5 py-4 text-sm font-semibold text-white shadow-2xl backdrop-blur md:px-6">
+            <span>Advanced controls are unlocked. Make your changes, then tuck them away when you’re done.</span>
+            <button
+                class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-md transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
+                position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center;
+                justify-content: center; gap: 1.5rem; width: 100%; max-width: 640px; margin: auto; padding: 2.5rem
+                1.5rem 3rem; text-align: center; } .firework-particle { position: absolute; top: 50%; left: 50%; width:
+                0.75rem; height: 0.75rem; border-radius: 9999px; opacity: 0; transform: translate(-50%, -50%)
+                scale(0.5); animation: fireworkTravel 1000ms ease-out forwards; } @keyframes fireworkTravel { 0% {
+                opacity: 1; transform: translate(-50%, -50%) scale(0.5); } 80% { opacity: 1; } 100% { opacity: 0;
+                transform: translate(calc(var(--x) - 50%), calc(var(--y) - 50%)) scale(0.1); } } .tab-hidden { display:
+                none !important; } #bottomTabNav { box-shadow: 0 -12px 32px rgba(15, 23, 42, 0.35); bottom: 0;
+                padding-bottom: env(safe-area-inset-bottom, 0px); } #bottomTabNav button[data-tab-active="true" ] {
+                background: rgba(255, 255, 255, 0.18); color: #fff; } @keyframes spin { from { transform: rotate(0deg);
+                } to { transform: rotate(360deg); } } @keyframes pulse-grow { 0%, 100% { transform: scale(1); opacity:
+                1; } 50% { transform: scale(1.2); opacity: 0.8; } } @keyframes bounce-float { 0%, 100% { transform:
+                translateY(0px); } 50% { transform: translateY(-20px); } } @keyframes rotate-pulse { 0%, 100% {
+                transform: rotate(0deg) scale(1); } 25% { transform: rotate(90deg) scale(1.1); } 50% { transform:
+                rotate(180deg) scale(1); } 75% { transform: rotate(270deg) scale(1.1); } } @keyframes wiggle { 0%, 100%
+                { transform: rotate(0deg); } 25% { transform: rotate(-15deg); } 75% { transform: rotate(15deg); } }
+                @keyframes rainbow-glow { 0% { filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.6)); } 33% { filter:
+                drop-shadow(0 0 20px rgba(0, 255, 0, 0.6)); } 66% { filter: drop-shadow(0 0 20px rgba(0, 0, 255, 0.6));
+                } 100% { filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.6)); } } .timer-emoji-btn[data-selected="true" ]
+                { background: rgba(255, 255, 255, 0.35); box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6); }
+                .youtube-mode-btn[data-selected="true" ] { background: rgba(255, 255, 255, 0.25); box-shadow: 0 0 0 3px
+                rgba(255, 255, 255, 0.5); } /* Hide scrollbars for carousel sections */ #kidQuickSection
+                .overflow-x-auto::-webkit-scrollbar { display: none; } /* Snap scrolling for carousel items */
+                #toddlerQuickColumn> button {
+                scroll-snap-align: start;
+                }
+                </style>
+                </head>
+
+                <body class="min-h-screen bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-700 text-white">
+                    <!-- Settings Lock Button -->
+                    <button id="settingsLock"
+                        class="fixed left-5 top-5 z-30 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-2xl shadow-lg backdrop-blur transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 select-none"
+                        style="user-select: none; -webkit-user-select: none; -moz-user-select: none;"
+                        onmousedown="startSettingsHold()" onmouseup="stopSettingsHold()"
+                        onmouseleave="stopSettingsHold()" ontouchstart="startSettingsHold()"
+                        ontouchend="stopSettingsHold()" onclick="handleSettingsClick(event)">
+                        <svg class="absolute inset-0 h-full w-full -rotate-90 pointer-events-none" aria-hidden="true">
+                            <circle id="progressCircle" cx="32" cy="32" r="26" stroke="#c4b5fd" stroke-width="4"
+                                stroke-dasharray="163" stroke-dashoffset="163" fill="none"></circle>
+                        </svg>
+                        <span class="relative pointer-events-none">⚙️</span>
+                    </button>
+
+                    <button
+                        class="fixed right-5 top-5 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-xl shadow-lg backdrop-blur transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
+                        onclick="toggleTheme()" aria-label="Toggle theme">
+                        🌓
+                    </button>
+
+                    <!-- PIN Modal -->
+                    <div id="pinModal"
+                        class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur">
+                        <div class="w-[90%] max-w-xs rounded-3xl bg-white p-6 text-center text-slate-900 shadow-2xl">
+                            <h2 class="text-xl font-semibold text-indigo-600">Enter Grown-up PIN</h2>
+                            <p class="mt-1 text-sm text-slate-500">Hold the gear button, then type the code.</p>
+                            <div id="pinDisplay"
+                                class="mx-auto mt-4 flex h-12 w-full max-w-[220px] items-center justify-center gap-3 rounded-full bg-indigo-50 text-2xl font-semibold tracking-[0.65em] text-indigo-600">
+                                ••••</div>
+                            <div class="mt-6 grid grid-cols-3 gap-3">
+                                <button
+                                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                                    onclick="enterPin('1')">1</button>
+                                <button
+                                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                                    onclick="enterPin('2')">2</button>
+                                <button
+                                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                                    onclick="enterPin('3')">3</button>
+                                <button
+                                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                                    onclick="enterPin('4')">4</button>
+                                <button
+                                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                                    onclick="enterPin('5')">5</button>
+                                <button
+                                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                                    onclick="enterPin('6')">6</button>
+                                <button
+                                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                                    onclick="enterPin('7')">7</button>
+                                <button
+                                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                                    onclick="enterPin('8')">8</button>
+                                <button
+                                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                                    onclick="enterPin('9')">9</button>
+                                <button
+                                    class="col-span-3 rounded-2xl bg-indigo-200 py-3 text-sm font-semibold uppercase tracking-wide text-indigo-700 transition hover:bg-indigo-300 active:scale-95"
+                                    onclick="clearPin()">Clear</button>
+                                <button
+                                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                                    onclick="enterPin('0')">0</button>
+                                <button
+                                    class="rounded-2xl bg-slate-200 py-4 text-base font-semibold text-slate-700 shadow-inner transition hover:bg-slate-300 active:scale-95"
+                                    onclick="closePinModal()">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <main
+                        class="mx-auto flex min-h-screen w-full flex-col gap-6 px-4 pb-32 pt-20 sm:gap-8 md:px-8 md:pt-24 lg:px-12">
+                        <div id="statusMessage" class="status-message hidden"></div>
+                        <div id="advancedSettingsBanner" data-settings
+                            class="hidden flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-white/15 px-5 py-4 text-sm font-semibold text-white shadow-2xl backdrop-blur md:px-6">
+                            <span>Advanced controls are unlocked. Make your changes, then tuck them away when you’re
+                                done.</span>
+                            <button
+                                class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-md transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
+                                onclick="hideSettings()">
+                                Hide Advanced Controls
+                            </button>
+                        </div>
+
+                        <section id="contentSourceSection" data-settings
+                            class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+                            <div class="flex flex-wrap items-start justify-between gap-4">
+                                <div>
+                                    <h2 class="text-2xl font-bold text-white">Kid Button Cloud Config</h2>
+                                    <p class="mt-1 text-sm text-indigo-100">Set your personal passphrase to load custom
+                                        button layouts from the cloud.</p>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 grid gap-4 md:grid-cols-[2fr,1fr] md:items-start">
+                                <label class="flex flex-col gap-3">
+                                    <span class="text-sm font-semibold uppercase tracking-wide text-indigo-200">Config
+                                        Passphrase</span>
+                                    <input id="toddlerContentPassphrase" type="text" inputmode="text"
+                                        placeholder="blue mountain coffee morning sunshine"
+                                        class="w-full rounded-2xl border border-white/20 bg-white/15 px-5 py-4 text-sm font-semibold text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50" />
+                                    <span class="text-xs text-indigo-200/70">Enter at least 5 words separated by spaces.
+                                        Each unique passphrase stores a separate configuration.</span>
+                                </label>
+                                <div class="flex flex-col gap-3 md:items-end">
+                                    <button onclick="saveToddlerContentPassphrase()"
+                                        class="rounded-2xl bg-white/20 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/30 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/50">
+                                        Save Passphrase
+                                    </button>
+                                    <button onclick="refreshToddlerContent()"
+                                        class="rounded-2xl bg-white/15 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
+                                        Refresh from Cloud
+                                    </button>
+                                    <button onclick="clearToddlerContentPassphrase()"
+                                        class="rounded-2xl bg-rose-500/30 px-5 py-3 text-sm font-semibold text-rose-50 shadow-lg transition hover:bg-rose-500/40 focus:outline-none focus:ring-2 focus:ring-rose-200/60">
+                                        Clear Passphrase
+                                    </button>
+                                </div>
+                            </div>
+                            <p id="toddlerContentCacheInfo"
+                                class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-100"></p>
+
+                            <!-- Cloud Config Editor -->
+                            <div id="cloudConfigEditor" class="mt-6 hidden space-y-4">
+                                <div class="rounded-3xl bg-white/10 p-6 space-y-4">
+                                    <div>
+                                        <h3 class="text-lg font-bold text-white">Edit & Save Cloud Config</h3>
+                                        <p class="mt-1 text-xs text-indigo-100/80">Make changes to your button layout
+                                            and save it to the cloud with your passphrase.</p>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <label class="flex flex-col gap-2">
+                                            <span
+                                                class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Configuration
+                                                JSON</span>
+                                            <textarea id="cloudConfigJson" rows="12" spellcheck="false"
+                                                class="w-full rounded-2xl border border-white/20 bg-black/30 px-4 py-3 font-mono text-xs text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-black/40 focus:outline-none focus:ring-2 focus:ring-white/50"
+                                                placeholder='{"tabs": [...]}'></textarea>
+                                        </label>
+                                        <div class="flex flex-wrap gap-3">
+                                            <button onclick="loadCurrentConfigIntoEditor()"
+                                                class="rounded-2xl bg-white/15 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
+                                                Load Current Config
+                                            </button>
+                                            <button onclick="saveConfigToCloud()"
+                                                class="rounded-2xl bg-emerald-500/30 px-5 py-3 text-sm font-semibold text-emerald-50 shadow-lg transition hover:bg-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-200/60">
+                                                💾 Save to Cloud
+                                            </button>
+                                            <button onclick="validateConfigJson()"
+                                                class="rounded-2xl bg-white/15 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
+                                                Validate JSON
+                                            </button>
+                                        </div>
+                                        <p class="text-xs text-indigo-100/70">Tip: Click "Load Current Config" to see
+                                            what's currently loaded, make your edits, then "Save to Cloud".</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-100">
+                                Bundled configuration lives in <code
+                                    class="font-mono text-[11px] text-white">config/app-config.json</code>. Add <code
+                                    class="font-mono text-[11px] text-white">app-config.custom.json</code> beside it for
+                                local tweaks—Git will ignore that file.
+                            </div>
+                            <div id="buttonHandlerCatalog"
+                                class="mt-6 hidden space-y-4 rounded-3xl bg-white/10 p-4 text-indigo-100 shadow-inner">
+                                <div>
+                                    <h3 class="text-base font-semibold text-white">Kid-mode Handler Catalog</h3>
+                                    <p class="mt-1 text-xs text-indigo-100/80">Use these button types and handlers when
+                                        editing your config files.</p>
+                                </div>
+                                <div id="buttonHandlerList" class="grid gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-white/90">Content Providers</h4>
+                                    <div id="contentProviderList" class="mt-2 grid gap-2 text-xs text-indigo-100"></div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="parentalControlsSection" data-settings
+                            class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+                            <div class="flex flex-wrap items-start justify-between gap-4">
+                                <div>
+                                    <h2 class="text-2xl font-bold text-white">Parental Controls</h2>
+                                    <p class="mt-1 text-sm text-indigo-100 max-w-2xl">Update the 4-digit PIN that
+                                        unlocks these settings. This override is stored on this device; cloud configs
+                                        can also provide a PIN.</p>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 grid gap-4 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+                                <div class="space-y-3">
+                                    <label class="text-xs font-semibold uppercase tracking-wide text-indigo-200"
+                                        for="parentalPinInput">New PIN</label>
+                                    <input id="parentalPinInput" type="password" inputmode="numeric" maxlength="4"
+                                        pattern="[0-9]*"
+                                        class="w-full rounded-2xl border border-white/20 bg-black/30 px-4 py-3 text-white placeholder:text-indigo-200/50 focus:border-white/50 focus:bg-black/40 focus:outline-none focus:ring-2 focus:ring-white/40"
+                                        placeholder="1234">
+                                    <p id="parentalPinStatus" class="text-xs text-indigo-100/80">PIN status loading…</p>
+                                </div>
+
+                                <div class="flex flex-wrap gap-3">
+                                    <button onclick="saveParentalPinOverride()"
+                                        class="rounded-2xl bg-white/20 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">
+                                        Save PIN
+                                    </button>
+                                    <button onclick="clearParentalPinOverride()"
+                                        class="rounded-2xl bg-white/10 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/30">
+                                        Reset to Cloud
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="goveeSection" data-settings
+                            class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+                            <div class="flex flex-wrap items-start justify-between gap-4">
+                                <div>
+                                    <div
+                                        class="mx-auto flex w-full max-w-4xl items-center justify-between gap-2 px-3 py-2">
+                                        <div class="flex items-center gap-2 flex-1 min-w-0">
+                                            <span id="currentRoomIndicator" class="text-xs font-semibold truncate">📍
+                                                All Rooms</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <!-- Room Selector Dropdown -->
+                                            <select id="roomSelector" onchange="setCurrentRoom(this.value, 'manual')"
+                                                class="rounded-lg border border-white/40 bg-white/20 px-2 py-1 text-xs font-semibold text-white focus:border-white/60 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
+                                                style="color: white; background-color: rgba(255, 255, 255, 0.2);">
+                                                <option value="" style="background-color: #1e1b4b; color: white;">All
+                                                    Rooms</option>
+                                            </select>
+
+                                            <!-- Auto-detect Toggle Button -->
+                                            <button id="roomAutoDetectToggle" onclick="toggleRoomAutoDetect()"
+                                                class="flex items-center justify-center gap-1 px-2 h-7 rounded-lg border border-white/30 bg-white/10 hover:bg-white/20 active:bg-white/30 transition-colors whitespace-nowrap"
+                                                title="Toggle auto room detection">
+                                                <span id="roomAutoDetectIcon" class="text-sm">🔍</span>
+                                                <span class="text-xs font-semibold">Auto</span>
+                                            </button>
+
+                                            <!-- Locate Button -->
+                                            <button id="roomLocateButton" onclick="manuallyLocateRoom()"
+                                                class="flex items-center justify-center w-7 h-7 rounded-lg border border-white/30 bg-white/10 hover:bg-white/20 active:bg-white/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                title="Find current room">
+                                                <span class="text-sm">📡</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tab Buttons Section -->
+                                <div id="bottomTabButtons"
+                                    class="mx-auto flex w-full max-w-4xl items-stretch justify-around gap-2 px-4 py-3">
+                                </div>
+                                </nav>
+
+                                <div id="toastContainer"
+                                    class="pointer-events-none fixed left-1/2 top-6 z-50 hidden -translate-x-1/2 transform">
+                                </div>
+
+
+
+
+
+
+
+                                <script src="modules.js"></script>
+                                <script src="lights.js"></script>
+                </body>
+
+</html>

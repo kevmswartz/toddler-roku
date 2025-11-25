@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -9,32 +10,39 @@
         body {
             -webkit-tap-highlight-color: transparent;
         }
+
         button {
             touch-action: manipulation;
         }
+
         .min-h-screen {
             min-height: 100vh;
             min-height: 100svh;
         }
+
         @supports (min-height: 100dvh) {
             .min-h-screen {
                 min-height: 100dvh;
             }
         }
+
         body.fireworks-open,
         body.timer-open,
         body.youtube-player-open {
             overflow: hidden;
         }
+
         .showcase-highlight {
             outline: 4px solid rgba(255, 255, 255, 0.7);
             outline-offset: 4px;
             transition: outline-offset 0.2s ease, outline-color 0.2s ease;
         }
+
         .timer-overlay {
             backdrop-filter: blur(16px);
             background: rgba(15, 23, 42, 0.72);
         }
+
         .fireworks-overlay {
             position: relative;
             overflow: hidden;
@@ -42,13 +50,15 @@
             background: rgba(15, 23, 42, 0.8);
             padding: clamp(1.5rem, 4vw, 3rem);
         }
+
         .fireworks-stage {
             position: absolute;
             inset: 0;
             overflow: hidden;
             pointer-events: none;
-            background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.12), rgba(15,23,42,0.65));
+            background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.12), rgba(15, 23, 42, 0.65));
         }
+
         .fireworks-content {
             position: relative;
             z-index: 1;
@@ -63,6 +73,7 @@
             padding: 2.5rem 1.5rem 3rem;
             text-align: center;
         }
+
         .firework-particle {
             position: absolute;
             top: 50%;
@@ -74,145 +85,167 @@
             transform: translate(-50%, -50%) scale(0.5);
             animation: fireworkTravel 1000ms ease-out forwards;
         }
+
         @keyframes fireworkTravel {
             0% {
                 opacity: 1;
                 transform: translate(-50%, -50%) scale(0.5);
             }
+
             80% {
                 opacity: 1;
             }
+
             100% {
                 opacity: 0;
                 transform: translate(calc(var(--x) - 50%), calc(var(--y) - 50%)) scale(0.1);
             }
         }
+
         .tab-hidden {
             display: none !important;
         }
+
         #bottomTabNav {
             box-shadow: 0 -12px 32px rgba(15, 23, 42, 0.35);
             bottom: 0;
             padding-bottom: env(safe-area-inset-bottom, 0px);
         }
+
         #bottomTabNav button[data-tab-active="true"] {
             background: rgba(255, 255, 255, 0.18);
             color: #fff;
         }
+
         @keyframes spin {
             from {
                 transform: rotate(0deg);
             }
+
             to {
                 transform: rotate(360deg);
             }
         }
+
         @keyframes pulse-grow {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: scale(1);
                 opacity: 1;
             }
+
             50% {
                 transform: scale(1.2);
                 opacity: 0.8;
             }
         }
+
         @keyframes bounce-float {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: translateY(0px);
             }
+
             50% {
                 transform: translateY(-20px);
             }
         }
+
         @keyframes rotate-pulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: rotate(0deg) scale(1);
             }
+
             25% {
                 transform: rotate(90deg) scale(1.1);
             }
+
             50% {
                 transform: rotate(180deg) scale(1);
             }
+
             75% {
                 transform: rotate(270deg) scale(1.1);
             }
         }
+
         @keyframes wiggle {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: rotate(0deg);
             }
+
             25% {
                 transform: rotate(-15deg);
             }
+
             75% {
                 transform: rotate(15deg);
             }
         }
+
         @keyframes rainbow-glow {
             0% {
                 filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.6));
             }
+
             33% {
                 filter: drop-shadow(0 0 20px rgba(0, 255, 0, 0.6));
             }
+
             66% {
                 filter: drop-shadow(0 0 20px rgba(0, 0, 255, 0.6));
             }
+
             100% {
                 filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.6));
             }
         }
+
         .timer-emoji-btn[data-selected="true"] {
             background: rgba(255, 255, 255, 0.35);
             box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
         }
+
         .youtube-mode-btn[data-selected="true"] {
             background: rgba(255, 255, 255, 0.25);
             box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
         }
+
         /* Hide scrollbars for carousel sections */
         #kidQuickSection .overflow-x-auto::-webkit-scrollbar {
             display: none;
         }
+
         /* Snap scrolling for carousel items */
-        #toddlerQuickColumn > button {
+        #toddlerQuickColumn>button {
             scroll-snap-align: start;
         }
     </style>
 </head>
+
 <body class="min-h-screen bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-700 text-white">
     <!-- Settings Lock Button -->
-    <button
-        id="settingsLock"
+    <button id="settingsLock"
         class="fixed left-5 top-5 z-30 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-2xl shadow-lg backdrop-blur transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 select-none"
-        style="user-select: none; -webkit-user-select: none; -moz-user-select: none;"
-        onmousedown="startSettingsHold()"
-        onmouseup="stopSettingsHold()"
-        onmouseleave="stopSettingsHold()"
-        ontouchstart="startSettingsHold()"
-        ontouchend="stopSettingsHold()"
-        onclick="handleSettingsClick(event)">
+        style="user-select: none; -webkit-user-select: none; -moz-user-select: none;" onmousedown="startSettingsHold()"
+        onmouseup="stopSettingsHold()" onmouseleave="stopSettingsHold()" ontouchstart="startSettingsHold()"
+        ontouchend="stopSettingsHold()" onclick="handleSettingsClick(event)">
         <svg class="absolute inset-0 h-full w-full -rotate-90 pointer-events-none" aria-hidden="true">
-            <circle
-                id="progressCircle"
-                cx="32"
-                cy="32"
-                r="26"
-                stroke="#c4b5fd"
-                stroke-width="4"
-                stroke-dasharray="163"
-                stroke-dashoffset="163"
-                fill="none"></circle>
+            <circle id="progressCircle" cx="32" cy="32" r="26" stroke="#c4b5fd" stroke-width="4" stroke-dasharray="163"
+                stroke-dashoffset="163" fill="none"></circle>
         </svg>
         <span class="relative pointer-events-none">⚙️</span>
     </button>
 
     <button
         class="fixed right-5 top-5 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-xl shadow-lg backdrop-blur transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
-        onclick="toggleTheme()"
-        aria-label="Toggle theme">
+        onclick="toggleTheme()" aria-label="Toggle theme">
         🌓
     </button>
 
@@ -221,27 +254,54 @@
         <div class="w-[90%] max-w-xs rounded-3xl bg-white p-6 text-center text-slate-900 shadow-2xl">
             <h2 class="text-xl font-semibold text-indigo-600">Enter Grown-up PIN</h2>
             <p class="mt-1 text-sm text-slate-500">Hold the gear button, then type the code.</p>
-            <div id="pinDisplay" class="mx-auto mt-4 flex h-12 w-full max-w-[220px] items-center justify-center gap-3 rounded-full bg-indigo-50 text-2xl font-semibold tracking-[0.65em] text-indigo-600">••••</div>
+            <div id="pinDisplay"
+                class="mx-auto mt-4 flex h-12 w-full max-w-[220px] items-center justify-center gap-3 rounded-full bg-indigo-50 text-2xl font-semibold tracking-[0.65em] text-indigo-600">
+                ••••</div>
             <div class="mt-6 grid grid-cols-3 gap-3">
-                <button class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95" onclick="enterPin('1')">1</button>
-                <button class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95" onclick="enterPin('2')">2</button>
-                <button class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95" onclick="enterPin('3')">3</button>
-                <button class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95" onclick="enterPin('4')">4</button>
-                <button class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95" onclick="enterPin('5')">5</button>
-                <button class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95" onclick="enterPin('6')">6</button>
-                <button class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95" onclick="enterPin('7')">7</button>
-                <button class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95" onclick="enterPin('8')">8</button>
-                <button class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95" onclick="enterPin('9')">9</button>
-                <button class="col-span-3 rounded-2xl bg-indigo-200 py-3 text-sm font-semibold uppercase tracking-wide text-indigo-700 transition hover:bg-indigo-300 active:scale-95" onclick="clearPin()">Clear</button>
-                <button class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95" onclick="enterPin('0')">0</button>
-                <button class="rounded-2xl bg-slate-200 py-4 text-base font-semibold text-slate-700 shadow-inner transition hover:bg-slate-300 active:scale-95" onclick="closePinModal()">Cancel</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('1')">1</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('2')">2</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('3')">3</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('4')">4</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('5')">5</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('6')">6</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('7')">7</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('8')">8</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('9')">9</button>
+                <button
+                    class="col-span-3 rounded-2xl bg-indigo-200 py-3 text-sm font-semibold uppercase tracking-wide text-indigo-700 transition hover:bg-indigo-300 active:scale-95"
+                    onclick="clearPin()">Clear</button>
+                <button
+                    class="rounded-2xl bg-indigo-100 py-4 text-xl font-bold text-indigo-700 shadow-inner transition hover:bg-indigo-200 active:scale-95"
+                    onclick="enterPin('0')">0</button>
+                <button
+                    class="rounded-2xl bg-slate-200 py-4 text-base font-semibold text-slate-700 shadow-inner transition hover:bg-slate-300 active:scale-95"
+                    onclick="closePinModal()">Cancel</button>
             </div>
         </div>
     </div>
 
     <main class="mx-auto flex min-h-screen w-full flex-col gap-6 px-4 pb-32 pt-20 sm:gap-8 md:px-8 md:pt-24 lg:px-12">
         <div id="statusMessage" class="status-message hidden"></div>
-        <div id="advancedSettingsBanner" data-settings class="hidden flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-white/15 px-5 py-4 text-sm font-semibold text-white shadow-2xl backdrop-blur md:px-6">
+        <div id="advancedSettingsBanner" data-settings
+            class="hidden flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-white/15 px-5 py-4 text-sm font-semibold text-white shadow-2xl backdrop-blur md:px-6">
             <span>Advanced controls are unlocked. Make your changes, then tuck them away when you’re done.</span>
             <button
                 class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-md transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
@@ -250,32 +310,28 @@
             </button>
         </div>
 
-        <section id="connectionSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+        <section id="connectionSection" data-settings
+            class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
             <div class="flex items-start justify-between gap-6">
                 <div>
                     <h1 class="text-3xl font-extrabold tracking-tight text-white md:text-4xl">🎮 Roku Playground</h1>
-                    <p class="mt-2 max-w-xl text-lg text-indigo-100">Big friendly buttons for tiny humans. Advanced tools stay tucked away until a grown-up unlocks them.</p>
+                    <p class="mt-2 max-w-xl text-lg text-indigo-100">Big friendly buttons for tiny humans. Advanced
+                        tools stay tucked away until a grown-up unlocks them.</p>
                 </div>
             </div>
 
             <div class="mt-8 grid gap-6 md:grid-cols-[3fr,2fr] md:items-end">
                 <label class="flex flex-col gap-3">
                     <span class="text-sm font-semibold uppercase tracking-wide text-indigo-200">Roku IP Address</span>
-                    <input
-                        id="rokuIp"
-                        type="text"
-                        inputmode="decimal"
-                        placeholder="192.168.1.100"
+                    <input id="rokuIp" type="text" inputmode="decimal" placeholder="192.168.1.100"
                         class="w-full rounded-2xl border border-white/20 bg-white/15 px-5 py-4 text-lg font-semibold text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50" />
                 </label>
                 <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-end">
-                    <button
-                        onclick="saveIp()"
+                    <button onclick="saveIp()"
                         class="rounded-2xl bg-white/20 px-6 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-white/30 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/50">
                         Save IP
                     </button>
-                    <button
-                        onclick="checkStatus()"
+                    <button onclick="checkStatus()"
                         class="rounded-2xl bg-white px-6 py-4 text-lg font-bold text-indigo-600 shadow-xl transition hover:scale-[1.02] hover:bg-indigo-50 focus:outline-none focus:ring-4 focus:ring-white/40">
                         Connect &amp; Load Roku
                     </button>
@@ -283,15 +339,15 @@
             </div>
             <div id="deviceInfo" class="mt-4 hidden rounded-2xl bg-white/10 px-5 py-4 text-sm text-indigo-100"></div>
         </section>
-        
-        <section id="deviceDiscoverySection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+
+        <section id="deviceDiscoverySection" data-settings
+            class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-white">🔍 Advanced Device Discovery</h2>
-                    <p class="mt-1 text-sm text-indigo-100">Discover and test all devices on your network (Roku + Govee).</p>
+                    <p class="mt-1 text-sm text-indigo-100">Discover and test Roku devices on your network.</p>
                 </div>
-                <button
-                    onclick="refreshDeviceDiscovery()"
+                <button onclick="refreshDeviceDiscovery()"
                     class="rounded-2xl bg-emerald-500/30 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-300/60">
                     🔄 Discover All Devices
                 </button>
@@ -300,14 +356,13 @@
             <div class="mt-6 grid gap-6 lg:grid-cols-2">
                 <div class="rounded-3xl bg-slate-950/40 p-5">
                     <h3 class="text-sm font-semibold uppercase tracking-wide text-indigo-200 mb-3">Select Device</h3>
-                    <select
-                        id="deviceSelector"
-                        onchange="handleDeviceSelection()"
+                    <select id="deviceSelector" onchange="handleDeviceSelection()"
                         class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30">
                         <option value="">-- Select a device --</option>
                     </select>
 
-                    <div id="deviceDetails" class="mt-4 hidden rounded-2xl bg-white/5 p-4 text-sm text-indigo-100"></div>
+                    <div id="deviceDetails" class="mt-4 hidden rounded-2xl bg-white/5 p-4 text-sm text-indigo-100">
+                    </div>
                 </div>
 
                 <div class="rounded-3xl bg-slate-950/40 p-5">
@@ -316,10 +371,12 @@
                 </div>
             </div>
 
-            <div id="discoveryStatus" class="mt-4 hidden rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-indigo-100"></div>
+            <div id="discoveryStatus"
+                class="mt-4 hidden rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-indigo-100"></div>
         </section>
 
-        <section id="youtubeSettingsSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+        <section id="youtubeSettingsSection" data-settings
+            class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-white">YouTube Playback</h2>
@@ -328,28 +385,33 @@
             </div>
 
             <div class="mt-6 grid gap-4 md:grid-cols-2">
-                <button id="youtubePlayRoku" onclick="setYoutubePlaybackMode('roku')" class="youtube-mode-btn flex flex-col gap-3 rounded-3xl bg-white/10 p-5 text-left transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/40">
+                <button id="youtubePlayRoku" onclick="setYoutubePlaybackMode('roku')"
+                    class="youtube-mode-btn flex flex-col gap-3 rounded-3xl bg-white/10 p-5 text-left transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/40">
                     <div class="flex items-center gap-3">
                         <span class="text-3xl">📺</span>
                         <h3 class="text-lg font-bold text-white">Play on Roku</h3>
                     </div>
                     <p class="text-sm text-indigo-100">Launch videos on your Roku TV using the YouTube app.</p>
                 </button>
-                <button id="youtubePlayApp" onclick="setYoutubePlaybackMode('app')" class="youtube-mode-btn flex flex-col gap-3 rounded-3xl bg-white/10 p-5 text-left transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/40">
+                <button id="youtubePlayApp" onclick="setYoutubePlaybackMode('app')"
+                    class="youtube-mode-btn flex flex-col gap-3 rounded-3xl bg-white/10 p-5 text-left transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/40">
                     <div class="flex items-center gap-3">
                         <span class="text-3xl">📱</span>
                         <h3 class="text-lg font-bold text-white">Play in App</h3>
                     </div>
-                    <p class="text-sm text-indigo-100">Watch videos directly in this app (great for tablets and phones).</p>
+                    <p class="text-sm text-indigo-100">Watch videos directly in this app (great for tablets and phones).
+                    </p>
                 </button>
             </div>
         </section>
 
-        <section id="tabConfigSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+        <section id="tabConfigSection" data-settings
+            class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-white">Tab Configuration</h2>
-                    <p class="mt-1 text-sm text-indigo-100">Customize which tabs appear and what sections they contain.</p>
+                    <p class="mt-1 text-sm text-indigo-100">Customize which tabs appear and what sections they contain.
+                    </p>
                 </div>
             </div>
 
@@ -362,48 +424,51 @@
                 <div class="rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-100">
                     <p class="font-semibold text-white mb-2">To customize tabs and buttons:</p>
                     <ol class="list-decimal list-inside space-y-1 ml-2">
-                        <li>Edit <code class="font-mono text-[11px] bg-white/10 px-1 py-0.5 rounded">public/config/app-config.json</code></li>
-                        <li>Each tab has a <code class="font-mono text-[11px] bg-white/10 px-1 py-0.5 rounded">buttons</code> array with all its buttons</li>
+                        <li>Edit <code
+                                class="font-mono text-[11px] bg-white/10 px-1 py-0.5 rounded">public/config/app-config.json</code>
+                        </li>
+                        <li>Each tab has a <code
+                                class="font-mono text-[11px] bg-white/10 px-1 py-0.5 rounded">buttons</code> array with
+                            all its buttons</li>
                         <li>Add/remove/edit buttons directly in the tab's buttons array</li>
-                        <li>The apps tab also has a <code class="font-mono text-[11px] bg-white/10 px-1 py-0.5 rounded">quickLaunch</code> array for YouTube videos</li>
+                        <li>The apps tab also has a <code
+                                class="font-mono text-[11px] bg-white/10 px-1 py-0.5 rounded">quickLaunch</code> array
+                            for YouTube videos</li>
                         <li>Refresh the page to see changes</li>
                     </ol>
                 </div>
             </div>
         </section>
 
-        <section id="contentSourceSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+        <section id="contentSourceSection" data-settings
+            class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-white">Kid Button Cloud Config</h2>
-                    <p class="mt-1 text-sm text-indigo-100">Set your personal passphrase to load custom button layouts from the cloud.</p>
+                    <p class="mt-1 text-sm text-indigo-100">Set your personal passphrase to load custom button layouts
+                        from the cloud.</p>
                 </div>
             </div>
 
             <div class="mt-6 grid gap-4 md:grid-cols-[2fr,1fr] md:items-start">
                 <label class="flex flex-col gap-3">
                     <span class="text-sm font-semibold uppercase tracking-wide text-indigo-200">Config Passphrase</span>
-                    <input
-                        id="toddlerContentPassphrase"
-                        type="text"
-                        inputmode="text"
+                    <input id="toddlerContentPassphrase" type="text" inputmode="text"
                         placeholder="blue mountain coffee morning sunshine"
                         class="w-full rounded-2xl border border-white/20 bg-white/15 px-5 py-4 text-sm font-semibold text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50" />
-                    <span class="text-xs text-indigo-200/70">Enter at least 5 words separated by spaces. Each unique passphrase stores a separate configuration.</span>
+                    <span class="text-xs text-indigo-200/70">Enter at least 5 words separated by spaces. Each unique
+                        passphrase stores a separate configuration.</span>
                 </label>
                 <div class="flex flex-col gap-3 md:items-end">
-                    <button
-                        onclick="saveToddlerContentPassphrase()"
+                    <button onclick="saveToddlerContentPassphrase()"
                         class="rounded-2xl bg-white/20 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/30 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/50">
                         Save Passphrase
                     </button>
-                    <button
-                        onclick="refreshToddlerContent()"
+                    <button onclick="refreshToddlerContent()"
                         class="rounded-2xl bg-white/15 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
                         Refresh from Cloud
                     </button>
-                    <button
-                        onclick="clearToddlerContentPassphrase()"
+                    <button onclick="clearToddlerContentPassphrase()"
                         class="rounded-2xl bg-rose-500/30 px-5 py-3 text-sm font-semibold text-rose-50 shadow-lg transition hover:bg-rose-500/40 focus:outline-none focus:ring-2 focus:ring-rose-200/60">
                         Clear Passphrase
                     </button>
@@ -416,47 +481,49 @@
                 <div class="rounded-3xl bg-white/10 p-6 space-y-4">
                     <div>
                         <h3 class="text-lg font-bold text-white">Edit & Save Cloud Config</h3>
-                        <p class="mt-1 text-xs text-indigo-100/80">Make changes to your button layout and save it to the cloud with your passphrase.</p>
+                        <p class="mt-1 text-xs text-indigo-100/80">Make changes to your button layout and save it to the
+                            cloud with your passphrase.</p>
                     </div>
                     <div class="space-y-3">
                         <label class="flex flex-col gap-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Configuration JSON</span>
-                            <textarea
-                                id="cloudConfigJson"
-                                rows="12"
-                                spellcheck="false"
+                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Configuration
+                                JSON</span>
+                            <textarea id="cloudConfigJson" rows="12" spellcheck="false"
                                 class="w-full rounded-2xl border border-white/20 bg-black/30 px-4 py-3 font-mono text-xs text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-black/40 focus:outline-none focus:ring-2 focus:ring-white/50"
                                 placeholder='{"tabs": [...]}'></textarea>
                         </label>
                         <div class="flex flex-wrap gap-3">
-                            <button
-                                onclick="loadCurrentConfigIntoEditor()"
+                            <button onclick="loadCurrentConfigIntoEditor()"
                                 class="rounded-2xl bg-white/15 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
                                 Load Current Config
                             </button>
-                            <button
-                                onclick="saveConfigToCloud()"
+                            <button onclick="saveConfigToCloud()"
                                 class="rounded-2xl bg-emerald-500/30 px-5 py-3 text-sm font-semibold text-emerald-50 shadow-lg transition hover:bg-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-200/60">
                                 💾 Save to Cloud
                             </button>
-                            <button
-                                onclick="validateConfigJson()"
+                            <button onclick="validateConfigJson()"
                                 class="rounded-2xl bg-white/15 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
                                 Validate JSON
                             </button>
                         </div>
-                        <p class="text-xs text-indigo-100/70">Tip: Click "Load Current Config" to see what's currently loaded, make your edits, then "Save to Cloud".</p>
+                        <p class="text-xs text-indigo-100/70">Tip: Click "Load Current Config" to see what's currently
+                            loaded, make your edits, then "Save to Cloud".</p>
                     </div>
                 </div>
             </div>
 
             <div class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-100">
-                Bundled configuration lives in <code class="font-mono text-[11px] text-white">config/app-config.json</code>. Add <code class="font-mono text-[11px] text-white">app-config.custom.json</code> beside it for local tweaks—Git will ignore that file.
+                Bundled configuration lives in <code
+                    class="font-mono text-[11px] text-white">config/app-config.json</code>. Add <code
+                    class="font-mono text-[11px] text-white">app-config.custom.json</code> beside it for local
+                tweaks—Git will ignore that file.
             </div>
-            <div id="buttonHandlerCatalog" class="mt-6 hidden space-y-4 rounded-3xl bg-white/10 p-4 text-indigo-100 shadow-inner">
+            <div id="buttonHandlerCatalog"
+                class="mt-6 hidden space-y-4 rounded-3xl bg-white/10 p-4 text-indigo-100 shadow-inner">
                 <div>
                     <h3 class="text-base font-semibold text-white">Kid-mode Handler Catalog</h3>
-                    <p class="mt-1 text-xs text-indigo-100/80">Use these button types and handlers when editing your config files.</p>
+                    <p class="mt-1 text-xs text-indigo-100/80">Use these button types and handlers when editing your
+                        config files.</p>
                 </div>
                 <div id="buttonHandlerList" class="grid gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
                 <div>
@@ -466,553 +533,39 @@
             </div>
         </section>
 
-        <section id="lightsButtonSection" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
-            <div id="lightsButtonColumn" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
-        </section>
 
-        <section id="parentalControlsSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
+
+        <section id="parentalControlsSection" data-settings
+            class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-white">Parental Controls</h2>
-                    <p class="mt-1 text-sm text-indigo-100 max-w-2xl">Update the 4-digit PIN that unlocks these settings. This override is stored on this device; cloud configs can also provide a PIN.</p>
+                    <p class="mt-1 text-sm text-indigo-100 max-w-2xl">Update the 4-digit PIN that unlocks these
+                        settings. This override is stored on this device; cloud configs can also provide a PIN.</p>
                 </div>
             </div>
 
             <div class="mt-6 grid gap-4 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
                 <div class="space-y-3">
-                    <label class="text-xs font-semibold uppercase tracking-wide text-indigo-200" for="parentalPinInput">New PIN</label>
-                    <input
-                        id="parentalPinInput"
-                        type="password"
-                        inputmode="numeric"
-                        maxlength="4"
-                        pattern="[0-9]*"
+                    <label class="text-xs font-semibold uppercase tracking-wide text-indigo-200"
+                        for="parentalPinInput">New PIN</label>
+                    <input id="parentalPinInput" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]*"
                         class="w-full rounded-2xl border border-white/20 bg-black/30 px-4 py-3 text-white placeholder:text-indigo-200/50 focus:border-white/50 focus:bg-black/40 focus:outline-none focus:ring-2 focus:ring-white/40"
                         placeholder="1234">
                     <p id="parentalPinStatus" class="text-xs text-indigo-100/80">PIN status loading…</p>
                 </div>
 
                 <div class="flex flex-wrap gap-3">
-                    <button
-                        onclick="saveParentalPinOverride()"
+                    <button onclick="saveParentalPinOverride()"
                         class="rounded-2xl bg-white/20 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">
                         Save PIN
                     </button>
-                    <button
-                        onclick="clearParentalPinOverride()"
+                    <button onclick="clearParentalPinOverride()"
                         class="rounded-2xl bg-white/10 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/30">
                         Reset to Cloud
                     </button>
                 </div>
             </div>
-        </section>
-
-        <section id="goveeSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-white">Govee Lights Settings</h2>
-                    <p class="mt-1 text-sm text-indigo-100 max-w-2xl">Turn on LAN control in the Govee Home app, note the light's IP, then paste it here to toggle power, dim, or change colors without the cloud.</p>
-                </div>
-            </div>
-
-            <div class="mt-6 grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:items-start">
-                <div class="space-y-4">
-                    <div class="rounded-3xl bg-white/10 p-4 space-y-3">
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Cloud API Key</span>
-                                <p class="mt-1 text-xs text-indigo-100/80 max-w-xl">Store your private Govee API key locally so the app can look up devices and send cloud commands when LAN control is unavailable.</p>
-                            </div>
-                            <button
-                                id="goveeApiKeyClear"
-                                type="button"
-                                onclick="goveeClearApiKey()"
-                                class="hidden rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
-                                Remove Key
-                            </button>
-                        </div>
-                        <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-                            <input
-                                id="goveeApiKeyInput"
-                                type="password"
-                                autocomplete="off"
-                                spellcheck="false"
-                                placeholder="Paste your Govee developer API key"
-                                class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm font-semibold text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50" />
-                            <button
-                                type="button"
-                                onclick="goveeSaveApiKey()"
-                                class="rounded-2xl bg-emerald-500/30 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-300/60">
-                                Save API Key
-                            </button>
-                        </div>
-                        <p id="goveeApiKeyStatus" class="text-xs text-indigo-100/80">No API key saved yet.</p>
-                    </div>
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <label class="flex flex-col gap-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Device IP</span>
-                            <input
-                                id="goveeIpInput"
-                                type="text"
-                                inputmode="decimal"
-                                placeholder="192.168.1.120"
-                                class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm font-semibold text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50" />
-                        </label>
-                        <label class="flex flex-col gap-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Port (default 4003)</span>
-                            <input
-                                id="goveePortInput"
-                                type="number"
-                                inputmode="numeric"
-                                min="1"
-                                max="65535"
-                                placeholder="4003"
-                                class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm font-semibold text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50" />
-                        </label>
-                    </div>
-                    <div class="flex flex-wrap gap-3">
-                        <button
-                            onclick="goveeDiscoverDevices()"
-                            class="rounded-2xl bg-emerald-500/30 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-300/60">
-                            🔍 Discover Devices
-                        </button>
-                        <button
-                            onclick="goveeSaveSettings()"
-                            class="rounded-2xl bg-white/20 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50">
-                            Save LAN Settings
-                        </button>
-                        <button
-                            onclick="goveePower(true)"
-                            class="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-indigo-600 shadow-lg transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-white/60">
-                            Turn On
-                        </button>
-                        <button
-                            onclick="goveePower(false)"
-                            class="rounded-2xl bg-white/15 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
-                            Turn Off
-                        </button>
-                    </div>
-
-                    <div class="rounded-3xl bg-white/10 p-4">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Brightness</span>
-                            <span id="goveeBrightnessValue" class="text-sm font-semibold text-white">80%</span>
-                        </div>
-                        <input
-                            id="goveeBrightnessSlider"
-                            type="range"
-                            min="1"
-                            max="100"
-                            step="1"
-                            class="mt-3 w-full accent-white/80"
-                        />
-                    </div>
-
-                    <div class="space-y-3">
-                        <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Quick Colors</span>
-                        <div class="flex flex-wrap gap-2">
-                            <button onclick="goveeSetWarmWhite()" class="h-10 w-10 rounded-full border-2 border-white/50 bg-[#ffe6c8] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"></button>
-                            <button onclick="goveeSetOceanBlue()" class="h-10 w-10 rounded-full border-2 border-white/50 bg-[#78b8ff] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"></button>
-                            <button onclick="goveeSetSunsetGlow()" class="h-10 w-10 rounded-full border-2 border-white/50 bg-[#ff9966] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"></button>
-                            <button onclick="goveeSetColor(255,0,120)" class="h-10 w-10 rounded-full border-2 border-white/50 bg-[#ff0078] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"></button>
-                            <button onclick="goveeSetColor(0,255,180)" class="h-10 w-10 rounded-full border-2 border-white/50 bg-[#00ffb4] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"></button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex flex-col gap-4 rounded-3xl bg-white/10 p-4">
-                    <h3 class="text-sm font-semibold uppercase tracking-wide text-indigo-200">LAN Control Tips</h3>
-                    <ul class="space-y-2 text-sm text-indigo-100/90">
-                        <li>Enable LAN Control in the Govee Home app (Device Settings → LAN Control).</li>
-                        <li>Connect your phone and light to the same network, then note the IP shown in the app.</li>
-                        <li>Lights speak HTTP JSON on port 4003. Only devices on your LAN can reach them.</li>
-                    </ul>
-                    <p class="text-xs text-indigo-100/80">You can trigger these helpers from kid buttons by using handlers like <code>goveePower</code>, <code>goveeSetColor</code>, or <code>goveeSetWarmWhite</code>.</p>
-                </div>
-            </div>
-
-            <div class="mt-6 rounded-3xl bg-white/10 p-5 space-y-4">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-sm font-semibold uppercase tracking-wide text-indigo-200">Device Status</h3>
-                    <button
-                        onclick="refreshGoveeStatus()"
-                        class="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
-                        Refresh
-                    </button>
-                </div>
-                <div id="goveeStatusDisplay" class="grid gap-2 text-sm text-indigo-100">
-                    <div class="flex items-center gap-3">
-                        <span class="text-lg">📡</span>
-                        <span class="font-semibold">Connection:</span>
-                        <span id="goveeOnlineStatus" class="font-mono text-white">—</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-lg">⚡</span>
-                        <span class="font-semibold">Power:</span>
-                        <span id="goveePowerStatus" class="font-mono text-white">—</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-lg">💡</span>
-                        <span class="font-semibold">Brightness:</span>
-                        <span id="goveeBrightnessStatus" class="font-mono text-white">—</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-lg">🎨</span>
-                        <span class="font-semibold">Color:</span>
-                        <span id="goveeColorStatus" class="flex items-center gap-2">
-                            <span id="goveeColorBox" class="inline-block h-6 w-12 rounded border-2 border-white/30 bg-gray-500"></span>
-                            <span id="goveeColorText" class="font-mono text-white text-xs">—</span>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-6 rounded-3xl bg-white/10 p-5 space-y-4">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                        <h3 class="text-sm font-semibold uppercase tracking-wide text-indigo-200">Cloud Device Catalog</h3>
-                        <p class="mt-1 text-xs text-indigo-100/80 max-w-xl">Pull your devices from the official Govee cloud API and review which commands each one supports.</p>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        <button
-                            type="button"
-                            onclick="goveeLoadCloudDevices()"
-                            class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50">
-                            Refresh Cloud Devices
-                        </button>
-                    </div>
-                </div>
-                <p id="goveeCloudStatus" class="rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-indigo-100">
-                    Save your Govee API key to load your cloud devices.
-                </p>
-                <div id="goveeCloudDeviceList" class="grid gap-4"></div>
-            </div>
-
-            <div class="mt-6 rounded-3xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 p-6 space-y-4 border-2 border-blue-400/30">
-                <div>
-                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                        <span>📡</span>
-                        <span>Bluetooth Scanner</span>
-                    </h3>
-                    <p class="mt-1 text-xs text-indigo-100/90 max-w-2xl">Scan for nearby Bluetooth devices and view their signal strength (RSSI) for room detection setup.</p>
-                </div>
-
-                <!-- Scan Controls -->
-                <div class="rounded-2xl bg-white/10 p-4 space-y-3">
-                    <div class="flex items-center gap-3">
-                        <button
-                            type="button"
-                            onclick="scanBluetoothDevices()"
-                            id="btScanButton"
-                            class="rounded-2xl bg-white/20 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50">
-                            🔍 Scan for Devices
-                        </button>
-                        <span id="btScanStatus" class="text-xs text-indigo-100/80">Ready to scan</span>
-                    </div>
-                    <p class="text-xs text-indigo-100/70">Scan takes 5 seconds. You'll see nearby Bluetooth devices with their signal strength.</p>
-                </div>
-
-                <!-- Scan Results -->
-                <div id="btScanResults" class="hidden rounded-2xl bg-white/10 p-4 space-y-4">
-                    <div class="flex items-center justify-between">
-                        <h4 class="text-sm font-semibold uppercase tracking-wide text-indigo-200">Discovered Devices</h4>
-                        <span id="btDeviceCount" class="text-xs text-indigo-100/80">0 devices</span>
-                    </div>
-                    <div id="btDeviceList" class="space-y-3 max-h-96 overflow-y-auto">
-                        <!-- Device cards will be inserted here -->
-                    </div>
-                </div>
-
-                <!-- Room Detection Info -->
-                <div class="rounded-2xl bg-white/10 p-4 space-y-3">
-                    <h4 class="text-sm font-semibold uppercase tracking-wide text-indigo-200">Room Detection Tips</h4>
-                    <ul class="space-y-2 text-xs text-indigo-100/80">
-                        <li>• Use Govee lights or other Bluetooth devices as "beacons" in each room</li>
-                        <li>• Stand in a room and scan to see which devices have the strongest signal (highest RSSI, e.g. -40 is stronger than -70)</li>
-                        <li>• Copy device addresses from scan results to configure room beacons in <code>rooms.json</code></li>
-                        <li>• Typical RSSI values: -30 to -50 (very close), -50 to -70 (same room), -70 to -90 (far away)</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="mt-6 rounded-3xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 p-6 space-y-4 border-2 border-purple-400/30">
-                <div>
-                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                        <span>🧪</span>
-                        <span>Command Testing Playground</span>
-                    </h3>
-                    <p class="mt-1 text-xs text-indigo-100/90 max-w-2xl">Test cloud commands with your devices, see raw responses, and save working commands as button configs.</p>
-                </div>
-
-                <!-- Device Selector -->
-                <div class="rounded-2xl bg-white/10 p-4 space-y-3">
-                    <label class="flex flex-col gap-2">
-                        <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Select Device</span>
-                        <select
-                            id="goveeTestDevice"
-                            onchange="goveeTestDeviceChanged()"
-                            class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm font-semibold text-white focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50">
-                            <option value="">— Select a device —</option>
-                        </select>
-                    </label>
-                    <div id="goveeTestDeviceInfo" class="hidden text-xs text-indigo-100/80 space-y-1">
-                        <div><strong>Model:</strong> <span id="goveeTestModel" class="font-mono">—</span></div>
-                        <div><strong>Device ID:</strong> <span id="goveeTestDeviceId" class="font-mono text-xs">—</span></div>
-                        <div><strong>Capabilities:</strong> <span id="goveeTestCaps" class="font-mono text-xs">—</span></div>
-                    </div>
-                </div>
-
-                <!-- Command Type Selector -->
-                <div class="rounded-2xl bg-white/10 p-4 space-y-3">
-                    <label class="flex flex-col gap-2">
-                        <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Command Type</span>
-                        <select
-                            id="goveeTestCommandType"
-                            onchange="goveeTestCommandTypeChanged()"
-                            class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm font-semibold text-white focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50">
-                            <option value="">— Select command type —</option>
-                            <option value="turn">Power On/Off</option>
-                            <option value="brightness">Brightness</option>
-                            <option value="color">RGB Color</option>
-                            <option value="colorTem">Color Temperature (Kelvin)</option>
-                            <option value="colorTemPercentage">Color Temperature (%)</option>
-                            <option value="segment">Segment Control (multi-color)</option>
-                            <option value="scene">Scene / Dynamic Scene</option>
-                            <option value="musicMode">Music Mode</option>
-                            <option value="work_mode">Work Mode</option>
-                        </select>
-                    </label>
-                </div>
-
-                <!-- Command Parameters (Dynamic based on command type) -->
-                <div id="goveeTestParams" class="hidden rounded-2xl bg-white/10 p-4 space-y-4">
-                    <!-- Power params -->
-                    <div id="goveeTestParamsPower" class="hidden space-y-3">
-                        <label class="flex items-center gap-3">
-                            <span class="text-sm font-semibold text-white">Power:</span>
-                            <div class="flex gap-2">
-                                <button
-                                    type="button"
-                                    onclick="document.getElementById('goveeTestPowerValue').value = 'on'"
-                                    class="rounded-full bg-emerald-500/30 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-500/50">
-                                    On
-                                </button>
-                                <button
-                                    type="button"
-                                    onclick="document.getElementById('goveeTestPowerValue').value = 'off'"
-                                    class="rounded-full bg-white/20 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/30">
-                                    Off
-                                </button>
-                            </div>
-                            <input id="goveeTestPowerValue" type="hidden" value="on" />
-                        </label>
-                    </div>
-
-                    <!-- Brightness params -->
-                    <div id="goveeTestParamsBrightness" class="hidden space-y-3">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Brightness</span>
-                            <span id="goveeTestBrightnessDisplay" class="text-sm font-semibold text-white">50%</span>
-                        </div>
-                        <input
-                            id="goveeTestBrightnessValue"
-                            type="range"
-                            min="1"
-                            max="100"
-                            value="50"
-                            oninput="document.getElementById('goveeTestBrightnessDisplay').textContent = this.value + '%'"
-                            class="w-full accent-white/80"
-                        />
-                    </div>
-
-                    <!-- Color params -->
-                    <div id="goveeTestParamsColor" class="hidden space-y-3">
-                        <label class="flex flex-col gap-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Color Picker</span>
-                            <div class="flex gap-3 items-center">
-                                <input
-                                    id="goveeTestColorPicker"
-                                    type="color"
-                                    value="#ff6600"
-                                    onchange="goveeTestColorPickerChanged()"
-                                    class="h-12 w-24 rounded-2xl cursor-pointer border-2 border-white/30"
-                                />
-                                <div class="text-xs text-indigo-100/80">
-                                    <div>R: <span id="goveeTestColorR" class="font-mono font-semibold text-white">255</span></div>
-                                    <div>G: <span id="goveeTestColorG" class="font-mono font-semibold text-white">102</span></div>
-                                    <div>B: <span id="goveeTestColorB" class="font-mono font-semibold text-white">0</span></div>
-                                </div>
-                            </div>
-                        </label>
-                    </div>
-
-                    <!-- Color Temperature (Kelvin) params -->
-                    <div id="goveeTestParamsColorTem" class="hidden space-y-3">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Color Temperature</span>
-                            <span id="goveeTestColorTemDisplay" class="text-sm font-semibold text-white">4000K</span>
-                        </div>
-                        <input
-                            id="goveeTestColorTemValue"
-                            type="range"
-                            min="2000"
-                            max="9000"
-                            value="4000"
-                            step="100"
-                            oninput="document.getElementById('goveeTestColorTemDisplay').textContent = this.value + 'K'"
-                            class="w-full accent-white/80"
-                        />
-                        <p class="text-xs text-indigo-100/70">Range: 2000K (warm) to 9000K (cool)</p>
-                    </div>
-
-                    <!-- Color Temperature (Percentage) params -->
-                    <div id="goveeTestParamsColorTemPct" class="hidden space-y-3">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Color Temperature</span>
-                            <span id="goveeTestColorTemPctDisplay" class="text-sm font-semibold text-white">50%</span>
-                        </div>
-                        <input
-                            id="goveeTestColorTemPctValue"
-                            type="range"
-                            min="0"
-                            max="100"
-                            value="50"
-                            oninput="document.getElementById('goveeTestColorTemPctDisplay').textContent = this.value + '%'"
-                            class="w-full accent-white/80"
-                        />
-                        <p class="text-xs text-indigo-100/70">0% = warm white, 100% = cool white</p>
-                    </div>
-
-                    <!-- Segment params (advanced) -->
-                    <div id="goveeTestParamsSegment" class="hidden space-y-3">
-                        <p class="text-xs text-yellow-200/90">⚠️ Advanced: Segment control requires specific segment data format. See Govee API docs for your device model.</p>
-                        <label class="flex flex-col gap-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Segment Data (JSON)</span>
-                            <textarea
-                                id="goveeTestSegmentValue"
-                                rows="4"
-                                placeholder='[[255,0,0],[0,255,0],[0,0,255]]'
-                                class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-xs font-mono text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"></textarea>
-                        </label>
-                    </div>
-
-                    <!-- Scene / Dynamic Scene params -->
-                    <div id="goveeTestParamsScene" class="hidden space-y-3">
-                        <label class="flex flex-col gap-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Scene ID or Value</span>
-                            <input
-                                id="goveeTestSceneValue"
-                                type="text"
-                                placeholder="Enter scene ID (e.g., 1, 2, 3) or scene code"
-                                class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm text-white placeholder:text-indigo-200/50 focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
-                            />
-                        </label>
-                        <p class="text-xs text-indigo-100/70">Scene IDs vary by device. Check your device's supportCmds for available scenes.</p>
-                    </div>
-
-                    <!-- Music Mode params -->
-                    <div id="goveeTestParamsMusicMode" class="hidden space-y-3">
-                        <label class="flex flex-col gap-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Music Mode</span>
-                            <select
-                                id="goveeTestMusicModeValue"
-                                class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm text-white focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50">
-                                <option value="0">Off</option>
-                                <option value="1">Mode 1 - Energic</option>
-                                <option value="2">Mode 2 - Rhythm</option>
-                                <option value="3">Mode 3 - Spectrum</option>
-                                <option value="4">Mode 4 - Rolling</option>
-                            </select>
-                        </label>
-                        <p class="text-xs text-indigo-100/70">Available modes depend on your device model.</p>
-                    </div>
-
-                    <!-- Work Mode params -->
-                    <div id="goveeTestParamsWorkMode" class="hidden space-y-3">
-                        <label class="flex flex-col gap-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Work Mode</span>
-                            <select
-                                id="goveeTestWorkModeValue"
-                                class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm text-white focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50">
-                                <option value="0">Manual Mode</option>
-                                <option value="1">Scene Mode</option>
-                                <option value="2">Music Mode</option>
-                                <option value="3">Video Mode</option>
-                            </select>
-                        </label>
-                        <p class="text-xs text-indigo-100/70">Work modes vary by device. Check your device documentation.</p>
-                    </div>
-                </div>
-
-                <!-- Test Action Buttons -->
-                <div class="flex flex-wrap gap-3">
-                    <button
-                        id="goveeTestSendBtn"
-                        onclick="goveeTestSendCommand()"
-                        class="rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-purple-300/60">
-                        🚀 Send Command
-                    </button>
-                    <button
-                        onclick="goveeClearTestResponse()"
-                        class="rounded-2xl bg-white/20 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50">
-                        Clear Response
-                    </button>
-                    <button
-                        id="goveeTestSaveBtn"
-                        onclick="goveeTestSaveAsButton()"
-                        class="hidden rounded-2xl bg-emerald-500/30 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-300/60">
-                        💾 Save as Button Config
-                    </button>
-                </div>
-
-                <!-- Response Display -->
-                <div id="goveeTestResponse" class="hidden rounded-2xl bg-black/30 p-4 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <h4 class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Response</h4>
-                        <span id="goveeTestResponseStatus" class="text-xs font-semibold"></span>
-                    </div>
-                    <pre id="goveeTestResponseBody" class="overflow-x-auto text-xs font-mono text-green-300 whitespace-pre-wrap"></pre>
-                </div>
-
-                <!-- Button Config Export -->
-                <div id="goveeTestButtonConfig" class="hidden rounded-2xl bg-black/30 p-4 space-y-3">
-                    <h4 class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Button Configuration (JSON)</h4>
-                    <p class="text-xs text-indigo-100/80">Add this to your <code class="px-1 py-0.5 bg-white/10 rounded">public/config/app-config.json</code> file in the lights tab buttons array:</p>
-                    <div class="space-y-2">
-                        <label class="flex flex-col gap-2">
-                            <span class="text-xs text-indigo-200">Button Label:</span>
-                            <input
-                                id="goveeTestButtonLabel"
-                                type="text"
-                                placeholder="Cool White"
-                                class="rounded-xl border border-white/20 bg-white/15 px-3 py-2 text-sm text-white placeholder:text-indigo-200/50 focus:border-white/50 focus:bg-white/20 focus:outline-none"
-                            />
-                        </label>
-                        <label class="flex flex-col gap-2">
-                            <span class="text-xs text-indigo-200">Button Emoji:</span>
-                            <input
-                                id="goveeTestButtonEmoji"
-                                type="text"
-                                placeholder="💙"
-                                maxlength="2"
-                                class="rounded-xl border border-white/20 bg-white/15 px-3 py-2 text-sm text-white placeholder:text-indigo-200/50 focus:border-white/50 focus:bg-white/20 focus:outline-none"
-                            />
-                        </label>
-                    </div>
-                    <pre id="goveeTestButtonConfigJSON" class="overflow-x-auto text-xs font-mono text-cyan-300 whitespace-pre-wrap bg-black/20 p-3 rounded-xl"></pre>
-                    <button
-                        onclick="goveeCopyButtonConfig()"
-                        class="rounded-xl bg-cyan-500/30 px-4 py-2 text-xs font-semibold text-white transition hover:bg-cyan-500/40">
-                        📋 Copy to Clipboard
-                    </button>
-                </div>
-            </div>
-
-            <p id="goveeStatus" class="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-indigo-100">Enter the LAN IP to get started.</p>
-        </section>
-
-        <section id="kidQuickSection" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
-            <div id="toddlerQuickColumn" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
         </section>
 
         <section id="toddlerControls" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
@@ -1027,63 +580,94 @@
                     <h3 class="text-lg font-semibold text-white">Choose Your Timer Emoji</h3>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button type="button" data-timer-emoji="⭐" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">⭐</button>
-                    <button type="button" data-timer-emoji="🎨" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🎨</button>
-                    <button type="button" data-timer-emoji="🦄" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🦄</button>
-                    <button type="button" data-timer-emoji="🚀" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🚀</button>
-                    <button type="button" data-timer-emoji="🌈" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🌈</button>
-                    <button type="button" data-timer-emoji="🎈" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🎈</button>
-                    <button type="button" data-timer-emoji="🍎" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🍎</button>
-                    <button type="button" data-timer-emoji="⚡" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">⚡</button>
+                    <button type="button" data-timer-emoji="⭐"
+                        class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">⭐</button>
+                    <button type="button" data-timer-emoji="🎨"
+                        class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🎨</button>
+                    <button type="button" data-timer-emoji="🦄"
+                        class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🦄</button>
+                    <button type="button" data-timer-emoji="🚀"
+                        class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🚀</button>
+                    <button type="button" data-timer-emoji="🌈"
+                        class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🌈</button>
+                    <button type="button" data-timer-emoji="🎈"
+                        class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🎈</button>
+                    <button type="button" data-timer-emoji="🍎"
+                        class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🍎</button>
+                    <button type="button" data-timer-emoji="⚡"
+                        class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">⚡</button>
                 </div>
             </div>
 
             <div class="hidden mt-6 grid gap-5 md:grid-cols-2">
                 <div class="flex flex-col gap-4 rounded-3xl bg-white/10 p-5 text-indigo-50 shadow-inner">
                     <div class="flex flex-wrap gap-2">
-                        <button type="button" data-magic-timer="180" class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">3 min</button>
-                        <button type="button" data-magic-timer="300" class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">5 min</button>
-                        <button type="button" data-magic-timer="600" class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">10 min</button>
-                        <button type="button" data-magic-timer="900" class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">15 min</button>
+                        <button type="button" data-magic-timer="180"
+                            class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">3
+                            min</button>
+                        <button type="button" data-magic-timer="300"
+                            class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">5
+                            min</button>
+                        <button type="button" data-magic-timer="600"
+                            class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">10
+                            min</button>
+                        <button type="button" data-magic-timer="900"
+                            class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">15
+                            min</button>
                     </div>
                     <form id="magicTimerForm" class="space-y-3">
-                        <label class="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-indigo-200">
+                        <label
+                            class="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-indigo-200">
                             Custom minutes
                             <div class="flex gap-2">
-                                <input id="magicTimerMinutes" type="number" min="1" max="120" step="1" placeholder="e.g. 8" class="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-base font-semibold text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30" />
-                                <button type="submit" class="rounded-2xl bg-white px-4 py-2 text-sm font-semibold uppercase tracking-wide text-indigo-600 shadow-lg transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-white/40">Start</button>
+                                <input id="magicTimerMinutes" type="number" min="1" max="120" step="1"
+                                    placeholder="e.g. 8"
+                                    class="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-base font-semibold text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30" />
+                                <button type="submit"
+                                    class="rounded-2xl bg-white px-4 py-2 text-sm font-semibold uppercase tracking-wide text-indigo-600 shadow-lg transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-white/40">Start</button>
                             </div>
                         </label>
                     </form>
-                    <button id="magicTimerCancel" type="button" class="self-start rounded-2xl bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">Cancel Timer</button>
+                    <button id="magicTimerCancel" type="button"
+                        class="self-start rounded-2xl bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">Cancel
+                        Timer</button>
                 </div>
 
                 <div class="flex flex-col gap-4 rounded-3xl bg-white/10 p-5 text-indigo-50 shadow-inner">
                     <div>
                         <h3 class="text-lg font-semibold text-white">Fireworks Celebration</h3>
-                        <p class="mt-1 text-sm text-indigo-100">Fill the screen with sparkle for bedtime victories or potty triumphs.</p>
+                        <p class="mt-1 text-sm text-indigo-100">Fill the screen with sparkle for bedtime victories or
+                            potty triumphs.</p>
                     </div>
-                    <button id="magicFireworksButton" type="button" class="mt-auto rounded-2xl bg-gradient-to-r from-rose-400/80 to-amber-300/80 px-5 py-3 text-base font-semibold text-slate-900 shadow-lg transition hover:scale-[1.02] hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/40">Launch Fireworks</button>
+                    <button id="magicFireworksButton" type="button"
+                        class="mt-auto rounded-2xl bg-gradient-to-r from-rose-400/80 to-amber-300/80 px-5 py-3 text-base font-semibold text-slate-900 shadow-lg transition hover:scale-[1.02] hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/40">Launch
+                        Fireworks</button>
                 </div>
             </div>
         </section>
 
-        <section id="nowPlayingSection" class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8" data-settings>
+        <section id="nowPlayingSection" class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8"
+            data-settings>
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-white">Now Playing</h2>
                     <p class="mt-1 text-sm text-indigo-100">Live info from the Roku media player.</p>
                 </div>
                 <div class="flex flex-wrap gap-3">
-                    <button onclick="checkNowPlaying()" class="rounded-2xl bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">Refresh</button>
-                    <button onclick="showFullMediaInfo()" class="rounded-2xl bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">Show XML</button>
+                    <button onclick="checkNowPlaying()"
+                        class="rounded-2xl bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">Refresh</button>
+                    <button onclick="showFullMediaInfo()"
+                        class="rounded-2xl bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">Show
+                        XML</button>
                 </div>
             </div>
             <div id="nowPlayingInfo" class="mt-4 rounded-2xl bg-white/10 px-5 py-4 text-sm text-indigo-50"></div>
-            <pre id="fullMediaInfo" class="mt-4 hidden max-h-80 overflow-auto rounded-2xl bg-slate-950/70 px-5 py-4 text-xs text-indigo-100"></pre>
+            <pre id="fullMediaInfo"
+                class="mt-4 hidden max-h-80 overflow-auto rounded-2xl bg-slate-950/70 px-5 py-4 text-xs text-indigo-100"></pre>
         </section>
 
-        <section id="appsSection" class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8" data-settings>
+        <section id="appsSection" class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8"
+            data-settings>
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-white">Installed Apps</h2>
@@ -1093,34 +677,45 @@
             <div id="appsList" class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
         </section>
 
-        <section id="quickLaunchSection" class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8" data-settings>
+        <section id="quickLaunchSection" class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8"
+            data-settings>
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-white">Quick Launch</h2>
                     <p class="mt-1 text-sm text-indigo-100">Favorite shows with one tap.</p>
                 </div>
             </div>
-            <div id="quickLaunchGrid" class="mt-6 grid gap-4 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+            <div id="quickLaunchGrid" class="mt-6 grid gap-4 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            </div>
         </section>
 
-        <section id="deepLinkSection" class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8" data-settings>
+        <section id="deepLinkSection" class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8"
+            data-settings>
             <h2 class="text-2xl font-bold text-white">Deep Link Toolkit</h2>
             <p class="mt-1 text-sm text-indigo-100">Launch straight into hidden screens or playback positions.</p>
 
             <div class="mt-6 grid gap-4 rounded-3xl bg-slate-950/40 p-5">
-                <input id="deepLinkAppId" type="text" class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30" placeholder="App ID (e.g. 12 for Netflix)" />
-                <input id="deepLinkContentId" type="text" class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30" placeholder="Params (mediaType=movie&contentId=80014749)" />
-                <button onclick="launchDeepLink()" class="rounded-2xl bg-white px-5 py-3 text-base font-semibold text-indigo-600 shadow-lg transition hover:bg-indigo-50">Launch Deep Link</button>
+                <input id="deepLinkAppId" type="text"
+                    class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
+                    placeholder="App ID (e.g. 12 for Netflix)" />
+                <input id="deepLinkContentId" type="text"
+                    class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
+                    placeholder="Params (mediaType=movie&contentId=80014749)" />
+                <button onclick="launchDeepLink()"
+                    class="rounded-2xl bg-white px-5 py-3 text-base font-semibold text-indigo-600 shadow-lg transition hover:bg-indigo-50">Launch
+                    Deep Link</button>
             </div>
 
             <details class="mt-4 rounded-2xl bg-white/10 p-4 text-sm text-indigo-50">
                 <summary class="cursor-pointer text-base font-semibold text-white">Deep Link Examples</summary>
                 <div class="mt-2 space-y-3 text-xs leading-relaxed">
-                    <p><strong>Netflix (ID 12)</strong> — movie: <code>mediaType=movie&amp;contentId=80014749</code>, series: <code>mediaType=series&amp;contentId=80057281</code></p>
+                    <p><strong>Netflix (ID 12)</strong> — movie: <code>mediaType=movie&amp;contentId=80014749</code>,
+                        series: <code>mediaType=series&amp;contentId=80057281</code></p>
                     <p><strong>YouTube (ID 837)</strong> — <code>contentId=dQw4w9WgXcQ</code></p>
                     <p><strong>Hulu (ID 2213)</strong> — <code>contentId=series/some-show-id</code></p>
                     <p><strong>Plex (ID 151908)</strong> — <code>contentId=/library/metadata/12345</code></p>
-                    <p><strong>Disney+ (ID 291097)</strong> — try <code>contentId=SERIES_ID</code>, <code>seriesId=XXX</code>, <code>videoId=XXX</code>, <code>programId=XXX</code></p>
+                    <p><strong>Disney+ (ID 291097)</strong> — try <code>contentId=SERIES_ID</code>,
+                        <code>seriesId=XXX</code>, <code>videoId=XXX</code>, <code>programId=XXX</code></p>
                 </div>
             </details>
 
@@ -1128,8 +723,12 @@
                 <summary class="cursor-pointer text-base font-semibold text-white">YouTube Launcher</summary>
                 <div class="mt-3 space-y-3">
                     <p>Paste a YouTube URL to open it on Roku:</p>
-                    <input id="youtubeUrl" type="text" class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30" placeholder="https://www.youtube.com/watch?v=OBqZDyVlFP8" />
-                    <button onclick="launchYouTube()" class="w-full rounded-2xl bg-white px-5 py-3 text-base font-semibold text-indigo-600 shadow-lg transition hover:bg-indigo-50">Launch on Roku</button>
+                    <input id="youtubeUrl" type="text"
+                        class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
+                        placeholder="https://www.youtube.com/watch?v=OBqZDyVlFP8" />
+                    <button onclick="launchYouTube()"
+                        class="w-full rounded-2xl bg-white px-5 py-3 text-base font-semibold text-indigo-600 shadow-lg transition hover:bg-indigo-50">Launch
+                        on Roku</button>
                     <div id="youtubeResult" class="hidden rounded-2xl bg-slate-950/60 px-4 py-3 text-xs"></div>
                 </div>
             </details>
@@ -1138,87 +737,142 @@
                 <summary class="cursor-pointer text-base font-semibold text-white">Disney+ ID Finder</summary>
                 <div class="mt-3 space-y-3">
                     <p>Paste a Disney+ URL to grab the content ID:</p>
-                    <input id="disneyUrl" type="text" class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30" placeholder="https://www.disneyplus.com/series/the-mandalorian/3jLIGMDYINqD" />
-                    <button onclick="extractDisneyId()" class="w-full rounded-2xl bg-white/20 px-5 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-white/30">Extract ID</button>
+                    <input id="disneyUrl" type="text"
+                        class="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
+                        placeholder="https://www.disneyplus.com/series/the-mandalorian/3jLIGMDYINqD" />
+                    <button onclick="extractDisneyId()"
+                        class="w-full rounded-2xl bg-white/20 px-5 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-white/30">Extract
+                        ID</button>
                     <div id="disneyIdResult" class="hidden rounded-2xl bg-slate-950/60 px-4 py-3 text-xs"></div>
                 </div>
             </details>
         </section>
 
-        <section id="remoteSection" class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8" data-settings>
+        <section id="remoteSection" class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8"
+            data-settings>
             <h2 class="text-2xl font-bold text-white">Advanced Remote</h2>
             <p class="mt-1 text-sm text-indigo-100">All the classic Roku controls laid out for quick access.</p>
             <div class="mt-6 grid grid-cols-3 gap-3 text-base sm:text-lg font-semibold">
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Back')">⬅️ Back</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Home')">🏠 Home</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Info')">ℹ️ Info</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('Back')">⬅️ Back</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('Home')">🏠 Home</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('Info')">ℹ️ Info</button>
 
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Rev')">⏮️ Rev</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Play')">⏯️ Play</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Fwd')">⏭️ Fwd</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('Rev')">⏮️ Rev</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('Play')">⏯️ Play</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('Fwd')">⏭️ Fwd</button>
 
                 <div></div>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Up')">⬆️</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('Up')">⬆️</button>
                 <div></div>
 
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Left')">⬅️</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Select')">⭕ OK</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Right')">➡️</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('Left')">⬅️</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('Select')">⭕ OK</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('Right')">➡️</button>
 
                 <div></div>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('Down')">⬇️</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('Down')">⬇️</button>
                 <div></div>
 
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('InstantReplay')">⏪ Replay</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('VolumeUp')">🔊 Vol+</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('VolumeMute')">🔇 Mute</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('InstantReplay')">⏪ Replay</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('VolumeUp')">🔊 Vol+</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('VolumeMute')">🔇 Mute</button>
 
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('PowerOff')">🔘 Power</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('VolumeDown')">🔉 Vol-</button>
-                <button class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation" onclick="sendKey('ChannelUp')">⬆️ CH+</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('PowerOff')">🔘 Power</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('VolumeDown')">🔉 Vol-</button>
+                <button
+                    class="remote-btn rounded-2xl bg-white/10 px-4 py-4 sm:px-5 sm:py-5 text-white shadow-inner transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95 touch-manipulation"
+                    onclick="sendKey('ChannelUp')">⬆️ CH+</button>
             </div>
         </section>
 
-        <section id="macroSection" class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8" data-settings>
+        <section id="macroSection" class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8"
+            data-settings>
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-white">Macro Magic</h2>
-                    <p class="mt-1 text-sm text-indigo-100">Create sequences to launch apps, wait, and press buttons automatically.</p>
+                    <p class="mt-1 text-sm text-indigo-100">Create sequences to launch apps, wait, and press buttons
+                        automatically.</p>
                 </div>
-                <button onclick="openMacroHelp()" class="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">How it works</button>
+                <button onclick="openMacroHelp()"
+                    class="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">How
+                    it works</button>
             </div>
 
             <div class="mt-6 grid gap-6 lg:grid-cols-[2fr,3fr]">
                 <form id="macroForm" class="grid gap-4 rounded-3xl bg-slate-950/40 p-5">
                     <label class="grid gap-2 text-sm font-semibold uppercase tracking-wide text-indigo-200">
                         Macro Name
-                        <input id="macroName" type="text" class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30" placeholder="Bedtime Routine" required />
+                        <input id="macroName" type="text"
+                            class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
+                            placeholder="Bedtime Routine" required />
                     </label>
 
                     <label class="grid gap-2 text-sm font-semibold uppercase tracking-wide text-indigo-200">
                         Steps
-                        <div class="rounded-2xl border border-dashed border-white/20 bg-white/5 px-4 py-4 text-sm text-indigo-100">
+                        <div
+                            class="rounded-2xl border border-dashed border-white/20 bg-white/5 px-4 py-4 text-sm text-indigo-100">
                             <p class="text-xs uppercase tracking-wide text-indigo-200/80">Add step</p>
                             <div class="mt-3 flex flex-col gap-3 sm:flex-row">
-                                <select id="macroActionType" class="flex-1 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30">
+                                <select id="macroActionType"
+                                    class="flex-1 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30">
                                     <option value="key">Press Remote Key</option>
                                     <option value="launch">Launch App</option>
                                     <option value="delay">Wait</option>
                                 </select>
-                                <input id="macroActionValue" type="text" class="flex-1 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30" placeholder="Key (Home) / App ID (12) / Milliseconds (1000)" />
-                                <button type="button" onclick="addMacroStep()" class="rounded-2xl bg-white px-5 py-3 text-base font-semibold text-indigo-600 shadow-lg transition hover:bg-indigo-50">Add Step</button>
+                                <input id="macroActionValue" type="text"
+                                    class="flex-1 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
+                                    placeholder="Key (Home) / App ID (12) / Milliseconds (1000)" />
+                                <button type="button" onclick="addMacroStep()"
+                                    class="rounded-2xl bg-white px-5 py-3 text-base font-semibold text-indigo-600 shadow-lg transition hover:bg-indigo-50">Add
+                                    Step</button>
                             </div>
                         </div>
                     </label>
 
-                    <ul id="macroStepsPreview" class="min-h-[80px] space-y-3 rounded-2xl bg-indigo-950/30 p-4 text-sm text-indigo-100"></ul>
+                    <ul id="macroStepsPreview"
+                        class="min-h-[80px] space-y-3 rounded-2xl bg-indigo-950/30 p-4 text-sm text-indigo-100"></ul>
 
                     <div class="flex flex-col gap-3 sm:flex-row sm:justify-between">
                         <label class="flex items-center gap-2 text-sm text-indigo-100">
-                            <input id="macroMarkFavorite" type="checkbox" class="h-4 w-4 rounded border-white/40 bg-white/10 text-indigo-500 focus:ring-white/40" />
+                            <input id="macroMarkFavorite" type="checkbox"
+                                class="h-4 w-4 rounded border-white/40 bg-white/10 text-indigo-500 focus:ring-white/40" />
                             Show in kid mode as the Magic Button
                         </label>
-                        <button type="submit" class="rounded-2xl bg-primary px-6 py-3 text-base font-bold text-white shadow-lg transition hover:bg-primary-dark">Save Macro</button>
+                        <button type="submit"
+                            class="rounded-2xl bg-primary px-6 py-3 text-base font-bold text-white shadow-lg transition hover:bg-primary-dark">Save
+                            Macro</button>
                     </div>
                 </form>
 
@@ -1233,25 +887,22 @@
     <!-- Bottom Navigation with integrated Room Selector -->
     <nav id="bottomTabNav" class="fixed inset-x-0 bottom-0 z-40 hidden bg-slate-950/80 text-white backdrop-blur-lg">
         <!-- Room Selector Section (shown when rooms are configured) -->
-        <div id="roomSelectorBar" class="hidden bg-gradient-to-r from-purple-900/90 to-indigo-900/90 border-t border-white/20">
+        <div id="roomSelectorBar"
+            class="hidden bg-gradient-to-r from-purple-900/90 to-indigo-900/90 border-t border-white/20">
             <div class="mx-auto flex w-full max-w-4xl items-center justify-between gap-2 px-3 py-2">
                 <div class="flex items-center gap-2 flex-1 min-w-0">
                     <span id="currentRoomIndicator" class="text-xs font-semibold truncate">📍 All Rooms</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <!-- Room Selector Dropdown -->
-                    <select
-                        id="roomSelector"
-                        onchange="setCurrentRoom(this.value, 'manual')"
+                    <select id="roomSelector" onchange="setCurrentRoom(this.value, 'manual')"
                         class="rounded-lg border border-white/40 bg-white/20 px-2 py-1 text-xs font-semibold text-white focus:border-white/60 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
                         style="color: white; background-color: rgba(255, 255, 255, 0.2);">
                         <option value="" style="background-color: #1e1b4b; color: white;">All Rooms</option>
                     </select>
 
                     <!-- Auto-detect Toggle Button -->
-                    <button
-                        id="roomAutoDetectToggle"
-                        onclick="toggleRoomAutoDetect()"
+                    <button id="roomAutoDetectToggle" onclick="toggleRoomAutoDetect()"
                         class="flex items-center justify-center gap-1 px-2 h-7 rounded-lg border border-white/30 bg-white/10 hover:bg-white/20 active:bg-white/30 transition-colors whitespace-nowrap"
                         title="Toggle auto room detection">
                         <span id="roomAutoDetectIcon" class="text-sm">🔍</span>
@@ -1259,9 +910,7 @@
                     </button>
 
                     <!-- Locate Button -->
-                    <button
-                        id="roomLocateButton"
-                        onclick="manuallyLocateRoom()"
+                    <button id="roomLocateButton" onclick="manuallyLocateRoom()"
                         class="flex items-center justify-center w-7 h-7 rounded-lg border border-white/30 bg-white/10 hover:bg-white/20 active:bg-white/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Find current room">
                         <span class="text-sm">📡</span>
@@ -1271,13 +920,14 @@
         </div>
 
         <!-- Tab Buttons Section -->
-        <div id="bottomTabButtons" class="mx-auto flex w-full max-w-4xl items-stretch justify-around gap-2 px-4 py-3"></div>
+        <div id="bottomTabButtons" class="mx-auto flex w-full max-w-4xl items-stretch justify-around gap-2 px-4 py-3">
+        </div>
     </nav>
 
-    <div id="toastContainer" class="pointer-events-none fixed left-1/2 top-6 z-50 hidden -translate-x-1/2 transform"></div>
+    <div id="toastContainer" class="pointer-events-none fixed left-1/2 top-6 z-50 hidden -translate-x-1/2 transform">
+    </div>
 
-    <div
-        id="timerOverlay"
+    <div id="timerOverlay"
         class="timer-overlay fixed inset-0 z-50 hidden items-center justify-center px-6 py-12 text-white">
         <div class="w-full max-w-md rounded-3xl bg-white/10 p-8 shadow-2xl">
             <div class="text-center mb-6">
@@ -1285,63 +935,63 @@
             </div>
 
             <div class="relative mx-auto flex h-64 w-64 items-center justify-center">
-                <div id="timerSpinnerEmoji" class="absolute text-9xl" style="animation: spin 3s linear infinite;">⭐</div>
+                <div id="timerSpinnerEmoji" class="absolute text-9xl" style="animation: spin 3s linear infinite;">⭐
+                </div>
                 <div class="relative flex flex-col items-center justify-center text-center z-10">
-                    <span id="timerCountdown" class="text-5xl font-extrabold tracking-tight text-white drop-shadow-lg">00:00</span>
+                    <span id="timerCountdown"
+                        class="text-5xl font-extrabold tracking-tight text-white drop-shadow-lg">00:00</span>
                 </div>
             </div>
 
             <div class="mt-6 flex flex-wrap justify-center gap-2">
-                <button type="button" data-timer-emoji="⭐" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">⭐</button>
-                <button type="button" data-timer-emoji="🎨" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🎨</button>
-                <button type="button" data-timer-emoji="🦄" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🦄</button>
-                <button type="button" data-timer-emoji="🚀" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🚀</button>
-                <button type="button" data-timer-emoji="🌈" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🌈</button>
-                <button type="button" data-timer-emoji="🎈" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🎈</button>
-                <button type="button" data-timer-emoji="🍎" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🍎</button>
-                <button type="button" data-timer-emoji="⚡" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">⚡</button>
+                <button type="button" data-timer-emoji="⭐"
+                    class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">⭐</button>
+                <button type="button" data-timer-emoji="🎨"
+                    class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🎨</button>
+                <button type="button" data-timer-emoji="🦄"
+                    class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🦄</button>
+                <button type="button" data-timer-emoji="🚀"
+                    class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🚀</button>
+                <button type="button" data-timer-emoji="🌈"
+                    class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🌈</button>
+                <button type="button" data-timer-emoji="🎈"
+                    class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🎈</button>
+                <button type="button" data-timer-emoji="🍎"
+                    class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🍎</button>
+                <button type="button" data-timer-emoji="⚡"
+                    class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">⚡</button>
             </div>
 
-            <button
-                id="timerOverlayDismiss"
-                onclick="cancelToddlerTimer()"
+            <button id="timerOverlayDismiss" onclick="cancelToddlerTimer()"
                 class="mt-6 w-full rounded-2xl bg-rose-500/80 px-5 py-4 text-base font-bold text-white shadow-lg transition hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-white/60">
                 Stop Timer
             </button>
         </div>
     </div>
 
-    <div
-        id="fireworksOverlay"
-        class="fireworks-overlay fixed inset-0 z-40 hidden text-white">
+    <div id="fireworksOverlay" class="fireworks-overlay fixed inset-0 z-40 hidden text-white">
         <div id="fireworksStage" class="fireworks-stage"></div>
         <div class="fireworks-content">
             <div class="space-y-3">
                 <h2 class="text-4xl font-extrabold tracking-tight drop-shadow-lg">🎆 Fireworks Celebration</h2>
-                <p id="fireworksLabel" class="text-base font-semibold text-indigo-100 drop-shadow-md">Celebration time.</p>
+                <p id="fireworksLabel" class="text-base font-semibold text-indigo-100 drop-shadow-md">Celebration time.
+                </p>
             </div>
-            <button
-                onclick="stopFireworksShow()"
+            <button onclick="stopFireworksShow()"
                 class="rounded-full bg-white/20 px-6 py-3 text-xs font-semibold uppercase tracking-[0.35em] text-white shadow-lg transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50">
                 End Fireworks
             </button>
         </div>
     </div>
 
-    <div
-        id="youtubePlayerOverlay"
-        class="fixed inset-0 z-50 hidden items-center justify-center bg-black/95 px-4 py-6">
+    <div id="youtubePlayerOverlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/95 px-4 py-6">
         <div class="relative w-full max-w-6xl">
-            <button
-                onclick="closeYoutubePlayer()"
+            <button onclick="closeYoutubePlayer()"
                 class="absolute -top-12 right-0 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">
                 Close Video
             </button>
             <div class="relative w-full pt-[56.25%]">
-                <iframe
-                    id="youtubePlayerFrame"
-                    class="absolute inset-0 h-full w-full rounded-2xl"
-                    src=""
+                <iframe id="youtubePlayerFrame" class="absolute inset-0 h-full w-full rounded-2xl" src=""
                     frameborder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowfullscreen>
@@ -1354,4 +1004,5 @@
     <script src="vendor/confetti.js"></script>
     <script src="app.js"></script>
 </body>
+
 </html>
