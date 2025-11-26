@@ -22,7 +22,7 @@ const APP_CONFIG_CUSTOM_PATH = `${CONFIG_BASE_PATH}/app-config.custom.json`;
 const BUTTON_TYPES_CONFIG_PATH = `${CONFIG_BASE_PATH}/button-types.json`;
 const TODDLER_CONTENT_PASSPHRASE_KEY = 'toddler_content_passphrase';
 const NETLIFY_CONFIG_API_BASE = 'https://toddler-phone-control.netlify.app/api/config';
-const TIMER_CIRCUMFERENCE = 2 * Math.PI * 54;
+
 const YOUTUBE_PLAYBACK_MODE_KEY = 'youtube_playback_mode'; // 'roku' or 'app'
 const PARENTAL_PIN_STORAGE_KEY = 'parental_pin';
 const tauriBridge = typeof window !== 'undefined' ? window.__TAURI__ : undefined;
@@ -54,12 +54,7 @@ const TAB_DEFINITIONS = {
         defaultIcon: '📺',
         sections: ['kidQuickSection', 'connectionSection', 'nowPlayingSection', 'appsSection', 'quickLaunchSection', 'deepLinkSection']
     },
-    magic: {
-        id: 'magic',
-        defaultLabel: 'Magic Time',
-        defaultIcon: '⏱️',
-        sections: ['magicSection']
-    },
+
 
     macros: {
         id: 'macros',
@@ -135,11 +130,7 @@ let timerAnimationFrame = null;
 let timerEndTimestamp = 0;
 let timerDurationMs = 0;
 let timerLabelText = '';
-let fireworksInterval = null;
-let fireworksTimeout = null;
-let nativeTtsStatusTimeout = null;
-let selectedTimerEmoji = '⭐';
-let currentTimerAnimation = 0;
+
 
 function getNativeTtsBridge() {
     if (typeof window === 'undefined') return undefined;
@@ -197,8 +188,7 @@ function getTabsForRendering() {
         tabs = [
             buildTabFromDefinition(TAB_DEFINITIONS.remote),
             buildTabFromDefinition(TAB_DEFINITIONS.apps),
-            buildTabFromDefinition(TAB_DEFINITIONS.lights),
-            buildTabFromDefinition(TAB_DEFINITIONS.magic)
+
         ];
     }
 
@@ -411,18 +401,7 @@ function loadCurrentConfigIntoEditor() {
                     buttons: toddlerSpecialButtons.filter(b => b.category === 'kidMode-content'),
                     quickLaunch: toddlerQuickLaunchItems
                 },
-                {
-                    id: 'lights',
-                    label: 'Lights',
-                    icon: '💡',
-                    buttons: toddlerSpecialButtons.filter(b => b.category === 'lights')
-                },
-                {
-                    id: 'magic',
-                    label: 'Magic Time',
-                    icon: '⏱️',
-                    buttons: toddlerSpecialButtons.filter(b => b.category === 'magic')
-                }
+
             ].filter(tab => tab.buttons.length > 0 || tab.quickLaunch?.length > 0),
             version: '1.0.0',
             lastUpdated: new Date().toISOString()
@@ -551,11 +530,7 @@ function applyToddlerContent(data) {
     currentLoadedConfig = data;
 
     const settingsData = data?.settings || {};
-     else {
 
-            }
-        }
-    }
 
     if (Object.prototype.hasOwnProperty.call(settingsData, 'parentalPin')) {
         setRemotePinCode(settingsData.parentalPin);
@@ -571,24 +546,22 @@ function applyToddlerContent(data) {
 
     const remoteTab = tabs.find(tab => tab.id === 'remote');
     const appsTab = tabs.find(tab => tab.id === 'apps');
-    const lightsTab = tabs.find(tab => tab.id === 'lights');
-    const magicTab = tabs.find(tab => tab.id === 'magic');
+
 
     const remoteButtons = Array.isArray(remoteTab?.buttons) ? [...remoteTab.buttons] : [];
     const appsButtons = Array.isArray(appsTab?.buttons) ? [...appsTab.buttons] : [];
-    const lightsButtons = Array.isArray(lightsTab?.buttons) ? [...lightsTab.buttons] : [];
-    const magicButtons = Array.isArray(magicTab?.buttons) ? [...magicTab.buttons] : [];
+
 
     // Normalize quick launch items (auto-generate id, thumbnail, etc.)
     const rawQuickLaunch = Array.isArray(appsTab?.quickLaunch) ? appsTab.quickLaunch : [];
     toddlerQuickLaunchItems = rawQuickLaunch.map(normalizeQuickLaunchItem);
 
     // Combine remote and apps buttons for rendering
-    toddlerSpecialButtons = [...remoteButtons, ...appsButtons, ...lightsButtons, ...magicButtons];
+    toddlerSpecialButtons = [...remoteButtons, ...appsButtons];
 
     renderToddlerButtons(remoteButtons, appsButtons, toddlerQuickLaunchItems);
 
-    renderMagicButtons(magicButtons);
+
     renderQuickLaunchSettings(toddlerQuickLaunchItems);
 }
 
@@ -795,134 +768,7 @@ function registerQuickActionCooldown(source) {
     return true;
 }
 
-function handleMagicTimerStart(durationSeconds) {
-    const seconds = Number(durationSeconds);
-    if (!Number.isFinite(seconds) || seconds <= 0) {
-        showStatus('Pick a timer length to get started.', 'error');
-        return;
-    }
 
-    const minutes = seconds / 60;
-    const label =
-        minutes >= 1
-            ? `${Math.round(minutes * 10) / 10} minute timer`
-            : `${seconds} second timer`;
-    startToddlerTimer(seconds, label);
-}
-
-function handleMagicFireworks() {
-    startFireworksShow(8, 'Fireworks Celebration!');
-}
-
-function handleMagicSpeak(text) {
-    const phrase = typeof text === 'string' ? text.trim() : '';
-    if (!phrase) {
-        showStatus('Type something to say first.', 'error');
-        return false;
-    }
-    speakTts(phrase);
-    return true;
-}
-
-function stopMagicSpeak() {
-    const nativeBridge = getNativeTtsBridge();
-    try {
-        if (nativeBridge?.stop) {
-            nativeBridge.stop();
-        }
-    } catch (error) {
-        console.warn('Native TTS stop failed', error);
-    }
-
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        try {
-            window.speechSynthesis.cancel();
-        } catch (error) {
-            console.warn('Speech synthesis cancel failed', error);
-        }
-    }
-
-    showStatus('Voice stopped.', 'info');
-}
-
-function initMagicControls() {
-    const quickButtons = document.querySelectorAll('[data-magic-timer]');
-    quickButtons.forEach(button => {
-        if (!button.__magicTimerBound) {
-            button.__magicTimerBound = true;
-            button.addEventListener('click', () => handleMagicTimerStart(button.dataset.magicTimer));
-        }
-    });
-
-    const customMinutesInput = document.getElementById('magicTimerMinutes');
-    const timerForm = document.getElementById('magicTimerForm');
-    if (timerForm && !timerForm.__magicSubmitBound) {
-        timerForm.__magicSubmitBound = true;
-        timerForm.addEventListener('submit', event => {
-            event.preventDefault();
-            const minutesRaw = customMinutesInput ? Number(customMinutesInput.value) : NaN;
-            if (!Number.isFinite(minutesRaw) || minutesRaw <= 0) {
-                showStatus('Enter the number of minutes for the timer.', 'error');
-                return;
-            }
-            handleMagicTimerStart(minutesRaw * 60);
-        });
-    }
-
-    const cancelButton = document.getElementById('magicTimerCancel');
-    if (cancelButton && !cancelButton.__magicCancelBound) {
-        cancelButton.__magicCancelBound = true;
-        cancelButton.addEventListener('click', () => cancelToddlerTimer());
-    }
-
-    const fireworksButton = document.getElementById('magicFireworksButton');
-    if (fireworksButton && !fireworksButton.__magicFireworksBound) {
-        fireworksButton.__magicFireworksBound = true;
-        fireworksButton.addEventListener('click', () => handleMagicFireworks());
-    }
-
-    // Timer emoji selection
-    const emojiButtons = document.querySelectorAll('[data-timer-emoji]');
-    emojiButtons.forEach(button => {
-        if (!button.__emojiSelectBound) {
-            button.__emojiSelectBound = true;
-            button.addEventListener('click', () => {
-                const emoji = button.dataset.timerEmoji;
-                selectedTimerEmoji = emoji || '⭐';
-
-                // Update UI to show selected
-                emojiButtons.forEach(btn => btn.setAttribute('data-selected', 'false'));
-                button.setAttribute('data-selected', 'true');
-            });
-        }
-    });
-
-    // Set first emoji as selected by default
-    if (emojiButtons.length > 0 && !emojiButtons[0].dataset.selected) {
-        emojiButtons[0].setAttribute('data-selected', 'true');
-    }
-
-    const speakForm = document.getElementById('magicSpeakForm');
-    const speakInput = document.getElementById('magicSpeakInput');
-    if (speakForm && !speakForm.__magicSpeakBound) {
-        speakForm.__magicSpeakBound = true;
-        speakForm.addEventListener('submit', event => {
-            event.preventDefault();
-            const phrase = speakInput ? speakInput.value : '';
-            const spoke = handleMagicSpeak(phrase);
-            if (spoke && speakInput) {
-                speakInput.value = '';
-                speakInput.focus();
-            }
-        });
-    }
-
-    const stopSpeakButton = document.getElementById('magicSpeakStop');
-    if (stopSpeakButton && !stopSpeakButton.__magicStopBound) {
-        stopSpeakButton.__magicStopBound = true;
-        stopSpeakButton.addEventListener('click', () => stopMagicSpeak());
-    }
-}
 
 // Initialize on load
 window.addEventListener('DOMContentLoaded', async () => {
@@ -936,7 +782,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     // Load tabs config before initializing tab controls
     await loadTabsConfig();
     initTabControls();
-    initMagicControls();
+
     updateToddlerContentSourceInfo();
     updateCloudEditorVisibility();
     void loadButtonTypeCatalog();
@@ -1076,26 +922,7 @@ function renderToddlerButtons(remoteButtons = [], appsButtons = [], quickLaunch 
     updateFavoriteMacroButton();
 }
 
-function renderMagicButtons(buttons = []) {
-    const column = document.getElementById('magicButtonColumn');
-    if (!column) return;
 
-    column.innerHTML = '';
-
-    if (buttons.length === 0) {
-        const emptyState = document.createElement('div');
-        emptyState.className = 'col-span-full rounded-3xl bg-white/10 px-6 py-8 text-center text-lg font-semibold text-indigo-100';
-        emptyState.textContent = 'No magic buttons configured yet.';
-        column.appendChild(emptyState);
-    } else {
-        buttons.forEach(config => {
-            const element = createQuickButtonElement(config);
-            if (element) {
-                column.appendChild(element);
-            }
-        });
-    }
-}
 
 function mapQuickLaunchToToddlerButton(item) {
     const buttonLabel = item.label || '';
@@ -1296,6 +1123,7 @@ function invokeToddlerHandler(config) {
             ? [config.args]
             : [];
 
+    if (
         Array.isArray(config.routine) &&
         config.routine.length > 0 &&
         args.length === 0
@@ -1493,290 +1321,9 @@ function speakTts(message = '') {
     }
 }
 
-function applyTimerAnimation(element) {
-    if (!element) return;
 
-    const animations = [
-        'spin 3s linear infinite',
-        'pulse-grow 2s ease-in-out infinite',
-        'bounce-float 2s ease-in-out infinite',
-        'rotate-pulse 3s ease-in-out infinite',
-        'wiggle 1s ease-in-out infinite',
-        'rainbow-glow 3s linear infinite'
-    ];
 
-    element.style.animation = animations[currentTimerAnimation];
-}
 
-function setupTimerOverlayEmojiButtons() {
-    const overlayEmojiButtons = document.querySelectorAll('#timerOverlay [data-timer-emoji]');
-
-    overlayEmojiButtons.forEach(button => {
-        if (!button.__timerOverlayBound) {
-            button.__timerOverlayBound = true;
-            button.addEventListener('click', () => {
-                const emoji = button.dataset.timerEmoji;
-                selectedTimerEmoji = emoji || '⭐';
-
-                // Update the spinner emoji
-                const spinnerEmoji = document.getElementById('timerSpinnerEmoji');
-                if (spinnerEmoji) {
-                    spinnerEmoji.textContent = selectedTimerEmoji;
-                }
-
-                // Cycle to next animation
-                currentTimerAnimation = (currentTimerAnimation + 1) % 6;
-                applyTimerAnimation(spinnerEmoji);
-
-                // Update selected state
-                overlayEmojiButtons.forEach(btn => btn.setAttribute('data-selected', 'false'));
-                button.setAttribute('data-selected', 'true');
-            });
-        }
-    });
-
-    // Set currently selected emoji
-    const currentEmojiButton = Array.from(overlayEmojiButtons).find(
-        btn => btn.dataset.timerEmoji === selectedTimerEmoji
-    );
-    if (currentEmojiButton) {
-        overlayEmojiButtons.forEach(btn => btn.setAttribute('data-selected', 'false'));
-        currentEmojiButton.setAttribute('data-selected', 'true');
-    }
-}
-
-function startToddlerTimer(durationSeconds = 300, label = 'Timer') {
-    const secondsValue = Number(Array.isArray(durationSeconds) ? durationSeconds[0] : durationSeconds);
-    const labelValue = Array.isArray(durationSeconds) && durationSeconds.length > 1 ? durationSeconds[1] : label;
-    const displayLabel = typeof labelValue === 'string' && labelValue.trim().length > 0 ? labelValue.trim() : 'Timer';
-
-    const overlay = document.getElementById('timerOverlay');
-    const originalTimeEl = document.getElementById('timerOriginalTime');
-    const spinnerEmoji = document.getElementById('timerSpinnerEmoji');
-    if (!overlay) {
-        console.warn('Timer overlay elements are missing.');
-        return;
-    }
-
-    const sanitizedSeconds = Number.isFinite(secondsValue) && secondsValue > 0 ? secondsValue : 300;
-
-    cancelToddlerTimer({ silent: true });
-
-    timerDurationMs = sanitizedSeconds * 1000;
-    timerEndTimestamp = Date.now() + timerDurationMs;
-    timerLabelText = displayLabel || 'Timer';
-
-    // Display original time
-    if (originalTimeEl) {
-        const minutes = Math.floor(sanitizedSeconds / 60);
-        const seconds = sanitizedSeconds % 60;
-        const timeStr = seconds > 0 ? `${minutes}:${String(seconds).padStart(2, '0')}` : `${minutes}:00`;
-        originalTimeEl.textContent = timeStr;
-    }
-
-    if (spinnerEmoji) {
-        spinnerEmoji.textContent = selectedTimerEmoji;
-        applyTimerAnimation(spinnerEmoji);
-    }
-
-    // Set up emoji button listeners in overlay
-    setupTimerOverlayEmojiButtons();
-
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.classList.add('timer-open');
-    }
-    overlay.classList.remove('hidden');
-    overlay.classList.add('flex');
-
-    updateToddlerTimerDisplay();
-    showStatus(`Started ${timerLabelText} for ${formatTimerDuration(sanitizedSeconds)}.`, 'success');
-}
-
-function formatTimerDuration(totalSeconds = 0) {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = Math.max(0, Math.round(totalSeconds % 60));
-    const minutePart = minutes > 0 ? `${minutes} min` : '';
-    const secondPart = seconds > 0 ? `${seconds} sec` : '';
-    return `${minutePart} ${secondPart}`.trim() || '0 sec';
-}
-
-function updateToddlerTimerDisplay() {
-    const overlay = document.getElementById('timerOverlay');
-    const countdownEl = document.getElementById('timerCountdown');
-    if (!overlay || overlay.classList.contains('hidden')) {
-        return;
-    }
-
-    const now = Date.now();
-    const remainingMs = Math.max(0, timerEndTimestamp - now);
-    const remainingSeconds = Math.ceil(remainingMs / 1000);
-    const minutes = String(Math.floor(remainingSeconds / 60)).padStart(2, '0');
-    const seconds = String(remainingSeconds % 60).padStart(2, '0');
-
-    if (countdownEl) {
-        countdownEl.textContent = `${minutes}:${seconds}`;
-    }
-
-    if (remainingMs <= 0) {
-        completeToddlerTimer();
-        return;
-    }
-
-    timerAnimationFrame = requestAnimationFrame(updateToddlerTimerDisplay);
-}
-
-function completeToddlerTimer() {
-    cancelToddlerTimer({ silent: true });
-    speakTts(`${timerLabelText || 'Timer'} is done!`);
-    showStatus('Timer finished!', 'success');
-}
-
-function cancelToddlerTimer({ silent = false } = {}) {
-    if (timerAnimationFrame) {
-        cancelAnimationFrame(timerAnimationFrame);
-        timerAnimationFrame = null;
-    }
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.classList.remove('timer-open');
-    }
-    const overlay = document.getElementById('timerOverlay');
-    const countdownEl = document.getElementById('timerCountdown');
-    if (overlay) {
-        overlay.classList.add('hidden');
-        overlay.classList.remove('flex');
-    }
-    if (countdownEl) {
-        countdownEl.textContent = '00:00';
-    }
-    timerEndTimestamp = 0;
-    timerDurationMs = 0;
-    timerLabelText = '';
-    if (!silent) {
-        showStatus('Timer cancelled.', 'info');
-    }
-}
-
-function startFireworksShow(durationSeconds = 6, message = 'Fireworks!') {
-    const overlay = document.getElementById('fireworksOverlay');
-    const labelEl = document.getElementById('fireworksLabel');
-
-    if (!overlay || !labelEl) {
-        console.warn('Fireworks overlay elements are missing.');
-        return;
-    }
-
-    stopFireworksShow({ silent: true });
-
-    const safeSeconds = Number(durationSeconds);
-    const durationMs = Number.isFinite(safeSeconds) && safeSeconds > 0 ? safeSeconds * 1000 : 6000;
-    const messageText = String(message || 'Fireworks!').trim() || 'Fireworks!';
-
-    labelEl.textContent = messageText;
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.classList.add('fireworks-open');
-    }
-    overlay.classList.remove('hidden');
-    overlay.classList.add('flex');
-
-    // Use canvas-confetti if available
-    if (typeof confetti === 'function') {
-        const colors = ['#fde68a', '#fca5a5', '#a5b4fc', '#7dd3fc', '#f9a8d4', '#bbf7d0'];
-
-        const launchConfetti = () => {
-            // Launch multiple bursts from different positions
-            const count = 2 + Math.floor(Math.random() * 2);
-            for (let i = 0; i < count; i++) {
-                setTimeout(() => {
-                    confetti({
-                        particleCount: 50,
-                        spread: 70,
-                        origin: { x: Math.random() * 0.6 + 0.2, y: Math.random() * 0.5 + 0.3 },
-                        colors: colors,
-                        shapes: ['circle', 'square'],
-                        gravity: 0.8,
-                        scalar: 1.2,
-                        drift: 0,
-                        ticks: 200
-                    });
-                }, i * 100);
-            }
-        };
-
-        launchConfetti();
-        fireworksInterval = setInterval(launchConfetti, 600);
-    } else {
-        console.warn('Canvas confetti library not loaded');
-    }
-
-    fireworksTimeout = setTimeout(() => {
-        stopFireworksShow({ silent: true });
-    }, durationMs);
-
-    speakTts(messageText);
-    showStatus('Fireworks launched!', 'success');
-}
-
-function stopFireworksShow({ silent = false } = {}) {
-    if (fireworksInterval) {
-        clearInterval(fireworksInterval);
-        fireworksInterval = null;
-    }
-    if (fireworksTimeout) {
-        clearTimeout(fireworksTimeout);
-        fireworksTimeout = null;
-    }
-
-    // Reset confetti if available
-    if (typeof confetti === 'function' && typeof confetti.reset === 'function') {
-        confetti.reset();
-    }
-
-    const overlay = document.getElementById('fireworksOverlay');
-    if (overlay) {
-        overlay.classList.add('hidden');
-        overlay.classList.remove('flex');
-    }
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.classList.remove('fireworks-open');
-    }
-
-    if (!silent) {
-        showStatus('Fireworks finished.', 'info');
-    }
-}
-
-function createFireworkBurst(stage, options = {}) {
-    if (!stage) return;
-    const colors = ['#fde68a', '#fca5a5', '#a5b4fc', '#7dd3fc', '#f9a8d4', '#bbf7d0', '#fef3c7', '#bfdbfe'];
-    const particleCount = options.particleCount ?? 32;
-    const rect = stage.getBoundingClientRect();
-    const stageWidth = rect.width || stage.clientWidth || 1;
-    const stageHeight = rect.height || stage.clientHeight || 1;
-    const originX = stageWidth * (0.15 + Math.random() * 0.7);
-    const originY = stageHeight * (0.25 + Math.random() * 0.5);
-
-    for (let i = 0; i < particleCount; i++) {
-        const angle = (Math.PI * 2 * i) / particleCount + Math.random() * 0.5;
-        const distance = 140 + Math.random() * 260;
-        const targetX = originX + Math.cos(angle) * distance;
-        const targetY = originY + Math.sin(angle) * distance;
-
-        const particle = document.createElement('div');
-        particle.className = 'firework-particle';
-        particle.style.setProperty('--x', `${(targetX / stageWidth) * 100}%`);
-        particle.style.setProperty('--y', `${(targetY / stageHeight) * 100}%`);
-        const color = colors[Math.floor(Math.random() * colors.length)];
-        particle.style.background = color;
-        particle.style.animationDuration = `${520 + Math.random() * 720}ms`;
-        particle.style.boxShadow = `0 0 24px 6px ${color}`;
-
-        stage.appendChild(particle);
-
-        setTimeout(() => {
-            particle.remove();
-        }, 1100);
-    }
-}
 
 // Device Registry System
 const DEVICE_REGISTRY_KEY = 'device_registry';
@@ -1831,7 +1378,7 @@ function getAllDevices() {
     const registry = getDeviceRegistry();
     return {
         roku: Object.values(registry.roku || {}),
-        
+
     };
 }
 
@@ -1839,7 +1386,7 @@ function normalizeDeviceIdentifier(value) {
     if (typeof value !== 'string') return '';
     let normalized = value.trim();
     if (!normalized) return '';
-    
+
     normalized = normalized.replace(/^https?:\/\//i, '');
     normalized = normalized.replace(/-+/g, ':');
     if (normalized.endsWith('/')) {
@@ -1876,7 +1423,7 @@ async function discoverAndRegisterAllDevices() {
 
         const allDevices = getAllDevices();
         console.log('✅ Discovery complete!');
-        console.log(`   Total: ${allDevices.roku.length} Roku + ${all0} Govee`);
+        console.log(`   Total: ${allDevices.roku.length} Roku devices`);
 
         return allDevices;
     } catch (error) {
@@ -1898,7 +1445,7 @@ async function refreshDeviceDiscovery() {
     if (devices) {
         populateDeviceSelector();
         if (statusEl) {
-            statusEl.textContent = `Found ${devices.roku.length} Roku + ${0} Govee devices`;
+            statusEl.textContent = `Found ${devices.roku.length} Roku devices`;
         }
     } else {
         if (statusEl) {
@@ -1922,15 +1469,6 @@ function populateDeviceSelector() {
         option.value = `roku:${device.id}`;
         const name = device.friendly_name || device.model_name || device.ip;
         option.textContent = `📺 ${name} (${device.ip})`;
-        selector.appendChild(option);
-    });
-
-    // Add Govee devices
-    [].forEach(device => {
-        const option = document.createElement('option');
-        option.value = `govee:${device.mac}`;
-        const name = device.name || device.model || device.ip;
-        option.textContent = `💡 ${name} (${device.ip})`;
         selector.appendChild(option);
     });
 }
@@ -2274,19 +1812,13 @@ function filterControlsByRoom() {
         if (roomData) {
             console.log(`🔍 Filtering controls for room: ${roomData.name}`);
             console.log(`  Roku devices:`, roomData.devices?.roku || []);
-            console.log(`  Govee devices:`, roomData.devices?.govee || []);
+
         }
     } else {
         console.log(`🔍 Showing all controls (no room selected)`);
     }
 
-    // Re-render lights buttons with room filtering
-    if (tabsConfig && Array.isArray(tabsConfig.tabs)) {
-        const lightsTab = tabsConfig.tabs.find(tab => tab.id === 'lights');
-        if (lightsTab && Array.isArray(lightsTab.buttons)) {
 
-        }
-    }
 }
 
 // Bluetooth Scanner UI Functions
@@ -2508,27 +2040,6 @@ function handleDeviceSelection() {
             <button onclick="testRokuCommand('${device.ip}', 'Back')" class="w-full rounded-xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">⬅️ Back</button>
             <button onclick="testRokuInfo('${device.ip}')" class="w-full rounded-xl bg-emerald-500/30 px-4 py-2 text-sm text-white transition hover:bg-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-300/60">ℹ️ Get Device Info</button>
         `;
-    } else if (type === 'govee') {
-        detailsEl.innerHTML = `
-            <div class="space-y-2">
-                <div><strong>Type:</strong> Govee Light</div>
-                <div><strong>IP:</strong> ${device.ip}</div>
-                ${device.name ? `<div><strong>Name:</strong> ${device.name}</div>` : ''}
-                ${device.model ? `<div><strong>Model:</strong> ${device.model}</div>` : ''}
-                <div><strong>MAC:</strong> ${device.mac}</div>
-                <div><strong>Last Seen:</strong> ${new Date(device.last_seen).toLocaleString()}</div>
-            </div>
-        `;
-
-        // Show Govee commands
-        commandsEl.innerHTML = `
-            <button onclick="testGoveeCommand('${device.ip}', 'on')" class="w-full rounded-xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">💡 Turn On</button>
-            <button onclick="testGoveeCommand('${device.ip}', 'off')" class="w-full rounded-xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">⚫ Turn Off</button>
-            <button onclick="testGoveeCommand('${device.ip}', 'brightness', 100)" class="w-full rounded-xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">🔆 Full Brightness</button>
-            <button onclick="testGoveeCommand('${device.ip}', 'brightness', 50)" class="w-full rounded-xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">🔅 50% Brightness</button>
-            <button onclick="testGoveeCommand('${device.ip}', 'color', {r:255,g:0,b:0})" class="w-full rounded-xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">🔴 Red</button>
-            <button onclick="testGoveeCommand('${device.ip}', 'status')" class="w-full rounded-xl bg-emerald-500/30 px-4 py-2 text-sm text-white transition hover:bg-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-300/60">ℹ️ Get Status</button>
-        `;
     }
 }
 
@@ -2571,7 +2082,6 @@ async function testRokuInfo(ip) {
     }
 }
 
-// Multi-device Govee handlers - control multiple lights at once
 
 // Testing Playground Functions
 

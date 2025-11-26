@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -518,10 +519,13 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>🎮 Visual Config Editor</h1>
@@ -529,12 +533,7 @@
 
         <div class="input-group">
             <label for="passphrase">Passphrase (5+ words)</label>
-            <input
-                type="text"
-                id="passphrase"
-                placeholder="e.g., my awesome roku button setup"
-                autocomplete="off"
-            >
+            <input type="text" id="passphrase" placeholder="e.g., my awesome roku button setup" autocomplete="off">
             <div class="help-text">Enter at least 5 words separated by spaces to load/save your config.</div>
         </div>
 
@@ -555,7 +554,7 @@
             <button class="tab-button" data-tab="device-lists">📡 Device Lists</button>
             <button class="tab-button" data-tab="youtube">📺 YouTube Quick Launch</button>
             <button class="tab-button" data-tab="apps">🎬 App Buttons</button>
-            <button class="tab-button" data-tab="lights">💡 Light Buttons</button>
+
             <button class="tab-button" data-tab="json">⚙️ Raw JSON</button>
         </nav>
 
@@ -574,36 +573,23 @@
         <div class="tab-content" id="app-settings-tab">
             <div class="config-header">
                 <h2>App Settings</h2>
-                <p style="color: #666; font-size: 14px; margin-top: 10px;">Manage secure values that the toddler app reads directly from your Netlify config.</p>
+                <p style="color: #666; font-size: 14px; margin-top: 10px;">Manage secure values that the toddler app
+                    reads directly from your Netlify config.</p>
             </div>
 
-            <div class="input-group">
-                <label for="goveeApiKeyEditor">Govee API Key</label>
-                <input
-                    type="text"
-                    id="goveeApiKeyEditor"
-                    placeholder="Enter your Govee API key to sync with the app">
-                <div class="help-text">
-                    Stored with your app config so the desktop/mobile app can access the cloud API automatically.
-                    The key is also kept in your browser for the editor tools.
-                </div>
-            </div>
+
 
             <div class="input-group">
                 <label for="parentalPinEditor">Parental PIN (4 digits)</label>
-                <input
-                    type="text"
-                    id="parentalPinEditor"
-                    maxlength="4"
-                    inputmode="numeric"
-                    pattern="[0-9]*"
+                <input type="text" id="parentalPinEditor" maxlength="4" inputmode="numeric" pattern="[0-9]*"
                     placeholder="1234">
                 <div class="help-text">
                     Leave blank to fall back to the default (1234). Numbers only—this controls the in-app settings lock.
                 </div>
             </div>
 
-            <div id="appSettingsStatus" class="rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-900" style="background: #f5f5f5;">
+            <div id="appSettingsStatus" class="rounded-2xl bg-white/10 px-4 py-3 text-xs text-indigo-900"
+                style="background: #f5f5f5;">
                 App settings will appear here after loading your config.
             </div>
         </div>
@@ -612,32 +598,22 @@
         <div class="tab-content" id="device-lists-tab">
             <div class="config-header">
                 <h2>Saved Device Lists</h2>
-                <p style="color: #666; font-size: 14px; margin-top: 10px;">View your saved Bluetooth and Govee device scans. Use these to configure room BLE beacons.</p>
+                <p style="color: #666; font-size: 14px; margin-top: 10px;">View your saved Bluetooth and Govee device
+                    scans. Use these to configure room BLE beacons.</p>
             </div>
 
             <div style="margin-bottom: 30px;">
                 <h3 style="margin-bottom: 15px;">📱 Bluetooth LE Devices</h3>
-                <button class="btn-primary" onclick="loadBLEDeviceList()" style="margin-bottom: 15px;">🔄 Load BLE Scan Results</button>
-                <div id="bleDevicesList" style="background: #f5f5f5; padding: 20px; border-radius: 8px; min-height: 100px;">
-                    <p style="color: #999;">Click "Load BLE Scan Results" to view saved Bluetooth device scans from your app.</p>
+                <button class="btn-primary" onclick="loadBLEDeviceList()" style="margin-bottom: 15px;">🔄 Load BLE Scan
+                    Results</button>
+                <div id="bleDevicesList"
+                    style="background: #f5f5f5; padding: 20px; border-radius: 8px; min-height: 100px;">
+                    <p style="color: #999;">Click "Load BLE Scan Results" to view saved Bluetooth device scans from your
+                        app.</p>
                 </div>
             </div>
 
-            <div>
-                <h3 style="margin-bottom: 15px;">💡 Govee Devices</h3>
-                <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
-                    Configure your API key under <strong>App Settings</strong>, then return here to load device lists or upload scans.
-                </p>
 
-                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-                    <button class="btn-success" onclick="fetchAndUploadGoveeDevices()">🌐 Fetch & Upload from Govee Cloud</button>
-                    <button class="btn-primary" onclick="loadGoveeDeviceList()">🔄 Load Saved Results</button>
-                </div>
-
-                <div id="goveeDevicesList" style="background: #f5f5f5; padding: 20px; border-radius: 8px; min-height: 100px;">
-                    <p style="color: #999;">Add your Govee API key in the App Settings tab and click "Fetch & Upload from Govee Cloud" to discover and save your devices.</p>
-                </div>
-            </div>
         </div>
 
         <!-- YouTube Tab -->
@@ -662,16 +638,7 @@
             <div id="appsContainer" class="app-grid"></div>
         </div>
 
-        <!-- Lights Tab -->
-        <div class="tab-content" id="lights-tab">
-            <div class="config-header">
-                <h2>Light Control Buttons</h2>
-                <button class="add-button" onclick="addLightButton()">
-                    ➕ Add Light Button
-                </button>
-            </div>
-            <div id="lightsContainer" class="app-grid"></div>
-        </div>
+
 
         <!-- JSON Tab -->
         <div class="tab-content" id="json-tab">
@@ -707,9 +674,11 @@
             </div>
 
             <h4 style="margin-top: 20px; margin-bottom: 10px;">📡 BLE Beacons for Room Detection</h4>
-            <p style="color: #666; font-size: 12px; margin-bottom: 10px;">Add Bluetooth devices that will be used to detect when you're in this room.</p>
+            <p style="color: #666; font-size: 12px; margin-bottom: 10px;">Add Bluetooth devices that will be used to
+                detect when you're in this room.</p>
             <div id="roomBeacons"></div>
-            <button class="btn-secondary btn-sm" onclick="addBeacon()" style="margin-bottom: 20px;">+ Add BLE Beacon</button>
+            <button class="btn-secondary btn-sm" onclick="addBeacon()" style="margin-bottom: 20px;">+ Add BLE
+                Beacon</button>
 
             <div class="modal-actions">
                 <button class="btn-success" onclick="saveRoom()">Save Room</button>
@@ -776,54 +745,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Light Button Edit Modal -->
-    <div class="modal" id="lightModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="lightModalTitle">Add Light Button</h2>
-                <button class="modal-close" onclick="closeLightModal()">×</button>
-            </div>
-
-            <!-- Device Info Retrieval Section -->
-            <div style="background: #f0f9ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
-                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
-                    <input type="text" id="lightDeviceQuery" placeholder="192.168.1.100 (LAN) or Device ID (Cloud)" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;">
-                    <button class="btn-primary btn-sm" onclick="queryLightDevice()" style="white-space: nowrap;">🔍 Get Info</button>
-                </div>
-                <div id="lightDeviceInfo" style="font-size: 12px; color: #666; display: none;"></div>
-            </div>
-
-            <div class="input-group">
-                <label>Label</label>
-                <input type="text" id="lightLabel" placeholder="e.g., Bedroom Ceiling">
-            </div>
-            <div class="input-group">
-                <label>Emoji</label>
-                <input type="text" id="lightEmoji" placeholder="💡" maxlength="2">
-            </div>
-
-            <!-- Light Routine Controls -->
-            <div id="lightRoutineControls">
-                <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                    <h4 style="margin-bottom: 10px; font-size: 14px;">Routine Steps</h4>
-                    <div id="lightRoutineSteps"></div>
-                    <button type="button" class="btn-secondary btn-sm" onclick="addLightRoutineStep()" style="margin-top: 10px;">+ Add Step</button>
-                </div>
-            </div>
-
-            <div class="input-group">
-                <label>Show in Rooms (optional)</label>
-                <div id="lightRoomsSelector" style="margin-top: 8px;"></div>
-                <div class="help-text">Leave empty to show in all rooms</div>
-            </div>
-            <div class="modal-actions">
-                <button class="btn-success" onclick="saveLightButton()">Save Button</button>
-                <button class="btn-secondary" onclick="closeLightModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         const API_BASE_URL = '/api/config';
         let appConfig = null;
@@ -831,64 +752,13 @@
         let currentEditingRoomIndex = -1;
         let currentEditingYouTubeIndex = -1;
         let currentEditingAppIndex = -1;
-        let currentEditingLightIndex = -1;
+
 
         // Device Registry Functions
         const DEVICE_REGISTRY_KEY = 'device_registry';
-        const CACHED_GOVEE_DEVICES_KEY = 'editor_cached_govee_devices';
 
-        function getDeviceRegistry() {
-            try {
-                const data = localStorage.getItem(DEVICE_REGISTRY_KEY);
-                return data ? JSON.parse(data) : { roku: {}, govee: {} };
-            } catch (error) {
-                console.error('Failed to parse device registry:', error);
-                return { roku: {}, govee: {} };
-            }
-        }
 
-        function getAllGoveeDevices() {
-            // Try to get cached Govee devices from the editor (loaded from cloud)
-            try {
-                const cached = localStorage.getItem(CACHED_GOVEE_DEVICES_KEY);
-                if (cached) {
-                    const data = JSON.parse(cached);
-                    return data.devices || [];
-                }
-            } catch (error) {
-                console.error('Failed to parse cached Govee devices:', error);
-            }
 
-            // Fallback to old registry format
-            const registry = getDeviceRegistry();
-            return Object.values(registry.govee || {});
-        }
-
-        function buildDeviceDropdownOptions(selectedDevice) {
-            const devices = getAllGoveeDevices();
-            let options = '<option value="">Select a device...</option>';
-
-            // Add discovered devices
-            devices.forEach(device => {
-                // Handle both cloud API format (device ID) and LAN format (IP)
-                const deviceValue = device.device || device.ip || device.device_id || device.mac;
-                const deviceName = device.deviceName || device.name || 'Unnamed Device';
-                const deviceLabel = `${deviceName} (${deviceValue})`;
-                const selected = deviceValue === selectedDevice ? 'selected' : '';
-
-                if (deviceValue) {
-                    options += `<option value="${deviceValue}" ${selected}>${deviceLabel}</option>`;
-                }
-            });
-
-            // Add manual entry option for custom/unlisted devices
-            if (selectedDevice && !devices.find(d => (d.device || d.ip || d.device_id || d.mac) === selectedDevice)) {
-                options += `<option value="${selectedDevice}" selected>${selectedDevice} (Manual)</option>`;
-            }
-            options += '<option value="__MANUAL__">Enter manually...</option>';
-
-            return options;
-        }
 
         // Tab switching
         document.querySelectorAll('.tab-button').forEach(button => {
@@ -918,1338 +788,664 @@
             }
             const words = passphrase.split(/\s+/);
             if (words.length < 5) {
-                showMessage(`Passphrase must be at least 5 words (you have ${words.length})`, 'error');
-                return null;
-            }
-            return passphrase;
-        }
-
-        async function loadAllConfigs() {
-            const passphrase = getPassphrase();
-            if (!passphrase) return;
-
-            try {
-                const [appResponse, roomsResponse] = await Promise.all([
-                    fetch(`${API_BASE_URL}?passphrase=${encodeURIComponent(passphrase)}&type=app-config&_t=${Date.now()}`, { cache: 'no-store' }),
-                    fetch(`${API_BASE_URL}?passphrase=${encodeURIComponent(passphrase)}&type=rooms&_t=${Date.now()}`, { cache: 'no-store' })
-                ]);
-
-                if (!appResponse.ok || !roomsResponse.ok) {
-                    throw new Error('Failed to load configs');
+                showMessage(`Passphrase must be at least 5 words (you have
+                    ${words.length})`, 'error'); return null;
+            } return passphrase;
+        } async function loadAllConfigs() {
+            const passphrase = getPassphrase(); if (!passphrase) return; try {
+                const [appResponse,
+                    roomsResponse] = await Promise.all([
+                        fetch(`${API_BASE_URL}?passphrase=${encodeURIComponent(passphrase)}&type=app-config&_t=${Date.now()}`,
+                            { cache: 'no-store' }),
+                        fetch(`${API_BASE_URL}?passphrase=${encodeURIComponent(passphrase)}&type=rooms&_t=${Date.now()}`, {
+                            cache: 'no-store'
+                        })]); if (!appResponse.ok || !roomsResponse.ok) {
+                            throw new Error('Failed to load
+                    configs'); } appConfig=await appResponse.json(); roomsConfig=await roomsResponse.json();
+                    renderAllViews(); showMessage('✅ Configs loaded successfully!', 'success');
+                        } catch (error) {
+                            showMessage(`❌ Failed to load: ${error.message}`, 'error'); console.error(error);
+                        }
+            } async
+            function saveAllConfigs() {
+                const passphrase = getPassphrase(); if (!passphrase) return; // Sync JSON
+                    changes back to objects try {
+                    const
+                    appJsonText = document.getElementById('appConfigJson').value.trim(); const
+                        roomsJsonText = document.getElementById('roomsConfigJson').value.trim(); if (appJsonText)
+                        appConfig = JSON.parse(appJsonText); if (roomsJsonText) roomsConfig = JSON.parse(roomsJsonText);
+                } catch
+                (error) { showMessage(`❌ Invalid JSON: ${error.message}`, 'error'); return; } try {
+                    const
+                    [appResponse, roomsResponse] = await Promise.all([fetch(`${API_BASE_URL}?type=app-config`, {
+                        method: 'POST', headers: {
+                            'Content-Type': 'application/json', 'Authorization': `Bearer
+                    ${passphrase}`
+                        }, body: JSON.stringify(appConfig)
+                    }), fetch(`${API_BASE_URL}?type=rooms`, {
+                        method: 'POST', headers: {
+                            'Content-Type': 'application/json', 'Authorization': `Bearer
+                    ${passphrase}`
+                        }, body: JSON.stringify(roomsConfig)
+                    })]); if (!appResponse.ok || !roomsResponse.ok) { throw new Error('Failed to save configs'); } showMessage('✅ All configs saved to
+                    cloud!', 'success' ); } catch (error) { showMessage(`❌ Failed to save: ${error.message}`, 'error' );
+                    console.error(error);
+                } } function ensureAppConfigStructure() {
+                    if (!appConfig || typeof appConfig
+                        !== 'object') { appConfig = { tabs: [] }; } if (!Array.isArray(appConfig.tabs)) { appConfig.tabs = []; }
+                    if (!appConfig.settings || typeof appConfig.settings !== 'object') { appConfig.settings = {}; } if
+                        (typeof appConfig.settings.parentalPin !== 'string') { appConfig.settings.parentalPin = ''; }
                 }
-
-                appConfig = await appResponse.json();
-                roomsConfig = await roomsResponse.json();
-
-                renderAllViews();
-                showMessage('✅ Configs loaded successfully!', 'success');
-            } catch (error) {
-                showMessage(`❌ Failed to load: ${error.message}`, 'error');
-                console.error(error);
-            }
-        }
-
-        async function saveAllConfigs() {
-            const passphrase = getPassphrase();
-            if (!passphrase) return;
-
-            // Sync JSON changes back to objects
-            try {
-                const appJsonText = document.getElementById('appConfigJson').value.trim();
-                const roomsJsonText = document.getElementById('roomsConfigJson').value.trim();
-                if (appJsonText) appConfig = JSON.parse(appJsonText);
-                if (roomsJsonText) roomsConfig = JSON.parse(roomsJsonText);
-            } catch (error) {
-                showMessage(`❌ Invalid JSON: ${error.message}`, 'error');
-                return;
+            function getAppSettings() { ensureAppConfigStructure(); return appConfig.settings; } function
+                syncAppConfigJson() {
+                    const textarea = document.getElementById('appConfigJson'); if (textarea &&
+                        appConfig) { textarea.value = JSON.stringify(appConfig, null, 2); }
+            } function
+                updateAppSettingsStatus() {
+                    const statusEl = document.getElementById('appSettingsStatus'); if
+                        (!statusEl) return; const settings = getAppSettings(); const pin = (settings.parentalPin || '').trim();
+                const maskedPin = pin ? '•'.repeat(pin.length) : 'Default'; const lines = []; lines.push(pin ?
+                    `Parental PIN set to ${maskedPin}.` : 'Parental PIN will fall back to 1234.');
+                lines.push('Click "Save All Configs" to push updates.'); statusEl.textContent = lines.join(' ');
             }
 
-            try {
-                const [appResponse, roomsResponse] = await Promise.all([
-                    fetch(`${API_BASE_URL}?type=app-config`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${passphrase}`
-                        },
-                        body: JSON.stringify(appConfig)
-                    }),
-                    fetch(`${API_BASE_URL}?type=rooms`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${passphrase}`
-                        },
-                        body: JSON.stringify(roomsConfig)
-                    })
-                ]);
-
-                if (!appResponse.ok || !roomsResponse.ok) {
-                    throw new Error('Failed to save configs');
-                }
-
-                showMessage('✅ All configs saved to cloud!', 'success');
-            } catch (error) {
-                showMessage(`❌ Failed to save: ${error.message}`, 'error');
-                console.error(error);
+            function renderAppSettings() {
+                ensureAppConfigStructure();
+                const settings = appConfig.settings;
+                const pinInput = document.getElementById(' parentalPinEditor'); if (pinInput && pinInput
+                    !== document.activeElement) { pinInput.value = settings.parentalPin || ''; }
+                updateAppSettingsStatus();
+            } function updateAppSettingsFromInputs() {
+                if (!appConfig) return; const
+                    settings = getAppSettings(); const pinInput = document.getElementById('parentalPinEditor'); if
+                    (pinInput) {
+                        let digits = pinInput.value.replace(/\D/g, '').slice(0, 4); if (pinInput.value
+                            !== digits) { pinInput.value = digits; } settings.parentalPin = digits;
+                } syncAppConfigJson();
+                updateAppSettingsStatus();
+            } function renderAllViews() {
+                ensureAppConfigStructure(); renderRooms();
+                renderYouTubeVideos(); renderAppButtons(); renderAppSettings();
+                document.getElementById('appConfigJson').value = JSON.stringify(appConfig, null, 2);
+                document.getElementById('roomsConfigJson').value = JSON.stringify(roomsConfig, null, 2);
             }
-        }
-
-        function ensureAppConfigStructure() {
-            if (!appConfig || typeof appConfig !== 'object') {
-                appConfig = { tabs: [] };
-            }
-            if (!Array.isArray(appConfig.tabs)) {
-                appConfig.tabs = [];
-            }
-            if (!appConfig.settings || typeof appConfig.settings !== 'object') {
-                appConfig.settings = {};
-            }
-            if (typeof appConfig.settings.goveeApiKey !== 'string') {
-                appConfig.settings.goveeApiKey = '';
-            }
-            if (typeof appConfig.settings.parentalPin !== 'string') {
-                appConfig.settings.parentalPin = '';
-            }
-        }
-
-        function getAppSettings() {
-            ensureAppConfigStructure();
-            return appConfig.settings;
-        }
-
-        function syncAppConfigJson() {
-            const textarea = document.getElementById('appConfigJson');
-            if (textarea && appConfig) {
-                textarea.value = JSON.stringify(appConfig, null, 2);
-            }
-        }
-
-        function updateAppSettingsStatus() {
-            const statusEl = document.getElementById('appSettingsStatus');
-            if (!statusEl) return;
-
-            const settings = getAppSettings();
-            const hasKey = Boolean(settings.goveeApiKey?.trim());
-            const pin = (settings.parentalPin || '').trim();
-            const maskedPin = pin ? '•'.repeat(pin.length) : 'Default';
-
-            const lines = [];
-            lines.push(hasKey ? 'Govee API key will sync to the app.' : 'No Govee API key saved yet.');
-            lines.push(pin ? `Parental PIN set to ${maskedPin}.` : 'Parental PIN will fall back to 1234.');
-            lines.push('Click "Save All Configs" to push updates.');
-            statusEl.textContent = lines.join(' ');
-        }
-
-        function renderAppSettings() {
-            ensureAppConfigStructure();
-            const settings = appConfig.settings;
-            const apiInput = document.getElementById('goveeApiKeyEditor');
-            const pinInput = document.getElementById('parentalPinEditor');
-
-            if (apiInput && apiInput !== document.activeElement) {
-                apiInput.value = settings.goveeApiKey || '';
-            }
-            if (pinInput && pinInput !== document.activeElement) {
-                pinInput.value = settings.parentalPin || '';
-            }
-
-            updateAppSettingsStatus();
-        }
-
-        function updateAppSettingsFromInputs() {
-            if (!appConfig) return;
-            const settings = getAppSettings();
-            const apiInput = document.getElementById('goveeApiKeyEditor');
-            const pinInput = document.getElementById('parentalPinEditor');
-
-            if (apiInput) {
-                settings.goveeApiKey = apiInput.value.trim();
-            }
-            if (pinInput) {
-                let digits = pinInput.value.replace(/\D/g, '').slice(0, 4);
-                if (pinInput.value !== digits) {
-                    pinInput.value = digits;
-                }
-                settings.parentalPin = digits;
-            }
-
-            syncAppConfigJson();
-            updateAppSettingsStatus();
-        }
-
-        function renderAllViews() {
-            ensureAppConfigStructure();
-            renderRooms();
-            renderYouTubeVideos();
-            renderAppButtons();
-            renderLightButtons();
-            renderAppSettings();
-            document.getElementById('appConfigJson').value = JSON.stringify(appConfig, null, 2);
-            document.getElementById('roomsConfigJson').value = JSON.stringify(roomsConfig, null, 2);
-        }
-
-        // ===== ROOMS =====
-        function renderRooms() {
-            const container = document.getElementById('roomsContainer');
+            //=====ROOMS=====function renderRooms() { const container=document.getElementById('roomsContainer');
             if (!roomsConfig || !roomsConfig.rooms || roomsConfig.rooms.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏠</div><p>No rooms configured. Click "Add Room" to get started.</p></div>';
-                return;
-            }
-
-            container.innerHTML = roomsConfig.rooms.map((room, index) => `
-                <div class="room-card">
-                    <div class="room-header">
-                        <div class="room-emoji">${room.emoji || '🏠'}</div>
-                        <div class="room-info">
-                            <h3>${room.name}</h3>
-                            <div class="room-id">${room.id}</div>
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏠</div><p>No rooms configured. Click "Add Room" to get started.</p></div>'
+                    ; return;
+            } container.innerHTML = roomsConfig.rooms.map((room, index) => `
+                    <div class="room-card">
+                        <div class="room-header">
+                            <div class="room-emoji">${room.emoji || '🏠'}</div>
+                            <div class="room-info">
+                                <h3>${room.name}</h3>
+                                <div class="room-id">${room.id}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="device-section">
-                        <h4>📡 BLE Beacons (${room.beacons?.length || 0})</h4>
-                        <div class="device-list">
-                            ${room.beacons?.length > 0 ? room.beacons.map(beacon => `
+                        <div class="device-section">
+                            <h4>📡 BLE Beacons (${room.beacons?.length || 0})</h4>
+                            <div class="device-list">
+                                ${room.beacons?.length > 0 ? room.beacons.map(beacon => `
                                 <div class="device-item">
                                     <div class="device-info">
                                         <span class="device-name">${beacon.name || 'Unnamed'}</span>
-                                        <span style="font-size: 11px; color: #666;">${beacon.address} • RSSI: ${beacon.rssiThreshold}dB</span>
+                                        <span style="font-size: 11px; color: #666;">${beacon.address} • RSSI:
+                                            ${beacon.rssiThreshold}dB</span>
                                     </div>
                                 </div>
-                            `).join('') : '<div style="text-align: center; color: #999; padding: 10px;">No BLE beacons configured</div>'}
+                                `).join('') : '<div style="text-align: center; color: #999; padding: 10px;">No BLE
+                                    beacons configured</div > '}
+                            </div >
+                        </div >
+                <button class="btn-primary btn-sm" style="width: 100%; margin-top: 10px;"
+                    onclick="editRoom(${index})">
+                    ✏️ Edit Room
+                </button>
+                    </div >
+                `).join('');
+                    }
+
+                    function addRoom() {
+                    currentEditingRoomIndex = -1;
+                    document.getElementById('roomModalTitle').textContent = 'Add New Room';
+                    document.getElementById('roomName').value = '';
+                    document.getElementById('roomEmoji').value = '🏠';
+                    document.getElementById('roomId').value = '';
+                    document.getElementById('roomBeacons').innerHTML = '';
+                    document.getElementById('roomModal').classList.add('show');
+                    }
+
+                    function editRoom(index) {
+                    currentEditingRoomIndex = index;
+                    const room = roomsConfig.rooms[index];
+                    document.getElementById('roomModalTitle').textContent = 'Edit Room';
+                    document.getElementById('roomName').value = room.name;
+                    document.getElementById('roomEmoji').value = room.emoji || '🏠';
+                    document.getElementById('roomId').value = room.id;
+
+                    // Render beacon inputs
+                    const beaconsContainer = document.getElementById('roomBeacons');
+                    beaconsContainer.innerHTML = (room.beacons || []).map((beacon, i) => `
+                < div class= "input-group"
+                        style = "background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e0e0e0;" >
+                        <div style="margin-bottom: 12px;">
+                            <label
+                                style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">Device
+                                Name</label>
+                            <input type="text" placeholder="e.g., Living Room TV" value="${beacon.name || ''}"
+                                data-beacon-index="${i}" data-field="name">
                         </div>
+                        <div style="margin-bottom: 12px;">
+                            <label
+                                style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">BLE
+                                Address (MAC)</label>
+                            <input type="text" placeholder="AA:BB:CC:DD:EE:FF" value="${beacon.address || ''}"
+                                data-beacon-index="${i}" data-field="address">
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <label
+                                style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">Type</label>
+                            <input type="text" placeholder="ble" value="${beacon.type || 'ble'}"
+                                data-beacon-index="${i}" data-field="type">
+                            <div style="font-size: 11px; color: #888; margin-top: 4px;">Usually "ble" for Bluetooth Low
+                                Energy</div>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <label
+                                style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Expected
+                                RSSI (Signal Strength)</label>
+                            <input type="number" placeholder="-50" value="${beacon.expectedRssi || -50}"
+                                data-beacon-index="${i}" data-field="expectedRssi">
+                            <div style="font-size: 11px; color: #888; margin-top: 4px;">Typical signal strength when
+                                you're in this room (e.g., -50)</div>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">RSSI
+                                Threshold (Minimum Signal)</label>
+                            <input type="number" placeholder="-70" value="${beacon.rssiThreshold || -70}"
+                                data-beacon-index="${i}" data-field="rssiThreshold">
+                            <div style="font-size: 11px; color: #888; margin-top: 4px;">Minimum signal to consider
+                                you're in this room (e.g., -70)</div>
+                        </div>
+                        <button class="btn-danger btn-sm" onclick="removeBeacon(${i})" style="margin-top: 8px;">Remove
+                            Beacon</button>
+                    </div >
+                `).join('');
+
+                    document.getElementById('roomModal').classList.add('show');
+                    }
+
+                    function addBeacon() {
+                    const container = document.getElementById('roomBeacons');
+                    const index = container.children.length;
+                    const div = document.createElement('div');
+                    div.className = 'input-group';
+                    div.style.cssText = 'background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px;
+                    border: 1px solid #e0e0e0;';
+                    div.innerHTML = `
+                < div style = "margin-bottom: 12px;" >
+                        <label
+                            style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">Device
+                            Name</label>
+                        <input type="text" placeholder="e.g., Living Room TV" data-beacon-index="${index}"
+                            data-field="name">
                     </div>
-                    <button class="btn-primary btn-sm" style="width: 100%; margin-top: 10px;" onclick="editRoom(${index})">
-                        ✏️ Edit Room
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        function addRoom() {
-            currentEditingRoomIndex = -1;
-            document.getElementById('roomModalTitle').textContent = 'Add New Room';
-            document.getElementById('roomName').value = '';
-            document.getElementById('roomEmoji').value = '🏠';
-            document.getElementById('roomId').value = '';
-            document.getElementById('roomBeacons').innerHTML = '';
-            document.getElementById('roomModal').classList.add('show');
-        }
-
-        function editRoom(index) {
-            currentEditingRoomIndex = index;
-            const room = roomsConfig.rooms[index];
-            document.getElementById('roomModalTitle').textContent = 'Edit Room';
-            document.getElementById('roomName').value = room.name;
-            document.getElementById('roomEmoji').value = room.emoji || '🏠';
-            document.getElementById('roomId').value = room.id;
-
-            // Render beacon inputs
-            const beaconsContainer = document.getElementById('roomBeacons');
-            beaconsContainer.innerHTML = (room.beacons || []).map((beacon, i) => `
-                <div class="input-group" style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e0e0e0;">
                     <div style="margin-bottom: 12px;">
-                        <label style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">Device Name</label>
-                        <input type="text" placeholder="e.g., Living Room TV" value="${beacon.name || ''}" data-beacon-index="${i}" data-field="name">
+                        <label
+                            style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">BLE
+                            Address (MAC)</label>
+                        <input type="text" placeholder="AA:BB:CC:DD:EE:FF" data-beacon-index="${index}"
+                            data-field="address">
                     </div>
                     <div style="margin-bottom: 12px;">
-                        <label style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">BLE Address (MAC)</label>
-                        <input type="text" placeholder="AA:BB:CC:DD:EE:FF" value="${beacon.address || ''}" data-beacon-index="${i}" data-field="address">
+                        <label
+                            style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">Type</label>
+                        <input type="text" placeholder="ble" value="ble" data-beacon-index="${index}" data-field="type">
+                        <div style="font-size: 11px; color: #888; margin-top: 4px;">Usually "ble" for Bluetooth Low
+                            Energy</div>
                     </div>
                     <div style="margin-bottom: 12px;">
-                        <label style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">Type</label>
-                        <input type="text" placeholder="ble" value="${beacon.type || 'ble'}" data-beacon-index="${i}" data-field="type">
-                        <div style="font-size: 11px; color: #888; margin-top: 4px;">Usually "ble" for Bluetooth Low Energy</div>
+                        <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Expected
+                            RSSI (Signal Strength)</label>
+                        <input type="number" placeholder="-50" value="-50" data-beacon-index="${index}"
+                            data-field="expectedRssi">
+                        <div style="font-size: 11px; color: #888; margin-top: 4px;">Typical signal strength when you're
+                            in this room (e.g., -50)</div>
                     </div>
                     <div style="margin-bottom: 12px;">
-                        <label style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">Expected RSSI (Signal Strength)</label>
-                        <input type="number" placeholder="-50" value="${beacon.expectedRssi || -50}" data-beacon-index="${i}" data-field="expectedRssi">
-                        <div style="font-size: 11px; color: #888; margin-top: 4px;">Typical signal strength when you're in this room (e.g., -50)</div>
+                        <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">RSSI
+                            Threshold (Minimum Signal)</label>
+                        <input type="number" placeholder="-70" value="-70" data-beacon-index="${index}"
+                            data-field="rssiThreshold">
+                        <div style="font-size: 11px; color: #888; margin-top: 4px;">Minimum signal to consider you're in
+                            this room (e.g., -70)</div>
                     </div>
-                    <div style="margin-bottom: 12px;">
-                        <label style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">RSSI Threshold (Minimum Signal)</label>
-                        <input type="number" placeholder="-70" value="${beacon.rssiThreshold || -70}" data-beacon-index="${i}" data-field="rssiThreshold">
-                        <div style="font-size: 11px; color: #888; margin-top: 4px;">Minimum signal to consider you're in this room (e.g., -70)</div>
-                    </div>
-                    <button class="btn-danger btn-sm" onclick="removeBeacon(${i})" style="margin-top: 8px;">Remove Beacon</button>
-                </div>
-            `).join('');
+                    <button class="btn-danger btn-sm" onclick="removeBeacon(${index})" style="margin-top: 8px;">Remove
+                        Beacon</button>
+                    `;
+                    container.appendChild(div);
+                    }
 
-            document.getElementById('roomModal').classList.add('show');
-        }
+                    function removeBeacon(index) {
+                    const container = document.getElementById('roomBeacons');
+                    container.children[index].remove();
+                    }
 
-        function addBeacon() {
-            const container = document.getElementById('roomBeacons');
-            const index = container.children.length;
-            const div = document.createElement('div');
-            div.className = 'input-group';
-            div.style.cssText = 'background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e0e0e0;';
-            div.innerHTML = `
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">Device Name</label>
-                    <input type="text" placeholder="e.g., Living Room TV" data-beacon-index="${index}" data-field="name">
-                </div>
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">BLE Address (MAC)</label>
-                    <input type="text" placeholder="AA:BB:CC:DD:EE:FF" data-beacon-index="${index}" data-field="address">
-                </div>
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">Type</label>
-                    <input type="text" placeholder="ble" value="ble" data-beacon-index="${index}" data-field="type">
-                    <div style="font-size: 11px; color: #888; margin-top: 4px;">Usually "ble" for Bluetooth Low Energy</div>
-                </div>
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">Expected RSSI (Signal Strength)</label>
-                    <input type="number" placeholder="-50" value="-50" data-beacon-index="${index}" data-field="expectedRssi">
-                    <div style="font-size: 11px; color: #888; margin-top: 4px;">Typical signal strength when you're in this room (e.g., -50)</div>
-                </div>
-                <div style="margin-bottom: 12px;">
-                    <label style="display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 13px;">RSSI Threshold (Minimum Signal)</label>
-                    <input type="number" placeholder="-70" value="-70" data-beacon-index="${index}" data-field="rssiThreshold">
-                    <div style="font-size: 11px; color: #888; margin-top: 4px;">Minimum signal to consider you're in this room (e.g., -70)</div>
-                </div>
-                <button class="btn-danger btn-sm" onclick="removeBeacon(${index})" style="margin-top: 8px;">Remove Beacon</button>
-            `;
-            container.appendChild(div);
-        }
+                    function saveRoom() {
+                    const name = document.getElementById('roomName').value.trim();
+                    const emoji = document.getElementById('roomEmoji').value.trim();
+                    const id = document.getElementById('roomId').value.trim();
 
-        function removeBeacon(index) {
-            const container = document.getElementById('roomBeacons');
-            container.children[index].remove();
-        }
+                    if (!name || !id) {
+                    showMessage('Room name and ID are required', 'error');
+                    return;
+                    }
 
-        function saveRoom() {
-            const name = document.getElementById('roomName').value.trim();
-            const emoji = document.getElementById('roomEmoji').value.trim();
-            const id = document.getElementById('roomId').value.trim();
-
-            if (!name || !id) {
-                showMessage('Room name and ID are required', 'error');
-                return;
-            }
-
-            // Collect BLE beacons
-            const beacons = Array.from(document.querySelectorAll('[data-beacon-index]'))
-                .reduce((acc, input) => {
+                    // Collect BLE beacons
+                    const beacons = Array.from(document.querySelectorAll('[data-beacon-index]'))
+                    .reduce((acc, input) => {
                     const index = parseInt(input.dataset.beaconIndex);
                     const field = input.dataset.field;
                     if (!acc[index]) acc[index] = {};
                     acc[index][field] = input.value.trim();
                     return acc;
-                }, [])
-                .filter(beacon => beacon.address)
-                .map(beacon => ({
+                    }, [])
+                    .filter(beacon => beacon.address)
+                    .map(beacon => ({
                     type: beacon.type || 'ble',
                     name: beacon.name || 'Unnamed',
                     address: beacon.address,
                     expectedRssi: parseInt(beacon.expectedRssi) || -50,
                     rssiThreshold: parseInt(beacon.rssiThreshold) || -70
-                }));
+                    }));
 
-            const room = {
-                id,
-                name,
-                emoji,
-                beacons
-            };
+                    const room = {
+                    id,
+                    name,
+                    emoji,
+                    beacons
+                    };
 
-            if (currentEditingRoomIndex >= 0) {
-                roomsConfig.rooms[currentEditingRoomIndex] = room;
-            } else {
-                roomsConfig.rooms.push(room);
-            }
+                    if (currentEditingRoomIndex >= 0) {
+                    roomsConfig.rooms[currentEditingRoomIndex] = room;
+                    } else {
+                    roomsConfig.rooms.push(room);
+                    }
 
-            renderAllViews();
-            closeRoomModal();
-            showMessage('✅ Room saved! Remember to click "Save All to Cloud"', 'success');
-        }
+                    renderAllViews();
+                    closeRoomModal();
+                    showMessage('✅ Room saved! Remember to click "Save All to Cloud"', 'success');
+                    }
 
-        function deleteRoom() {
-            if (currentEditingRoomIndex >= 0) {
-                if (confirm('Are you sure you want to delete this room?')) {
+                    function deleteRoom() {
+                    if (currentEditingRoomIndex >= 0) {
+                    if (confirm('Are you sure you want to delete this room?')) {
                     roomsConfig.rooms.splice(currentEditingRoomIndex, 1);
                     renderAllViews();
                     closeRoomModal();
                     showMessage('✅ Room deleted! Remember to click "Save All to Cloud"', 'success');
-                }
-            }
-        }
+                    }
+                    }
+                    }
 
-        function closeRoomModal() {
-            document.getElementById('roomModal').classList.remove('show');
-        }
+                    function closeRoomModal() {
+                    document.getElementById('roomModal').classList.remove('show');
+                    }
 
-        // ===== YOUTUBE =====
-        function renderYouTubeVideos() {
-            const container = document.getElementById('youtubeContainer');
-            const appsTab = appConfig?.tabs?.find(t => t.id === 'apps');
-            const videos = appsTab?.quickLaunch || [];
+                    // ===== YOUTUBE =====
+                    function renderYouTubeVideos() {
+                    const container = document.getElementById('youtubeContainer');
+                    const appsTab = appConfig?.tabs?.find(t => t.id === 'apps');
+                    const videos = appsTab?.quickLaunch || [];
 
-            if (videos.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📺</div><p>No YouTube videos configured. Click "Add Video" to get started.</p></div>';
-                return;
-            }
+                    if (videos.length === 0) {
+                    container.innerHTML = '<div class="empty-state">
+                        <div class="empty-state-icon">📺</div>
+                        <p>No YouTube videos configured. Click "Add Video" to get started.</p>
+                    </div>';
+                    return;
+                    }
 
-            container.innerHTML = videos.map((video, index) => `
-                <div class="youtube-card">
-                    <div class="youtube-thumbnail">
-                        <img src="https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg" alt="${video.label}">
-                    </div>
-                    <div class="youtube-info">
-                        <div class="youtube-label">${video.label}</div>
-                        <div class="youtube-video-id">${video.videoId}</div>
-                        <div class="youtube-actions">
-                            <button class="btn-primary btn-sm" onclick="editYouTubeVideo(${index})">Edit</button>
-                            <button class="btn-danger btn-sm" onclick="deleteYouTubeVideo(${index})">Delete</button>
+                    container.innerHTML = videos.map((video, index) => `
+                < div class= "youtube-card" >
+                        <div class="youtube-thumbnail">
+                            <img src="https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg" alt="${video.label}">
                         </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function addYouTubeVideo() {
-            currentEditingYouTubeIndex = -1;
-            document.getElementById('youtubeModalTitle').textContent = 'Add YouTube Video';
-            document.getElementById('youtubeUrl').value = '';
-            document.getElementById('youtubeLabel').value = '';
-            document.getElementById('youtubeModal').classList.add('show');
-        }
-
-        function editYouTubeVideo(index) {
-            currentEditingYouTubeIndex = index;
-            const appsTab = appConfig.tabs.find(t => t.id === 'apps');
-            const video = appsTab.quickLaunch[index];
-            document.getElementById('youtubeModalTitle').textContent = 'Edit YouTube Video';
-            document.getElementById('youtubeUrl').value = video.videoId;
-            document.getElementById('youtubeLabel').value = video.label;
-            document.getElementById('youtubeModal').classList.add('show');
-        }
-
-        function extractYouTubeId(input) {
-            // If it's already just an ID, return it
-            if (input.length === 11 && !input.includes('/') && !input.includes('?')) {
-                return input;
-            }
-            // Try to extract from URL
-            const patterns = [
-                /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-                /^([a-zA-Z0-9_-]{11})$/
-            ];
-            for (const pattern of patterns) {
-                const match = input.match(pattern);
-                if (match) return match[1];
-            }
-            return null;
-        }
-
-        function saveYouTubeVideo() {
-            const urlInput = document.getElementById('youtubeUrl').value.trim();
-            const label = document.getElementById('youtubeLabel').value.trim();
-
-            if (!urlInput || !label) {
-                showMessage('Video ID/URL and label are required', 'error');
-                return;
-            }
-
-            const videoId = extractYouTubeId(urlInput);
-            if (!videoId) {
-                showMessage('Invalid YouTube URL or video ID', 'error');
-                return;
-            }
-
-            const video = {
-                type: 'youtube',
-                videoId,
-                label
-            };
-
-            const appsTab = appConfig.tabs.find(t => t.id === 'apps');
-            if (!appsTab.quickLaunch) appsTab.quickLaunch = [];
-
-            if (currentEditingYouTubeIndex >= 0) {
-                appsTab.quickLaunch[currentEditingYouTubeIndex] = video;
-            } else {
-                appsTab.quickLaunch.push(video);
-            }
-
-            renderAllViews();
-            closeYouTubeModal();
-            showMessage('✅ Video saved! Remember to click "Save All to Cloud"', 'success');
-        }
-
-        function deleteYouTubeVideo(index) {
-            if (confirm('Are you sure you want to delete this video?')) {
-                const appsTab = appConfig.tabs.find(t => t.id === 'apps');
-                appsTab.quickLaunch.splice(index, 1);
-                renderAllViews();
-                showMessage('✅ Video deleted! Remember to click "Save All to Cloud"', 'success');
-            }
-        }
-
-        function closeYouTubeModal() {
-            document.getElementById('youtubeModal').classList.remove('show');
-        }
-
-        // ===== APPS =====
-        function renderAppButtons() {
-            const container = document.getElementById('appsContainer');
-            const appsTab = appConfig?.tabs?.find(t => t.id === 'apps');
-            const apps = appsTab?.buttons || [];
-
-            if (apps.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎬</div><p>No app buttons configured. Click "Add App" to get started.</p></div>';
-                return;
-            }
-
-            container.innerHTML = apps.map((app, index) => `
-                <div class="app-card">
-                    <div class="app-thumbnail">
-                        ${app.thumbnail ? `<img src="${app.thumbnail}" alt="${app.label || app.appName}">` : `<div>${app.emoji || '📱'}</div>`}
-                    </div>
-                    <div class="app-info">
-                        <div class="app-label">${app.label || app.appName}</div>
-                        <div class="app-id">App ID: ${app.appId}</div>
-                        <div style="display: flex; gap: 8px;">
-                            <button class="btn-primary btn-sm" onclick="editAppButton(${index})">Edit</button>
-                            <button class="btn-danger btn-sm" onclick="deleteAppButton(${index})">Delete</button>
+                        <div class="youtube-info">
+                            <div class="youtube-label">${video.label}</div>
+                            <div class="youtube-video-id">${video.videoId}</div>
+                            <div class="youtube-actions">
+                                <button class="btn-primary btn-sm" onclick="editYouTubeVideo(${index})">Edit</button>
+                                <button class="btn-danger btn-sm" onclick="deleteYouTubeVideo(${index})">Delete</button>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            `).join('');
-        }
+                    </div >
+                `).join('');
+                    }
 
-        function addAppButton() {
-            currentEditingAppIndex = -1;
-            document.getElementById('appModalTitle').textContent = 'Add App Button';
-            document.getElementById('appName').value = '';
-            document.getElementById('appId').value = '';
-            document.getElementById('appEmoji').value = '';
-            document.getElementById('appLabel').value = '';
-            document.getElementById('appThumbnail').value = '';
-            document.getElementById('appModal').classList.add('show');
-        }
+                    function addYouTubeVideo() {
+                    currentEditingYouTubeIndex = -1;
+                    document.getElementById('youtubeModalTitle').textContent = 'Add YouTube Video';
+                    document.getElementById('youtubeUrl').value = '';
+                    document.getElementById('youtubeLabel').value = '';
+                    document.getElementById('youtubeModal').classList.add('show');
+                    }
 
-        function editAppButton(index) {
-            currentEditingAppIndex = index;
-            const appsTab = appConfig.tabs.find(t => t.id === 'apps');
-            const app = appsTab.buttons[index];
-            document.getElementById('appModalTitle').textContent = 'Edit App Button';
-            document.getElementById('appName').value = app.appName || '';
-            document.getElementById('appId').value = app.appId || '';
-            document.getElementById('appEmoji').value = app.emoji || '';
-            document.getElementById('appLabel').value = app.label || '';
-            document.getElementById('appThumbnail').value = app.thumbnail || '';
-            document.getElementById('appModal').classList.add('show');
-        }
+                    function editYouTubeVideo(index) {
+                    currentEditingYouTubeIndex = index;
+                    const appsTab = appConfig.tabs.find(t => t.id === 'apps');
+                    const video = appsTab.quickLaunch[index];
+                    document.getElementById('youtubeModalTitle').textContent = 'Edit YouTube Video';
+                    document.getElementById('youtubeUrl').value = video.videoId;
+                    document.getElementById('youtubeLabel').value = video.label;
+                    document.getElementById('youtubeModal').classList.add('show');
+                    }
 
-        function saveAppButton() {
-            const appName = document.getElementById('appName').value.trim();
-            const appId = document.getElementById('appId').value.trim();
-            const emoji = document.getElementById('appEmoji').value.trim();
-            const label = document.getElementById('appLabel').value.trim();
-            const thumbnail = document.getElementById('appThumbnail').value.trim();
+                    function extractYouTubeId(input) {
+                    // If it's already just an ID, return it
+                    if (input.length === 11 && !input.includes('/') && !input.includes('?')) {
+                    return input;
+                    }
+                    // Try to extract from URL
+                    const patterns = [
+                    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+                    /^([a-zA-Z0-9_-]{11})$/
+                    ];
+                    for (const pattern of patterns) {
+                    const match = input.match(pattern);
+                    if (match) return match[1];
+                    }
+                    return null;
+                    }
 
-            if (!appName || !appId) {
-                showMessage('App name and ID are required', 'error');
-                return;
-            }
+                    function saveYouTubeVideo() {
+                    const urlInput = document.getElementById('youtubeUrl').value.trim();
+                    const label = document.getElementById('youtubeLabel').value.trim();
 
-            const app = {
-                id: `${appName.toLowerCase().replace(/[^a-z0-9]+/g, '')}Button`,
-                emoji: emoji || '📱',
-                label: label || appName,
-                appId,
-                appName
-            };
+                    if (!urlInput || !label) {
+                    showMessage('Video ID/URL and label are required', 'error');
+                    return;
+                    }
 
-            if (thumbnail) {
-                app.thumbnail = thumbnail;
-            }
+                    const videoId = extractYouTubeId(urlInput);
+                    if (!videoId) {
+                    showMessage('Invalid YouTube URL or video ID', 'error');
+                    return;
+                    }
 
-            const appsTab = appConfig.tabs.find(t => t.id === 'apps');
-            if (!appsTab.buttons) appsTab.buttons = [];
+                    const video = {
+                    type: 'youtube',
+                    videoId,
+                    label
+                    };
 
-            if (currentEditingAppIndex >= 0) {
-                appsTab.buttons[currentEditingAppIndex] = app;
-            } else {
-                appsTab.buttons.push(app);
-            }
+                    const appsTab = appConfig.tabs.find(t => t.id === 'apps');
+                    if (!appsTab.quickLaunch) appsTab.quickLaunch = [];
 
-            renderAllViews();
-            closeAppModal();
-            showMessage('✅ App saved! Remember to click "Save All to Cloud"', 'success');
-        }
+                    if (currentEditingYouTubeIndex >= 0) {
+                    appsTab.quickLaunch[currentEditingYouTubeIndex] = video;
+                    } else {
+                    appsTab.quickLaunch.push(video);
+                    }
 
-        function deleteAppButton(index) {
-            if (confirm('Are you sure you want to delete this app?')) {
-                const appsTab = appConfig.tabs.find(t => t.id === 'apps');
-                appsTab.buttons.splice(index, 1);
-                renderAllViews();
-                showMessage('✅ App deleted! Remember to click "Save All to Cloud"', 'success');
-            }
-        }
+                    renderAllViews();
+                    closeYouTubeModal();
+                    showMessage('✅ Video saved! Remember to click "Save All to Cloud"', 'success');
+                    }
 
-        function closeAppModal() {
-            document.getElementById('appModal').classList.remove('show');
-        }
+                    function deleteYouTubeVideo(index) {
+                    if (confirm('Are you sure you want to delete this video?')) {
+                    const appsTab = appConfig.tabs.find(t => t.id === 'apps');
+                    appsTab.quickLaunch.splice(index, 1);
+                    renderAllViews();
+                    showMessage('✅ Video deleted! Remember to click "Save All to Cloud"', 'success');
+                    }
+                    }
 
-        // ===== LIGHTS =====
-        function renderLightButtons() {
-            const container = document.getElementById('lightsContainer');
-            const lightsTab = appConfig?.tabs?.find(t => t.id === 'lights');
-            const lights = lightsTab?.buttons || [];
+                    function closeYouTubeModal() {
+                    document.getElementById('youtubeModal').classList.remove('show');
+                    }
 
-            if (lights.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💡</div><p>No light buttons configured. Click "Add Light Button" to get started.</p></div>';
-                return;
-            }
+                    // ===== APPS =====
+                    function renderAppButtons() {
+                    const container = document.getElementById('appsContainer');
+                    const appsTab = appConfig?.tabs?.find(t => t.id === 'apps');
+                    const apps = appsTab?.buttons || [];
 
-            container.innerHTML = lights.map((light, index) => {
-                const roomLabels = light.rooms && light.rooms.length > 0
-                    ? light.rooms.map(roomId => {
-                        const room = roomsConfig?.rooms?.find(r => r.id === roomId);
-                        return room ? room.name : roomId;
-                    }).join(', ')
-                    : 'All Rooms';
+                    if (apps.length === 0) {
+                    container.innerHTML = '<div class="empty-state">
+                        <div class="empty-state-icon">🎬</div>
+                        <p>No app buttons configured. Click "Add App" to get started.</p>
+                    </div>';
+                    return;
+                    }
 
-                return `
-                <div class="app-card">
-                    <div class="app-thumbnail">
-                        <div>${light.emoji || '💡'}</div>
-                    </div>
-                    <div class="app-info">
-                        <div class="app-label">${light.label || 'Unnamed'}</div>
-                        <div class="app-id" style="font-size: 10px; margin-bottom: 4px;">Handler: ${light.handler}</div>
-                        <div class="app-id" style="font-size: 10px;">Rooms: ${roomLabels}</div>
-                        <div style="display: flex; gap: 8px; margin-top: 8px;">
-                            <button class="btn-primary btn-sm" onclick="editLightButton(${index})">Edit</button>
-                            <button class="btn-danger btn-sm" onclick="deleteLightButton(${index})">Delete</button>
+                    container.innerHTML = apps.map((app, index) => `
+                < div class= "app-card" >
+                        <div class="app-thumbnail">
+                            ${app.thumbnail ? `<img src="${app.thumbnail}" alt="${app.label || app.appName}">` : `<div>
+                                ${app.emoji || '📱'}</div>`}
                         </div>
-                    </div>
-                </div>
-            `}).join('');
-        }
-
-        function addLightButton() {
-            currentEditingLightIndex = -1;
-            currentLightRoutineSteps = [];
-            document.getElementById('lightModalTitle').textContent = 'Add Light Button';
-            document.getElementById('lightLabel').value = '';
-            document.getElementById('lightEmoji').value = '💡';
-            renderRoomCheckboxes();
-            lightHandlerChanged();
-            renderLightRoutineSteps();
-            document.getElementById('lightModal').classList.add('show');
-        }
-
-        function editLightButton(index) {
-            currentEditingLightIndex = index;
-            const lightsTab = appConfig.tabs.find(t => t.id === 'lights');
-            const light = lightsTab.buttons[index];
-
-            document.getElementById('lightModalTitle').textContent = 'Edit Light Button';
-            document.getElementById('lightLabel').value = light.label || '';
-            document.getElementById('lightEmoji').value = light.emoji || '💡';
-
-            // Load routine steps - support both new lightRoutine format and old simple format
-            if (light.handler === 'lightRoutine' && light.routine && Array.isArray(light.routine)) {
-                currentLightRoutineSteps = JSON.parse(JSON.stringify(light.routine)); // Deep copy
-            } else if (light.handler && light.args) {
-                // Convert old simple format to routine steps for display purposes
-                currentLightRoutineSteps = convertOldFormatToRoutine(light.handler, light.args);
-            } else {
-                currentLightRoutineSteps = [];
-            }
-
-            renderRoomCheckboxes(light.rooms || []);
-            lightHandlerChanged();
-            renderLightRoutineSteps();
-            document.getElementById('lightModal').classList.add('show');
-        }
-
-        // Helper function to convert old light button format to routine steps
-        function convertOldFormatToRoutine(handler, args) {
-            const device = args[0] || '';
-            const steps = [];
-
-            if (handler === 'goveeTogglePower') {
-                steps.push({ type: 'power', device: device, value: 'toggle' });
-            } else if (handler === 'goveeSetBrightness') {
-                const brightness = args[1] || 50;
-                steps.push({ type: 'brightness', device: device, value: brightness });
-            } else if (handler === 'goveeSetColor') {
-                const r = args[1] || 255;
-                const g = args[2] || 0;
-                const b = args[3] || 0;
-                steps.push({ type: 'color', device: device, value: `${r},${g},${b}` });
-            }
-
-            return steps;
-        }
-
-        function renderRoomCheckboxes(selectedRooms = []) {
-            const container = document.getElementById('lightRoomsSelector');
-            if (!roomsConfig || !roomsConfig.rooms || roomsConfig.rooms.length === 0) {
-                container.innerHTML = '<p style="color: #999; font-size: 12px;">No rooms configured yet. Add rooms in the Rooms tab first.</p>';
-                return;
-            }
-
-            container.innerHTML = roomsConfig.rooms.map(room => {
-                const isChecked = selectedRooms.includes(room.id);
-                return `
-                    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer;">
-                        <input type="checkbox" value="${room.id}" ${isChecked ? 'checked' : ''}
-                               style="width: 16px; height: 16px; cursor: pointer;">
-                        <span style="font-size: 14px;">${room.emoji || '🏠'} ${room.name}</span>
-                    </label>
-                `;
-            }).join('');
-        }
-
-        function saveLightButton() {
-            const label = document.getElementById('lightLabel').value.trim();
-            const emoji = document.getElementById('lightEmoji').value.trim();
-
-            if (!label) {
-                showMessage('Label is required', 'error');
-                return;
-            }
-
-            if (currentLightRoutineSteps.length === 0) {
-                showMessage('Please add at least one step to the routine', 'error');
-                return;
-            }
-
-            const light = {
-                id: `${label.toLowerCase().replace(/[^a-z0-9]+/g, '')}Button`,
-                emoji: emoji || '💡',
-                label: label,
-                handler: 'lightRoutine',
-                routine: currentLightRoutineSteps
-            };
-
-            // Get selected rooms
-            const checkboxes = document.querySelectorAll('#lightRoomsSelector input[type="checkbox"]:checked');
-            const selectedRooms = Array.from(checkboxes).map(cb => cb.value);
-
-            // Only add rooms property if rooms are selected
-            if (selectedRooms.length > 0) {
-                light.rooms = selectedRooms;
-            }
-
-            const lightsTab = appConfig.tabs.find(t => t.id === 'lights');
-            if (!lightsTab) {
-                // Create lights tab if it doesn't exist
-                appConfig.tabs.push({
-                    id: 'lights',
-                    label: 'Lights',
-                    icon: '💡',
-                    buttons: []
-                });
-            }
-
-            const tab = appConfig.tabs.find(t => t.id === 'lights');
-            if (!tab.buttons) tab.buttons = [];
-
-            if (currentEditingLightIndex >= 0) {
-                tab.buttons[currentEditingLightIndex] = light;
-            } else {
-                tab.buttons.push(light);
-            }
-
-            renderAllViews();
-            closeLightModal();
-            showMessage('✅ Light button saved! Remember to click "Save All to Cloud"', 'success');
-        }
-
-        function deleteLightButton(index) {
-            if (confirm('Are you sure you want to delete this light button?')) {
-                const lightsTab = appConfig.tabs.find(t => t.id === 'lights');
-                lightsTab.buttons.splice(index, 1);
-                renderAllViews();
-                showMessage('✅ Light button deleted! Remember to click "Save All to Cloud"', 'success');
-            }
-        }
-
-        function closeLightModal() {
-            document.getElementById('lightModal').classList.remove('show');
-        }
-
-        let currentLightRoutineSteps = [];
-
-        function lightHandlerChanged() {
-            const routineControls = document.getElementById('lightRoutineControls');
-            // Always show routine controls - everything uses steps now
-            routineControls.classList.remove('hidden');
-        }
-
-        function addLightRoutineStep() {
-            const step = {
-                type: 'power',  // power, brightness, color, wait
-                device: '',
-                mac: '',
-                value: 'on'
-            };
-            currentLightRoutineSteps.push(step);
-            renderLightRoutineSteps();
-        }
-
-        function removeLightRoutineStep(index) {
-            currentLightRoutineSteps.splice(index, 1);
-            renderLightRoutineSteps();
-        }
-
-        function renderLightRoutineSteps() {
-            const container = document.getElementById('lightRoutineSteps');
-            if (currentLightRoutineSteps.length === 0) {
-                container.innerHTML = '<p style="color: #999; font-size: 13px;">No steps added yet. Click "+ Add Step" to begin.</p>';
-                return;
-            }
-
-            container.innerHTML = currentLightRoutineSteps.map((step, index) => `
-                <div style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e0e0e0;">
-                    <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 10px;">
-                        <strong style="font-size: 13px;">Step ${index + 1}</strong>
-                        <button class="btn-danger btn-sm" onclick="removeLightRoutineStep(${index})" style="margin-left: auto;">Remove</button>
-                    </div>
-
-                    <div style="display: grid; gap: 10px;">
-                        <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Action</label>
-                            <select data-step-index="${index}" data-field="type" onchange="updateLightRoutineStep(${index}, 'type', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-                                <option value="power" ${step.type === 'power' ? 'selected' : ''}>Power</option>
-                                <option value="brightness" ${step.type === 'brightness' ? 'selected' : ''}>Brightness</option>
-                                <option value="color" ${step.type === 'color' ? 'selected' : ''}>Color</option>
-                                <option value="scene" ${step.type === 'scene' ? 'selected' : ''}>Scene</option>
-                                <option value="wait" ${step.type === 'wait' ? 'selected' : ''}>Wait</option>
-                            </select>
+                        <div class="app-info">
+                            <div class="app-label">${app.label || app.appName}</div>
+                            <div class="app-id">App ID: ${app.appId}</div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn-primary btn-sm" onclick="editAppButton(${index})">Edit</button>
+                                <button class="btn-danger btn-sm" onclick="deleteAppButton(${index})">Delete</button>
+                            </div>
                         </div>
+                    </div >
+                `).join('');
+                    }
 
-                        ${step.type !== 'wait' ? `
-                        <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Device</label>
-                            <select onchange="handleDeviceSelection(${index}, this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-                                ${buildDeviceDropdownOptions(step.device || '')}
-                            </select>
-                        </div>
-                        ` : ''}
+                    function addAppButton() {
+                    currentEditingAppIndex = -1;
+                    document.getElementById('appModalTitle').textContent = 'Add App Button';
+                    document.getElementById('appName').value = '';
+                    document.getElementById('appId').value = '';
+                    document.getElementById('appEmoji').value = '';
+                    document.getElementById('appLabel').value = '';
+                    document.getElementById('appThumbnail').value = '';
+                    document.getElementById('appModal').classList.add('show');
+                    }
 
-                        ${step.type === 'power' ? `
-                        <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">State</label>
-                            <select onchange="updateLightRoutineStep(${index}, 'value', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-                                <option value="on" ${step.value === 'on' ? 'selected' : ''}>On</option>
-                                <option value="off" ${step.value === 'off' ? 'selected' : ''}>Off</option>
-                                <option value="toggle" ${step.value === 'toggle' ? 'selected' : ''}>Toggle</option>
-                            </select>
-                        </div>
-                        ` : ''}
+                    function editAppButton(index) {
+                    currentEditingAppIndex = index;
+                    const appsTab = appConfig.tabs.find(t => t.id === 'apps');
+                    const app = appsTab.buttons[index];
+                    document.getElementById('appModalTitle').textContent = 'Edit App Button';
+                    document.getElementById('appName').value = app.appName || '';
+                    document.getElementById('appId').value = app.appId || '';
+                    document.getElementById('appEmoji').value = app.emoji || '';
+                    document.getElementById('appLabel').value = app.label || '';
+                    document.getElementById('appThumbnail').value = app.thumbnail || '';
+                    document.getElementById('appModal').classList.add('show');
+                    }
 
-                        ${step.type === 'brightness' ? `
-                        <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Brightness (1-100)</label>
-                            <input type="number" min="1" max="100" value="${step.value || 50}" onchange="updateLightRoutineStep(${index}, 'value', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-                        </div>
-                        ` : ''}
+                    function saveAppButton() {
+                    const appName = document.getElementById('appName').value.trim();
+                    const appId = document.getElementById('appId').value.trim();
+                    const emoji = document.getElementById('appEmoji').value.trim();
+                    const label = document.getElementById('appLabel').value.trim();
+                    const thumbnail = document.getElementById('appThumbnail').value.trim();
 
-                        ${step.type === 'color' ? `
-                        <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">RGB (R,G,B)</label>
-                            <input type="text" placeholder="255,0,0" value="${step.value || '255,0,0'}" onchange="updateLightRoutineStep(${index}, 'value', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-                        </div>
-                        ` : ''}
+                    if (!appName || !appId) {
+                    showMessage('App name and ID are required', 'error');
+                    return;
+                    }
 
-                        ${step.type === 'scene' ? `
-                        <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Scene ID <span style="font-weight: normal; color: #888;">(use Get Info above)</span></label>
-                            <input type="text" placeholder="1" value="${step.value || ''}" onchange="updateLightRoutineStep(${index}, 'value', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-                        </div>
-                        ` : ''}
+                    const app = {
+                    id: `${ appName.toLowerCase().replace(/[^a-z0-9]+/g, '') }Button`,
+                    emoji: emoji || '📱',
+                    label: label || appName,
+                    appId,
+                    appName
+                    };
 
-                        ${step.type === 'wait' ? `
-                        <div>
-                            <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">Wait (ms)</label>
-                            <input type="number" min="100" value="${step.value || 1000}" onchange="updateLightRoutineStep(${index}, 'value', this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-                        </div>
-                        ` : ''}
-                    </div>
-                </div>
-            `).join('');
-        }
+                    if (thumbnail) {
+                    app.thumbnail = thumbnail;
+                    }
 
-        function updateLightRoutineStep(index, field, value) {
-            if (currentLightRoutineSteps[index]) {
-                currentLightRoutineSteps[index][field] = value;
-                // Re-render to show/hide relevant fields based on type change
-                if (field === 'type') {
-                    renderLightRoutineSteps();
-                }
-            }
-        }
+                    const appsTab = appConfig.tabs.find(t => t.id === 'apps');
+                    if (!appsTab.buttons) appsTab.buttons = [];
 
-        function handleDeviceSelection(index, value) {
-            if (value === '__MANUAL__') {
-                // Prompt for manual entry
-                const manualDevice = prompt('Enter device IP address or ID:');
-                if (manualDevice) {
-                    updateLightRoutineStep(index, 'device', manualDevice);
-                    renderLightRoutineSteps();
-                } else {
-                    // User cancelled - revert to previous value or empty
-                    renderLightRoutineSteps();
-                }
-            } else {
-                // Regular device selection
-                updateLightRoutineStep(index, 'device', value);
-            }
-        }
+                    if (currentEditingAppIndex >= 0) {
+                    appsTab.buttons[currentEditingAppIndex] = app;
+                    } else {
+                    appsTab.buttons.push(app);
+                    }
 
-        // Load passphrase from localStorage or URL
-        const PASSPHRASE_STORAGE_KEY = 'editor_passphrase';
+                    renderAllViews();
+                    closeAppModal();
+                    showMessage('✅ App saved! Remember to click "Save All to Cloud"', 'success');
+                    }
 
-        function savePassphraseToStorage() {
-            const passphrase = document.getElementById('passphrase').value.trim();
-            if (passphrase) {
-                localStorage.setItem(PASSPHRASE_STORAGE_KEY, passphrase);
-            }
-        }
+                    function deleteAppButton(index) {
+                    if (confirm('Are you sure you want to delete this app?')) {
+                    const appsTab = appConfig.tabs.find(t => t.id === 'apps');
+                    appsTab.buttons.splice(index, 1);
+                    renderAllViews();
+                    showMessage('✅ App deleted! Remember to click "Save All to Cloud"', 'success');
+                    }
+                    }
 
-        function loadPassphraseFromStorage() {
-            const stored = localStorage.getItem(PASSPHRASE_STORAGE_KEY);
-            if (stored) {
-                document.getElementById('passphrase').value = stored;
-            }
-        }
+                    function closeAppModal() {
+                    document.getElementById('appModal').classList.remove('show');
+                    }
 
-        // Auto-save passphrase when it changes
-        document.getElementById('passphrase').addEventListener('input', savePassphraseToStorage);
 
-        // Load from URL (takes precedence) or localStorage
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlPassphrase = urlParams.get('passphrase');
-        if (urlPassphrase) {
-            document.getElementById('passphrase').value = urlPassphrase;
-            savePassphraseToStorage();
-        } else {
-            loadPassphraseFromStorage();
-        }
 
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                e.preventDefault();
-                saveAllConfigs();
-            }
-            if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
-                e.preventDefault();
-                loadAllConfigs();
-            }
-        });
+                    // Load passphrase from localStorage or URL
+                    const PASSPHRASE_STORAGE_KEY = 'editor_passphrase';
 
-        // ===== DEVICE LISTS =====
-        async function loadBLEDeviceList() {
-            const container = document.getElementById('bleDevicesList');
-            container.innerHTML = '<p style="color: #999;">Loading BLE device list...</p>';
+                    function savePassphraseToStorage() {
+                    const passphrase = document.getElementById('passphrase').value.trim();
+                    if (passphrase) {
+                    localStorage.setItem(PASSPHRASE_STORAGE_KEY, passphrase);
+                    }
+                    }
 
-            try {
-                const passphrase = document.getElementById('passphrase').value.trim();
-                if (!passphrase) {
+                    function loadPassphraseFromStorage() {
+                    const stored = localStorage.getItem(PASSPHRASE_STORAGE_KEY);
+                    if (stored) {
+                    document.getElementById('passphrase').value = stored;
+                    }
+                    }
+
+                    // Auto-save passphrase when it changes
+                    document.getElementById('passphrase').addEventListener('input', savePassphraseToStorage);
+
+                    // Load from URL (takes precedence) or localStorage
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const urlPassphrase = urlParams.get('passphrase');
+                    if (urlPassphrase) {
+                    document.getElementById('passphrase').value = urlPassphrase;
+                    savePassphraseToStorage();
+                    } else {
+                    loadPassphraseFromStorage();
+                    }
+
+                    // Keyboard shortcuts
+                    document.addEventListener('keydown', (e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    saveAllConfigs();
+                    }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+                    e.preventDefault();
+                    loadAllConfigs();
+                    }
+                    });
+
+                    // ===== DEVICE LISTS =====
+                    async function loadBLEDeviceList() {
+                    const container = document.getElementById('bleDevicesList');
+                    container.innerHTML = '<p style="color: #999;">Loading BLE device list...</p>';
+
+                    try {
+                    const passphrase = document.getElementById('passphrase').value.trim();
+                    if (!passphrase) {
                     showMessage('Please enter a passphrase first', 'error');
                     container.innerHTML = '<p style="color: #f44336;">Error: Passphrase required</p>';
                     return;
-                }
+                    }
 
-                const response = await fetch(`${API_BASE_URL}/ble-devices.json?passphrase=${encodeURIComponent(passphrase)}`);
-                if (!response.ok) {
-                    throw new Error(`Failed to load BLE devices: ${response.statusText}`);
-                }
+                    const response = await
+                    fetch(`${ API_BASE_URL } / ble - devices.json ? passphrase = ${ encodeURIComponent(passphrase) }`);
+                    if (!response.ok) {
+                    throw new Error(`Failed to load BLE devices: ${ response.statusText }`);
+                    }
 
-                const data = await response.json();
+                    const data = await response.json();
 
-                if (!data.devices || data.devices.length === 0) {
+                    if (!data.devices || data.devices.length === 0) {
                     container.innerHTML = '<p style="color: #999;">No BLE devices found. Scan from your app first.</p>';
                     return;
-                }
+                    }
 
-                container.innerHTML = `
-                    <div style="margin-bottom: 10px;">
-                        <strong>Last scan:</strong> ${new Date(data.timestamp).toLocaleString()}<br>
-                        <strong>Total devices:</strong> ${data.devices.length}
-                    </div>
-                    <div style="display: grid; gap: 10px;">
-                        ${data.devices.map(device => `
-                            <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #ddd;">
-                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                                    <div>
-                                        <strong>${device.name || 'Unknown Device'}</strong><br>
-                                        <span style="font-size: 12px; color: #666; font-family: monospace;">${device.address}</span>
-                                    </div>
-                                    <span style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">
-                                        ${device.rssi} dBm
-                                    </span>
+                    container.innerHTML = `
+            < div style = "margin-bottom: 10px;" >
+            <strong>Last scan:</strong> ${ new Date(data.timestamp).toLocaleString() } < br >
+            <strong>Total devices:</strong> ${ data.devices.length }
+                    </div >
+                <div style="display: grid; gap: 10px;">
+                    ${data.devices.map(device => `
+                        <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #ddd;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                <div>
+                                    <strong>${device.name || 'Unknown Device'}</strong><br>
+                                    <span
+                                        style="font-size: 12px; color: #666; font-family: monospace;">${device.address}</span>
                                 </div>
-                                <button class="btn-secondary btn-sm" onclick="copyToClipboard('${device.address}')" style="font-size: 11px; padding: 4px 8px;">
-                                    📋 Copy Address
-                                </button>
+                                <span
+                                    style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                                    ${device.rssi} dBm
+                                </span>
                             </div>
-                        `).join('')}
-                    </div>
-                `;
-            } catch (error) {
-                console.error('Failed to load BLE devices:', error);
-                container.innerHTML = `<p style="color: #f44336;">Error: ${error.message}</p>`;
-                showMessage(`Failed to load BLE devices: ${error.message}`, 'error');
-            }
-        }
-
-        async function loadGoveeDeviceList() {
-            const container = document.getElementById('goveeDevicesList');
-            container.innerHTML = '<p style="color: #999;">Loading Govee device list...</p>';
-
-            try {
-                const passphrase = document.getElementById('passphrase').value.trim();
-                if (!passphrase) {
-                    showMessage('Please enter a passphrase first', 'error');
-                    container.innerHTML = '<p style="color: #f44336;">Error: Passphrase required</p>';
-                    return;
-                }
-
-                const response = await fetch(`${API_BASE_URL}/govee-devices.json?passphrase=${encodeURIComponent(passphrase)}`);
-                if (!response.ok) {
-                    throw new Error(`Failed to load Govee devices: ${response.statusText}`);
-                }
-
-                const data = await response.json();
-
-                if (!data.devices || data.devices.length === 0) {
-                    container.innerHTML = '<p style="color: #999;">No Govee devices found. Run discovery from your app first.</p>';
-                    return;
-                }
-
-                // Cache devices to localStorage for dropdown population
-                localStorage.setItem(CACHED_GOVEE_DEVICES_KEY, JSON.stringify(data));
-
-                container.innerHTML = `
-                    <div style="margin-bottom: 10px;">
-                        <strong>Last discovery:</strong> ${new Date(data.timestamp).toLocaleString()}<br>
-                        <strong>Total devices:</strong> ${data.devices.length}
-                        ${data.source ? `<br><strong>Source:</strong> ${data.source}` : ''}
-                    </div>
-                    <div style="display: grid; gap: 10px;">
-                        ${data.devices.map(device => {
-                            // Check if this is LAN discovery or Cloud API
-                            const isLanDevice = device.ip;
-                            const isCloudDevice = device.device && device.model;
-
-                            return `
-                            <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #ddd;">
-                                <div style="margin-bottom: 8px;">
-                                    <strong>💡 ${device.deviceName || device.device_name || device.name || device.nickName || 'Govee Light'}</strong><br>
-                                    ${isLanDevice ? `
-                                        <span style="font-size: 12px; color: #666;">
-                                            IP: <span style="font-family: monospace;">${device.ip}</span> • Port: ${device.port || 4003}
-                                        </span>
-                                        ${device.mac ? `<br><span style="font-size: 12px; color: #666;">MAC: <span style="font-family: monospace;">${device.mac}</span></span>` : ''}
-                                    ` : ''}
-                                    ${isCloudDevice ? `
-                                        <span style="font-size: 12px; color: #666;">
-                                            Model: <span style="font-family: monospace;">${device.model}</span><br>
-                                            Device ID: <span style="font-family: monospace;">${device.device}</span><br>
-                                            Controllable: ${device.controllable ? '✅' : '❌'} • Retrievable: ${device.retrievable ? '✅' : '❌'}
-                                        </span>
-                                        ${device.supportCmds && device.supportCmds.length > 0 ? `
-                                            <br><span style="font-size: 11px; color: #888;">
-                                                Supported: ${device.supportCmds.join(', ')}
-                                            </span>
-                                        ` : ''}
-                                    ` : ''}
-                                </div>
-                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    ${isLanDevice ? `
-                                        <button class="btn-secondary btn-sm" onclick="copyToClipboard('${device.ip}')" style="font-size: 11px; padding: 4px 8px;">
-                                            📋 Copy IP
-                                        </button>
-                                        ${device.mac ? `<button class="btn-secondary btn-sm" onclick="copyToClipboard('${device.mac}')" style="font-size: 11px; padding: 4px 8px;">
-                                            📋 Copy MAC
-                                        </button>` : ''}
-                                    ` : ''}
-                                    ${isCloudDevice ? `
-                                        <button class="btn-secondary btn-sm" onclick="copyToClipboard('${device.device}')" style="font-size: 11px; padding: 4px 8px;">
-                                            📋 Copy Device ID
-                                        </button>
-                                        <button class="btn-secondary btn-sm" onclick="copyToClipboard('${device.model}')" style="font-size: 11px; padding: 4px 8px;">
-                                            📋 Copy Model
-                                        </button>
-                                    ` : ''}
-                                </div>
-                            </div>
-                        `}).join('')}
-                    </div>
-                `;
-            } catch (error) {
-                console.error('Failed to load Govee devices:', error);
-                container.innerHTML = `<p style="color: #f44336;">Error: ${error.message}</p>`;
-                showMessage(`Failed to load Govee devices: ${error.message}`, 'error');
-            }
-        }
-
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                showMessage('✅ Copied to clipboard!', 'success');
-            }).catch(err => {
-                showMessage('❌ Failed to copy', 'error');
-                console.error('Failed to copy:', err);
-            });
-        }
-
-        // Govee API Key management
-        const GOVEE_API_KEY_STORAGE = 'editor_govee_api_key';
-
-        function saveGoveeApiKey() {
-            const apiKey = document.getElementById('goveeApiKeyEditor').value.trim();
-            if (apiKey) {
-                localStorage.setItem(GOVEE_API_KEY_STORAGE, apiKey);
-            }
-        }
-
-        function loadGoveeApiKey() {
-            const stored = localStorage.getItem(GOVEE_API_KEY_STORAGE);
-            if (stored) {
-                document.getElementById('goveeApiKeyEditor').value = stored;
-            }
-        }
-
-        // Auto-save inputs on change
-        document.addEventListener('DOMContentLoaded', () => {
-            loadGoveeApiKey();
-            const apiKeyInput = document.getElementById('goveeApiKeyEditor');
-            if (apiKeyInput) {
-                apiKeyInput.addEventListener('input', () => {
-                    saveGoveeApiKey();
-                    updateAppSettingsFromInputs();
-                });
-            }
-            const pinInput = document.getElementById('parentalPinEditor');
-            if (pinInput) {
-                pinInput.addEventListener('input', () => {
-                    updateAppSettingsFromInputs();
-                });
-            }
-        });
-
-        async function fetchAndUploadGoveeDevices() {
-            const apiKey = document.getElementById('goveeApiKeyEditor').value.trim();
-            const passphrase = getPassphrase();
-
-            if (!apiKey) {
-                showMessage('Please enter your Govee API key first', 'error');
-                return;
-            }
-
-            if (!passphrase) {
-                return; // getPassphrase already shows error
-            }
-
-            const container = document.getElementById('goveeDevicesList');
-            container.innerHTML = '<p style="color: #999;">🔄 Fetching devices from Govee Cloud API...</p>';
-
-            try {
-                // Fetch from Govee API
-                const response = await fetch('https://developer-api.govee.com/v1/devices', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Govee-API-Key': apiKey
-                    }
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.message || `Govee API error: ${response.status} ${response.statusText}`);
-                }
-
-                const data = await response.json();
-
-                if (!data.data || !data.data.devices) {
-                    throw new Error('Invalid response from Govee API');
-                }
-
-                // Transform to our format
-                const deviceList = {
-                    devices: data.data.devices.map(device => ({
-                        name: device.deviceName,
-                        model: device.model,
-                        device: device.device,
-                        controllable: device.controllable,
-                        retrievable: device.retrievable,
-                        supportCmds: device.supportCmds || [],
-                        properties: device.properties || {}
-                    })),
-                    timestamp: new Date().toISOString(),
-                    source: 'govee-cloud-api'
-                };
-
-                container.innerHTML = '<p style="color: #999;">📤 Uploading to Netlify...</p>';
-
-                // Upload to Netlify
-                const uploadResponse = await fetch(`${API_BASE_URL}/govee-devices.json`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${passphrase}`
-                    },
-                    body: JSON.stringify(deviceList)
-                });
-
-                if (!uploadResponse.ok) {
-                    const uploadError = await uploadResponse.json().catch(() => ({}));
-                    throw new Error(uploadError.error || 'Failed to upload to Netlify');
-                }
-
-                // Cache devices to localStorage for dropdown population
-                localStorage.setItem(CACHED_GOVEE_DEVICES_KEY, JSON.stringify(deviceList));
-
-                showMessage(`✅ Successfully fetched ${deviceList.devices.length} devices and uploaded to cloud!`, 'success');
-
-                // Display the results
-                loadGoveeDeviceList();
-
-            } catch (error) {
-                console.error('Failed to fetch/upload Govee devices:', error);
-                container.innerHTML = `<p style="color: #f44336;">Error: ${error.message}</p>`;
-                showMessage(`❌ Failed: ${error.message}`, 'error');
-            }
-        }
-
-        // Query device info for light button configuration
-        async function queryLightDevice() {
-            const deviceInput = document.getElementById('lightDeviceQuery').value.trim();
-            const infoContainer = document.getElementById('lightDeviceInfo');
-            const apiKey = document.getElementById('goveeApiKeyEditor').value.trim();
-
-            if (!deviceInput) {
-                showMessage('Please enter a device IP or ID', 'error');
-                return;
-            }
-
-            // Check if it's an IP address
-            const isIp = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(deviceInput);
-
-            if (isIp) {
-                // LAN device - show note that this requires the app
-                infoContainer.style.display = 'block';
-                infoContainer.innerHTML = `
-                    <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 10px; border-radius: 6px;">
-                        <strong>⚠️ LAN Device Detection</strong><br>
-                        <span style="font-size: 11px;">
-                            To get info from LAN devices (IP addresses), use the device discovery in the main app.
-                            The app can query devices at <code style="background: #f0f0f0; padding: 2px 4px; border-radius: 3px;">${deviceInput}:4003</code> directly.
-                        </span>
-                    </div>
-                `;
-                // Auto-fill the device field
-                document.getElementById('lightIp').value = deviceInput;
-                return;
-            }
-
-            // Cloud device - need API key
-            if (!apiKey) {
-                showMessage('Please enter your Govee API key in the Device Lists tab first', 'error');
-                infoContainer.style.display = 'block';
-                infoContainer.innerHTML = `
-                    <div style="background: #fee; border: 1px solid #f44; padding: 10px; border-radius: 6px;">
-                        <strong>❌ API Key Required</strong><br>
-                        <span style="font-size: 11px;">
-                            Go to the "Device Lists" tab and enter your Govee API key to query cloud devices.
-                        </span>
-                    </div>
-                `;
-                return;
-            }
-
-            infoContainer.style.display = 'block';
-            infoContainer.innerHTML = '<p style="color: #999;">🔄 Fetching device info...</p>';
-
-            try {
-                // First, get device list to find the model
-                const devicesResponse = await fetch('https://developer-api.govee.com/v1/devices', {
-                    method: 'GET',
-                    headers: {
-                        'Govee-API-Key': apiKey
-                    }
-                });
-
-                if (!devicesResponse.ok) {
-                    throw new Error(`Failed to fetch devices: ${devicesResponse.status}`);
-                }
-
-                const devicesData = await devicesResponse.json();
-                const device = devicesData.data?.devices?.find(d => d.device === deviceInput);
-
-                if (!device) {
-                    throw new Error(`Device ${deviceInput} not found in your Govee account`);
-                }
-
-                // Now get device state
-                const stateResponse = await fetch(
-                    `https://developer-api.govee.com/v1/devices/state?device=${encodeURIComponent(deviceInput)}&model=${encodeURIComponent(device.model)}`,
-                    {
-                        method: 'GET',
-                        headers: {
-                            'Govee-API-Key': apiKey
-                        }
-                    }
-                );
-
-                if (!stateResponse.ok) {
-                    throw new Error(`Failed to fetch state: ${stateResponse.status}`);
-                }
-
-                const stateData = await stateResponse.json();
-                const properties = stateData.data?.properties || [];
-
-                // Parse the state
-                const powerState = properties.find(p => p.online !== undefined);
-                const onlineStatus = powerState?.online;
-                const powerOn = properties.find(p => p.powerState)?.powerState === 'on';
-                const brightness = properties.find(p => p.brightness !== undefined)?.brightness;
-                const color = properties.find(p => p.color)?.color;
-
-                // Display device info
-                infoContainer.innerHTML = `
-                    <div style="background: #d4edda; border: 1px solid #c3e6cb; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
-                        <strong>✅ Device Found</strong><br>
-                        <div style="font-size: 11px; margin-top: 6px; line-height: 1.6;">
-                            <strong>Name:</strong> ${device.deviceName}<br>
-                            <strong>Model:</strong> <code style="background: #f0f0f0; padding: 2px 4px; border-radius: 3px;">${device.model}</code><br>
-                            <strong>Device ID:</strong> <code style="background: #f0f0f0; padding: 2px 4px; border-radius: 3px;">${device.device}</code>
-                            <button onclick="copyToClipboard('${device.device}')" style="margin-left: 8px; padding: 2px 6px; font-size: 10px; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">Copy</button>
-                            <br>
-                            <strong>Status:</strong> ${onlineStatus ? '🟢 Online' : '🔴 Offline'}<br>
-                            ${powerOn !== undefined ? `<strong>Power:</strong> ${powerOn ? '💡 On' : '⚫ Off'}<br>` : ''}
-                            ${brightness !== undefined ? `<strong>Brightness:</strong> ${brightness}%<br>` : ''}
-                            ${color ? `<strong>Color:</strong> RGB(${color.r}, ${color.g}, ${color.b})<br>` : ''}
-                            <strong>Capabilities:</strong> ${(device.supportCmds || []).map(cmd => `<code style="font-size: 10px; background: #e9ecef; padding: 1px 3px; border-radius: 2px;">${cmd}</code>`).join(' ')}
+                            <button class="btn-secondary btn-sm" onclick="copyToClipboard('${device.address}')"
+                                style="font-size: 11px; padding: 4px 8px;">
+                                📋 Copy Address
+                            </button>
                         </div>
-                    </div>
-                `;
+                        `).join('')}
+                </div>
+                    `;
+                    } catch (error) {
+                    console.error('Failed to load BLE devices:', error);
+                    container.innerHTML = `< p style = "color: #f44336;" > Error: ${ error.message }</p > `;
+                    showMessage(`Failed to load BLE devices: ${ error.message }`, 'error');
+                    }
+                    }
 
-                // Auto-fill the device field
-                document.getElementById('lightIp').value = deviceInput;
-                showMessage('✅ Device info retrieved!', 'success');
 
-            } catch (error) {
-                console.error('Failed to query device:', error);
-                infoContainer.innerHTML = `
-                    <div style="background: #fee; border: 1px solid #f44; padding: 10px; border-radius: 6px;">
-                        <strong>❌ Error</strong><br>
-                        <span style="font-size: 11px;">${error.message}</span>
-                    </div>
-                `;
-                showMessage(`❌ ${error.message}`, 'error');
-            }
-        }
+
+                    function copyToClipboard(text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                    showMessage('✅ Copied to clipboard!', 'success');
+                    }).catch(err => {
+                    showMessage('❌ Failed to copy', 'error');
+                    console.error('Failed to copy:', err);
+                    });
+                    }
+
+
+
+
+
+
+
+                    // Auto-save inputs on change
+                    document.addEventListener('DOMContentLoaded', () => {
+                    const pinInput = document.getElementById('parentalPinEditor');
+                    if (pinInput) {
+                    pinInput.addEventListener('input', () => {
+                    updateAppSettingsFromInputs();
+                    });
+                    }
+                    });
 
     </script>
 </body>
+
 </html>

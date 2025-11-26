@@ -466,9 +466,7 @@
             </div>
         </section>
 
-        <section id="lightsButtonSection" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
-            <div id="lightsButtonColumn" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
-        </section>
+
 
         <section id="parentalControlsSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
             <div class="flex flex-wrap items-start justify-between gap-4">
@@ -502,199 +500,6 @@
                         onclick="clearParentalPinOverride()"
                         class="rounded-2xl bg-white/10 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/30">
                         Reset to Cloud
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <section id="goveeSection" data-settings class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-white">Govee Lights Settings</h2>
-                    <p class="mt-1 text-sm text-indigo-100 max-w-2xl">Turn on LAN control in the Govee Home app, note the light's IP, then paste it here to toggle power, dim, or change colors without the cloud.</p>
-                </div>
-            </div>
-
-            <div class="mt-6 grid gap-6 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:items-start">
-                <div class="space-y-4">
-                    <div class="rounded-3xl bg-white/10 p-4 space-y-3">
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Cloud API Key</span>
-                                <p class="mt-1 text-xs text-indigo-100/80 max-w-xl">Store your private Govee API key locally so the app can look up devices and send cloud commands when LAN control is unavailable.</p>
-                            </div>
-                            <button
-                                id="goveeApiKeyClear"
-                                type="button"
-                                onclick="goveeClearApiKey()"
-                                class="hidden rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
-                                Remove Key
-                            </button>
-                        </div>
-                        <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-                            <input
-                                id="goveeApiKeyInput"
-                                type="password"
-                                autocomplete="off"
-                                spellcheck="false"
-                                placeholder="Paste your Govee developer API key"
-                                class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm font-semibold text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50" />
-                            <button
-                                type="button"
-                                onclick="goveeSaveApiKey()"
-                                class="rounded-2xl bg-emerald-500/30 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-300/60">
-                                Save API Key
-                            </button>
-                        </div>
-                        <p id="goveeApiKeyStatus" class="text-xs text-indigo-100/80">No API key saved yet.</p>
-                    </div>
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <label class="flex flex-col gap-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Device IP</span>
-                            <input
-                                id="goveeIpInput"
-                                type="text"
-                                inputmode="decimal"
-                                placeholder="192.168.1.120"
-                                class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm font-semibold text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50" />
-                        </label>
-                        <label class="flex flex-col gap-2">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Port (default 4003)</span>
-                            <input
-                                id="goveePortInput"
-                                type="number"
-                                inputmode="numeric"
-                                min="1"
-                                max="65535"
-                                placeholder="4003"
-                                class="rounded-2xl border border-white/20 bg-white/15 px-4 py-3 text-sm font-semibold text-white placeholder:text-indigo-200/50 shadow-inner focus:border-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50" />
-                        </label>
-                    </div>
-                    <div class="flex flex-wrap gap-3">
-                        <button
-                            onclick="goveeDiscoverDevices()"
-                            class="rounded-2xl bg-emerald-500/30 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-300/60">
-                            🔍 Discover Devices
-                        </button>
-                        <button
-                            onclick="goveeSaveSettings()"
-                            class="rounded-2xl bg-white/20 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50">
-                            Save LAN Settings
-                        </button>
-                        <button
-                            onclick="goveePower(true)"
-                            class="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-indigo-600 shadow-lg transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-white/60">
-                            Turn On
-                        </button>
-                        <button
-                            onclick="goveePower(false)"
-                            class="rounded-2xl bg-white/15 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
-                            Turn Off
-                        </button>
-                    </div>
-
-                    <div class="rounded-3xl bg-white/10 p-4">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Brightness</span>
-                            <span id="goveeBrightnessValue" class="text-sm font-semibold text-white">80%</span>
-                        </div>
-                        <input
-                            id="goveeBrightnessSlider"
-                            type="range"
-                            min="1"
-                            max="100"
-                            step="1"
-                            class="mt-3 w-full accent-white/80"
-                        />
-                    </div>
-
-                    <div class="space-y-3">
-                        <span class="text-xs font-semibold uppercase tracking-wide text-indigo-200">Quick Colors</span>
-                        <div class="flex flex-wrap gap-2">
-                            <button onclick="goveeSetWarmWhite()" class="h-10 w-10 rounded-full border-2 border-white/50 bg-[#ffe6c8] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"></button>
-                            <button onclick="goveeSetOceanBlue()" class="h-10 w-10 rounded-full border-2 border-white/50 bg-[#78b8ff] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"></button>
-                            <button onclick="goveeSetSunsetGlow()" class="h-10 w-10 rounded-full border-2 border-white/50 bg-[#ff9966] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"></button>
-                            <button onclick="goveeSetColor(255,0,120)" class="h-10 w-10 rounded-full border-2 border-white/50 bg-[#ff0078] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"></button>
-                            <button onclick="goveeSetColor(0,255,180)" class="h-10 w-10 rounded-full border-2 border-white/50 bg-[#00ffb4] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"></button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex flex-col gap-4 rounded-3xl bg-white/10 p-4">
-                    <h3 class="text-sm font-semibold uppercase tracking-wide text-indigo-200">LAN Control Tips</h3>
-                    <ul class="space-y-2 text-sm text-indigo-100/90">
-                        <li>Enable LAN Control in the Govee Home app (Device Settings → LAN Control).</li>
-                        <li>Connect your phone and light to the same network, then note the IP shown in the app.</li>
-                        <li>Lights speak HTTP JSON on port 4003. Only devices on your LAN can reach them.</li>
-                    </ul>
-                    <p class="text-xs text-indigo-100/80">You can trigger these helpers from kid buttons by using handlers like <code>goveePower</code>, <code>goveeSetColor</code>, or <code>goveeSetWarmWhite</code>.</p>
-                </div>
-            </div>
-
-            <div class="mt-6 rounded-3xl bg-white/10 p-5 space-y-4">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-sm font-semibold uppercase tracking-wide text-indigo-200">Device Status</h3>
-                    <button
-                        onclick="refreshGoveeStatus()"
-                        class="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40">
-                        Refresh
-                    </button>
-                </div>
-                <div id="goveeStatusDisplay" class="grid gap-2 text-sm text-indigo-100">
-                    <div class="flex items-center gap-3">
-                        <span class="text-lg">📡</span>
-                        <span class="font-semibold">Connection:</span>
-                        <span id="goveeOnlineStatus" class="font-mono text-white">—</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-lg">⚡</span>
-                        <span class="font-semibold">Power:</span>
-                        <span id="goveePowerStatus" class="font-mono text-white">—</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-lg">💡</span>
-                        <span class="font-semibold">Brightness:</span>
-                        <span id="goveeBrightnessStatus" class="font-mono text-white">—</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-lg">🎨</span>
-                        <span class="font-semibold">Color:</span>
-                        <span id="goveeColorStatus" class="flex items-center gap-2">
-                            <span id="goveeColorBox" class="inline-block h-6 w-12 rounded border-2 border-white/30 bg-gray-500"></span>
-                            <span id="goveeColorText" class="font-mono text-white text-xs">—</span>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-6 rounded-3xl bg-white/10 p-5 space-y-4">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                        <h3 class="text-sm font-semibold uppercase tracking-wide text-indigo-200">Cloud Device Catalog</h3>
-                        <p class="mt-1 text-xs text-indigo-100/80 max-w-xl">Pull your devices from the official Govee cloud API and review which commands each one supports.</p>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        <button
-                            type="button"
-                            onclick="goveeLoadCloudDevices()"
-                            class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50">
-                            Refresh Cloud Devices
-                        </button>
-                    </div>
-                </div>
-                <p id="goveeCloudStatus" class="rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-indigo-100">
-                    Save your Govee API key to load your cloud devices.
-                </p>
-                <div id="goveeCloudDeviceList" class="grid gap-4"></div>
-            </div>
-
-            <div class="mt-6 rounded-3xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 p-6 space-y-4 border-2 border-blue-400/30">
-                <div>
-                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                        <span>📡</span>
-                        <span>Bluetooth Scanner</span>
-                    </h3>
-                    <p class="mt-1 text-xs text-indigo-100/90 max-w-2xl">Scan for nearby Bluetooth devices and view their signal strength (RSSI) for room detection setup.</p>
                 </div>
 
                 <!-- Scan Controls -->
@@ -1019,54 +824,7 @@
             <div id="toddlerRemoteColumn" class="flex flex-col gap-4"></div>
         </section>
 
-        <section id="magicSection" class="rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8">
-            <div id="magicButtonColumn" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
 
-            <div id="timerEmojiPicker" class="hidden mt-6 rounded-3xl bg-white/10 p-5 text-indigo-50 shadow-inner">
-                <div class="mb-4">
-                    <h3 class="text-lg font-semibold text-white">Choose Your Timer Emoji</h3>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    <button type="button" data-timer-emoji="⭐" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">⭐</button>
-                    <button type="button" data-timer-emoji="🎨" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🎨</button>
-                    <button type="button" data-timer-emoji="🦄" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🦄</button>
-                    <button type="button" data-timer-emoji="🚀" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🚀</button>
-                    <button type="button" data-timer-emoji="🌈" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🌈</button>
-                    <button type="button" data-timer-emoji="🎈" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🎈</button>
-                    <button type="button" data-timer-emoji="🍎" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🍎</button>
-                    <button type="button" data-timer-emoji="⚡" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-2xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">⚡</button>
-                </div>
-            </div>
-
-            <div class="hidden mt-6 grid gap-5 md:grid-cols-2">
-                <div class="flex flex-col gap-4 rounded-3xl bg-white/10 p-5 text-indigo-50 shadow-inner">
-                    <div class="flex flex-wrap gap-2">
-                        <button type="button" data-magic-timer="180" class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">3 min</button>
-                        <button type="button" data-magic-timer="300" class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">5 min</button>
-                        <button type="button" data-magic-timer="600" class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">10 min</button>
-                        <button type="button" data-magic-timer="900" class="rounded-2xl bg-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40">15 min</button>
-                    </div>
-                    <form id="magicTimerForm" class="space-y-3">
-                        <label class="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-indigo-200">
-                            Custom minutes
-                            <div class="flex gap-2">
-                                <input id="magicTimerMinutes" type="number" min="1" max="120" step="1" placeholder="e.g. 8" class="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-base font-semibold text-white placeholder:text-indigo-100/50 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/30" />
-                                <button type="submit" class="rounded-2xl bg-white px-4 py-2 text-sm font-semibold uppercase tracking-wide text-indigo-600 shadow-lg transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-white/40">Start</button>
-                            </div>
-                        </label>
-                    </form>
-                    <button id="magicTimerCancel" type="button" class="self-start rounded-2xl bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40">Cancel Timer</button>
-                </div>
-
-                <div class="flex flex-col gap-4 rounded-3xl bg-white/10 p-5 text-indigo-50 shadow-inner">
-                    <div>
-                        <h3 class="text-lg font-semibold text-white">Fireworks Celebration</h3>
-                        <p class="mt-1 text-sm text-indigo-100">Fill the screen with sparkle for bedtime victories or potty triumphs.</p>
-                    </div>
-                    <button id="magicFireworksButton" type="button" class="mt-auto rounded-2xl bg-gradient-to-r from-rose-400/80 to-amber-300/80 px-5 py-3 text-base font-semibold text-slate-900 shadow-lg transition hover:scale-[1.02] hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/40">Launch Fireworks</button>
-                </div>
-            </div>
-        </section>
 
         <section id="nowPlayingSection" class="hidden rounded-3xl bg-white/15 p-6 shadow-2xl backdrop-blur md:p-8" data-settings>
             <div class="flex flex-wrap items-center justify-between gap-4">
@@ -1276,57 +1034,9 @@
 
     <div id="toastContainer" class="pointer-events-none fixed left-1/2 top-6 z-50 hidden -translate-x-1/2 transform"></div>
 
-    <div
-        id="timerOverlay"
-        class="timer-overlay fixed inset-0 z-50 hidden items-center justify-center px-6 py-12 text-white">
-        <div class="w-full max-w-md rounded-3xl bg-white/10 p-8 shadow-2xl">
-            <div class="text-center mb-6">
-                <div id="timerOriginalTime" class="text-lg font-semibold text-indigo-200">5:00</div>
-            </div>
 
-            <div class="relative mx-auto flex h-64 w-64 items-center justify-center">
-                <div id="timerSpinnerEmoji" class="absolute text-9xl" style="animation: spin 3s linear infinite;">⭐</div>
-                <div class="relative flex flex-col items-center justify-center text-center z-10">
-                    <span id="timerCountdown" class="text-5xl font-extrabold tracking-tight text-white drop-shadow-lg">00:00</span>
-                </div>
-            </div>
 
-            <div class="mt-6 flex flex-wrap justify-center gap-2">
-                <button type="button" data-timer-emoji="⭐" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">⭐</button>
-                <button type="button" data-timer-emoji="🎨" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🎨</button>
-                <button type="button" data-timer-emoji="🦄" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🦄</button>
-                <button type="button" data-timer-emoji="🚀" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🚀</button>
-                <button type="button" data-timer-emoji="🌈" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🌈</button>
-                <button type="button" data-timer-emoji="🎈" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🎈</button>
-                <button type="button" data-timer-emoji="🍎" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">🍎</button>
-                <button type="button" data-timer-emoji="⚡" class="timer-emoji-btn rounded-xl bg-white/15 px-3 py-2 text-3xl transition hover:bg-white/25 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/40 active:scale-95">⚡</button>
-            </div>
 
-            <button
-                id="timerOverlayDismiss"
-                onclick="cancelToddlerTimer()"
-                class="mt-6 w-full rounded-2xl bg-rose-500/80 px-5 py-4 text-base font-bold text-white shadow-lg transition hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-white/60">
-                Stop Timer
-            </button>
-        </div>
-    </div>
-
-    <div
-        id="fireworksOverlay"
-        class="fireworks-overlay fixed inset-0 z-40 hidden text-white">
-        <div id="fireworksStage" class="fireworks-stage"></div>
-        <div class="fireworks-content">
-            <div class="space-y-3">
-                <h2 class="text-4xl font-extrabold tracking-tight drop-shadow-lg">🎆 Fireworks Celebration</h2>
-                <p id="fireworksLabel" class="text-base font-semibold text-indigo-100 drop-shadow-md">Celebration time.</p>
-            </div>
-            <button
-                onclick="stopFireworksShow()"
-                class="rounded-full bg-white/20 px-6 py-3 text-xs font-semibold uppercase tracking-[0.35em] text-white shadow-lg transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50">
-                End Fireworks
-            </button>
-        </div>
-    </div>
 
     <div
         id="youtubePlayerOverlay"
@@ -1351,7 +1061,7 @@
     </div>
 
     <script src="modules.js"></script>
-    <script src="vendor/confetti.js"></script>
+
     <script src="app.js"></script>
 </body>
 </html>
