@@ -33,12 +33,7 @@ async fn roku_discover(timeout_secs: Option<u64>) -> Result<Vec<bridges::roku::R
 
 
 
-#[tauri::command]
-async fn roomsense_scan(timeout_ms: Option<u64>) -> Result<Vec<serde_json::Value>, String> {
-    bridges::roomsense::scan(timeout_ms)
-        .await
-        .map_err(|err| err.to_string())
-}
+
 
 #[tauri::command]
 fn is_wifi_connected() -> Result<bool, String> {
@@ -48,7 +43,7 @@ fn is_wifi_connected() -> Result<bool, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_blec::init())
+
         .setup(|app| {
             app.manage(RokuHttpClient::default());
             Ok(())
@@ -57,7 +52,7 @@ pub fn run() {
             roku_get,
             roku_post,
             roku_discover,
-            roomsense_scan,
+
             is_wifi_connected
         ])
         .run(tauri::generate_context!())

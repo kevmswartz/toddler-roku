@@ -32,20 +32,7 @@ const CORS_HEADERS = {
  * Get default configuration based on type
  */
 function getDefaultConfig(type = 'app-config') {
-  if (type === 'rooms') {
-    return {
-      rooms: [],
-      settings: {
-        autoDetect: false,
-        scanInterval: 10000,
-        rssiSampleSize: 3,
-        detectionMode: "manual",
-        fallbackRoom: null
-      },
-      version: "1.0.0",
-      lastUpdated: new Date().toISOString()
-    };
-  }
+
 
   // Default app-config
   return {
@@ -104,9 +91,9 @@ export default async (req, context) => {
       const configType = url.searchParams.get('type') || 'app-config'; // Default to app-config
 
       // Validate config type
-      if (configType !== 'app-config' && configType !== 'rooms') {
+      if (configType !== 'app-config') {
         return new Response(JSON.stringify({
-          error: `Invalid config type: ${configType}. Must be 'app-config' or 'rooms'`
+          error: `Invalid config type: ${configType}. Must be 'app-config'`
         }), {
           status: 400,
           headers: {
@@ -123,7 +110,7 @@ export default async (req, context) => {
         blobKey = `${configType}-${hashPassphrase(passphrase)}`;
       } else {
         // Use default config (for backwards compatibility, app-config uses old key)
-        blobKey = configType === 'app-config' ? "app-config" : "rooms-default";
+        blobKey = "app-config";
       }
 
       // Try to get config from blob storage
@@ -191,10 +178,10 @@ export default async (req, context) => {
       const configType = url.searchParams.get('type') || 'app-config';
 
       // Validate config type
-      if (configType !== 'app-config' && configType !== 'rooms') {
+      if (configType !== 'app-config') {
         return new Response(JSON.stringify({
           success: false,
-          error: `Invalid config type: ${configType}. Must be 'app-config' or 'rooms'`
+          error: `Invalid config type: ${configType}. Must be 'app-config'`
         }), {
           status: 400,
           headers: {
