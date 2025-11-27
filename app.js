@@ -86,6 +86,56 @@ if (typeof window !== 'undefined') {
     window.getButtonHandlerCatalog = () => buttonTypeCatalog;
 }
 
+function app() {
+    return {
+        activeTab: 'remote',
+        settingsUnlocked: false,
+        tabs: [],
+
+        init() {
+            this.tabs = getTabsForRendering();
+            window.addEventListener('tabs-updated', () => {
+                this.tabs = getTabsForRendering();
+            });
+
+            // Expose unlock method to global scope for legacy hold handler
+            window.unlockSettingsAlpine = () => {
+                this.settingsUnlocked = true;
+                this.showStatus('Settings unlocked! Advanced controls are now visible.', 'success');
+            };
+
+            window.hideSettingsAlpine = () => {
+                this.settingsUnlocked = false;
+                this.showStatus('Advanced controls hidden.', 'info');
+            };
+        },
+
+        isSectionVisible(sectionId) {
+            // Find which tab owns this section
+            const tab = this.tabs.find(t => t.sections.includes(sectionId));
+
+            // If section is not in any tab definition, it might be a global section or handled differently.
+            // For now, assume if it's in TAB_MANAGED_SECTION_IDS, it must be in a tab.
+            if (!tab) return false;
+
+            // Check if tab is active
+            if (this.activeTab !== tab.id) return false;
+
+            // Check settings lock
+            // We can't easily check data-settings attribute here reactively without a ref, 
+            // but we know which sections are settings sections based on ID or we can check DOM once.
+            // Better: The HTML x-show logic will handle the settings check if we expose settingsUnlocked.
+            return true;
+        },
+
+        showStatus(msg, type) {
+            if (typeof showStatus === 'function') {
+                showStatus(msg, type);
+            }
+        }
+    }
+}
+
 function sanitizePinValue(value) {
     if (typeof value !== 'string') return '';
     const digits = value.replace(/\D/g, '').slice(0, 4);
@@ -239,6 +289,10 @@ function applyTabVisibility(activeTabId, availableTabs) {
         if (!sectionEl) continue;
         if (visibleSections.has(sectionId)) {
             sectionEl.classList.remove('tab-hidden');
+            // Only remove 'hidden' if it's NOT a settings section, OR if settings are unlocked
+            if (!sectionEl.hasAttribute('data-settings') || (typeof settingsUnlocked !== 'undefined' && settingsUnlocked)) {
+                sectionEl.classList.remove('hidden');
+            }
         } else {
             sectionEl.classList.add('tab-hidden');
         }
